@@ -23,9 +23,8 @@ RectCallback? _getClipCallback(RenderBox referenceBox, bool containedInkWell, Re
     assert(containedInkWell);
     return rectCallback;
   }
-  if (containedInkWell) {
+  if (containedInkWell)
     return () => Offset.zero & referenceBox.size;
-  }
   return null;
 }
 
@@ -109,7 +108,7 @@ class InkRipple extends InteractiveInkFeature {
   /// When the ripple is removed, [onRemoved] will be called.
   InkRipple({
     required MaterialInkController controller,
-    required super.referenceBox,
+    required RenderBox referenceBox,
     required Offset position,
     required Color color,
     required TextDirection textDirection,
@@ -118,7 +117,7 @@ class InkRipple extends InteractiveInkFeature {
     BorderRadius? borderRadius,
     ShapeBorder? customBorder,
     double? radius,
-    super.onRemoved,
+    VoidCallback? onRemoved,
   }) : assert(color != null),
        assert(position != null),
        assert(textDirection != null),
@@ -128,7 +127,7 @@ class InkRipple extends InteractiveInkFeature {
        _textDirection = textDirection,
        _targetRadius = radius ?? _getTargetRadius(referenceBox, containedInkWell, rectCallback, position),
        _clipCallback = _getClipCallback(referenceBox, containedInkWell, rectCallback),
-       super(controller: controller, color: color) {
+       super(controller: controller, referenceBox: referenceBox, color: color, onRemoved: onRemoved) {
     assert(_borderRadius != null);
 
     // Immediately begin fading-in the initial splash.
@@ -209,15 +208,13 @@ class InkRipple extends InteractiveInkFeature {
     // dispose _fadeOutController.
     final double fadeOutValue = 1.0 - _fadeInController.value;
     _fadeOutController.value = fadeOutValue;
-    if (fadeOutValue < 1.0) {
+    if (fadeOutValue < 1.0)
       _fadeOutController.animateTo(1.0, duration: _kCancelDuration);
-    }
   }
 
   void _handleAlphaStatusChanged(AnimationStatus status) {
-    if (status == AnimationStatus.completed) {
+    if (status == AnimationStatus.completed)
       dispose();
-    }
   }
 
   @override

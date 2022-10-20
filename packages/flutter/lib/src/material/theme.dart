@@ -18,8 +18,6 @@ const Duration kThemeAnimationDuration = Duration(milliseconds: 200);
 ///
 /// A theme describes the colors and typographic choices of an application.
 ///
-/// {@youtube 560 315 https://www.youtube.com/watch?v=oTvQDJOBXmM}
-///
 /// Descendant widgets obtain the current theme's [ThemeData] object using
 /// [Theme.of]. When a widget uses [Theme.of], it is automatically rebuilt if
 /// the theme later changes, so that the changes can be applied.
@@ -39,11 +37,12 @@ class Theme extends StatelessWidget {
   ///
   /// The [data] and [child] arguments must not be null.
   const Theme({
-    super.key,
+    Key? key,
     required this.data,
     required this.child,
   }) : assert(child != null),
-       assert(data != null);
+       assert(data != null),
+       super(key: key);
 
   /// Specifies the color and typography values for descendant widgets.
   final ThemeData data;
@@ -62,7 +61,7 @@ class Theme extends StatelessWidget {
   /// [MaterialLocalizations], the returned data is localized according to the
   /// nearest available [MaterialLocalizations].
   ///
-  /// Defaults to [ThemeData.fallback] if there is no [Theme] in the given
+  /// Defaults to [new ThemeData.fallback] if there is no [Theme] in the given
   /// build context.
   ///
   /// Typical usage is as follows:
@@ -112,21 +111,6 @@ class Theme extends StatelessWidget {
     return ThemeData.localize(theme, theme.typography.geometryThemeFor(category));
   }
 
-  // The inherited themes in widgets library can not infer their values from
-  // Theme in material library. Wraps the child with these inherited themes to
-  // overrides their values directly.
-  Widget _wrapsWidgetThemes(BuildContext context, Widget child) {
-    final DefaultSelectionStyle selectionStyle = DefaultSelectionStyle.of(context);
-    return IconTheme(
-      data: data.iconTheme,
-      child: DefaultSelectionStyle(
-        selectionColor: data.textSelectionTheme.selectionColor ?? selectionStyle.selectionColor,
-        cursorColor: data.textSelectionTheme.cursorColor ?? selectionStyle.cursorColor,
-        child: child,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return _InheritedTheme(
@@ -138,7 +122,10 @@ class Theme extends StatelessWidget {
         data: MaterialBasedCupertinoThemeData(
           materialTheme: data,
         ),
-        child: _wrapsWidgetThemes(context, child),
+        child: IconTheme(
+          data: data.iconTheme,
+          child: child,
+        ),
       ),
     );
   }
@@ -152,9 +139,11 @@ class Theme extends StatelessWidget {
 
 class _InheritedTheme extends InheritedTheme {
   const _InheritedTheme({
+    Key? key,
     required this.theme,
-    required super.child,
-  }) : assert(theme != null);
+    required Widget child,
+  }) : assert(theme != null),
+       super(key: key, child: child);
 
   final Theme theme;
 
@@ -179,7 +168,7 @@ class ThemeDataTween extends Tween<ThemeData> {
   /// The [begin] and [end] properties must be non-null before the tween is
   /// first used, but the arguments can be null if the values are going to be
   /// filled in later.
-  ThemeDataTween({ super.begin, super.end });
+  ThemeDataTween({ ThemeData? begin, ThemeData? end }) : super(begin: begin, end: end);
 
   @override
   ThemeData lerp(double t) => ThemeData.lerp(begin!, end!, t);
@@ -205,14 +194,15 @@ class AnimatedTheme extends ImplicitlyAnimatedWidget {
   /// By default, the theme transition uses a linear curve. The [data] and
   /// [child] arguments must not be null.
   const AnimatedTheme({
-    super.key,
+    Key? key,
     required this.data,
-    super.curve,
-    super.duration = kThemeAnimationDuration,
-    super.onEnd,
+    Curve curve = Curves.linear,
+    Duration duration = kThemeAnimationDuration,
+    VoidCallback? onEnd,
     required this.child,
   }) : assert(child != null),
-       assert(data != null);
+       assert(data != null),
+       super(key: key, curve: curve, duration: duration, onEnd: onEnd);
 
   /// Specifies the color and typography values for descendant widgets.
   final ThemeData data;

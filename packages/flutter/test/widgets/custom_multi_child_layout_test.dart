@@ -12,9 +12,8 @@ class TestMultiChildLayoutDelegate extends MultiChildLayoutDelegate {
 
   @override
   Size getSize(BoxConstraints constraints) {
-    if (!RenderObject.debugCheckingIntrinsics) {
+    if (!RenderObject.debugCheckingIntrinsics)
       getSizeConstraints = constraints;
-    }
     return const Size(200.0, 300.0);
   }
 
@@ -151,9 +150,10 @@ class InvalidConstraintsChildLayoutDelegate extends MultiChildLayoutDelegate {
 
 class LayoutWithMissingId extends ParentDataWidget<MultiChildLayoutParentData> {
   const LayoutWithMissingId({
-    super.key,
-    required super.child,
-  }) : assert(child != null);
+    Key? key,
+    required Widget child,
+  }) : assert(child != null),
+       super(key: key, child: child);
 
   @override
   void applyParentData(RenderObject renderObject) {}

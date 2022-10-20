@@ -7,6 +7,7 @@ import 'dart:convert' show json, utf8, LineSplitter, JsonEncoder;
 import 'dart:io' as io;
 import 'dart:math' as math;
 
+import 'package:flutter_devicelab/common.dart';
 import 'package:path/path.dart' as path;
 import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart';
 
@@ -91,7 +92,7 @@ class Chrome {
         options.url!,
       if (io.Platform.environment['CHROME_NO_SANDBOX'] == 'true')
         '--no-sandbox',
-      if (options.headless ?? false)
+      if (options.headless == true)
         '--headless',
       if (withDebugging)
         '--remote-debugging-port=${options.debugPort}',
@@ -349,7 +350,7 @@ class BlinkTraceSummary {
         averageBeginFrameTime: _computeAverageDuration(frames.map((BlinkFrame frame) => frame.beginFrame).whereType<BlinkTraceEvent>().toList()),
         averageUpdateLifecyclePhasesTime: _computeAverageDuration(frames.map((BlinkFrame frame) => frame.updateAllLifecyclePhases).whereType<BlinkTraceEvent>().toList()),
       );
-    } catch (_) {
+    } catch (_, __) {
       final io.File traceFile = io.File('./chrome-trace.json');
       io.stderr.writeln('Failed to interpret the Chrome trace contents. The trace was saved in ${traceFile.path}');
       traceFile.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(traceJson));
@@ -503,17 +504,8 @@ class BlinkTraceEvent {
   /// This event does not include non-UI thread scripting, such as web workers,
   /// service workers, and CSS Paint paintlets.
   ///
-  /// WebViewImpl::beginFrame was used in earlier versions of Chrome, kept
-  /// for compatibility.
-  ///
   /// This event is a duration event that has its `tdur` populated.
-  bool get isBeginFrame {
-    return ph == 'X' && (
-      name == 'WebViewImpl::beginFrame' ||
-      name == 'WebFrameWidgetBase::BeginMainFrame' ||
-      name == 'WebFrameWidgetImpl::BeginMainFrame'
-    );
-  }
+  bool get isBeginFrame => ph == 'X' && name == 'WebViewImpl::beginFrame';
 
   /// An "update all lifecycle phases" event contains UI thread computations
   /// related to an animation frame that's outside the scripting phase.
@@ -521,16 +513,8 @@ class BlinkTraceEvent {
   /// This event includes style recalculation, layer tree update, layout,
   /// painting, and parts of compositing work.
   ///
-  /// WebViewImpl::updateAllLifecyclePhases was used in earlier versions of
-  /// Chrome, kept for compatibility.
-  ///
   /// This event is a duration event that has its `tdur` populated.
-  bool get isUpdateAllLifecyclePhases {
-    return ph == 'X' && (
-      name == 'WebViewImpl::updateAllLifecyclePhases' ||
-      name == 'WebFrameWidgetImpl::UpdateLifecycle'
-    );
-  }
+  bool get isUpdateAllLifecyclePhases => ph == 'X' && name == 'WebViewImpl::updateAllLifecyclePhases';
 
   /// Whether this is the beginning of a "measured_frame" event.
   ///

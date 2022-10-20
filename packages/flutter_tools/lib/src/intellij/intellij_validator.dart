@@ -22,11 +22,12 @@ const String _communityEditionId = 'IdeaIC';
 
 /// A doctor validator for both Intellij and Android Studio.
 abstract class IntelliJValidator extends DoctorValidator {
-  IntelliJValidator(super.title, this.installPath, {
+  IntelliJValidator(String title, this.installPath, {
     required FileSystem fileSystem,
     required UserMessages userMessages,
   }) : _fileSystem = fileSystem,
-       _userMessages = userMessages;
+       _userMessages = userMessages,
+       super(title);
 
   final String installPath;
   final FileSystem _fileSystem;
@@ -499,7 +500,7 @@ class IntelliJValidatorOnMac extends IntelliJValidator {
 
   @override
   String get version {
-    return _version ??= _plistParser.getStringValueFromFile(
+    return _version ??= _plistParser.getValueFromFile(
         plistFile,
         PlistParser.kCFBundleShortVersionStringKey,
       ) ?? 'unknown';
@@ -513,7 +514,7 @@ class IntelliJValidatorOnMac extends IntelliJValidator {
     }
 
     final String? altLocation = _plistParser
-      .getStringValueFromFile(plistFile, 'JetBrainsToolboxApp');
+      .getValueFromFile(plistFile, 'JetBrainsToolboxApp');
 
     if (altLocation != null) {
       _pluginsPath = '$altLocation.plugins';

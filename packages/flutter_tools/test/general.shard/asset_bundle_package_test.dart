@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'dart:convert';
 
 import 'package:file/file.dart';
@@ -10,7 +12,7 @@ import 'package:file/memory.dart';
 import 'package:flutter_tools/src/asset.dart';
 import 'package:flutter_tools/src/base/file_system.dart';
 
-import 'package:flutter_tools/src/globals.dart' as globals;
+import 'package:flutter_tools/src/globals_null_migrated.dart' as globals;
 
 import '../src/common.dart';
 import '../src/context.dart';
@@ -22,9 +24,9 @@ void main() {
     // fixed we fix them here.
     // TODO(dantup): Remove this function once the above issue is fixed and
     // rolls into Flutter.
-    return path.replaceAll('/', globals.fs.path.separator);
+    return path?.replaceAll('/', globals.fs.path.separator);
   }
-  void writePubspecFile(String path, String name, { List<String>? assets }) {
+  void writePubspecFile(String path, String name, { List<String> assets }) {
     String assetsSection;
     if (assets == null) {
       assetsSection = '';
@@ -63,11 +65,11 @@ $assetsSection
   Future<void> buildAndVerifyAssets(
     List<String> assets,
     List<String> packages,
-    String? expectedAssetManifest, {
+    String expectedAssetManifest, {
     bool expectExists = true,
   }) async {
     final AssetBundle bundle = AssetBundleFactory.instance.createBundle();
-    await bundle.build(packagesPath: '.packages');
+    await bundle.build(manifestPath: 'pubspec.yaml', packagesPath: '.packages');
 
     for (final String packageName in packages) {
       for (final String asset in assets) {
@@ -76,7 +78,7 @@ $assetsSection
           reason: 'Cannot find key on bundle: $entryKey');
         if (expectExists) {
           expect(
-            utf8.decode(await bundle.entries[entryKey]!.contentsAsBytes()),
+            utf8.decode(await bundle.entries[entryKey].contentsAsBytes()),
             asset,
           );
         }
@@ -85,7 +87,7 @@ $assetsSection
 
     if (expectExists) {
       expect(
-        utf8.decode(await bundle.entries['AssetManifest.json']!.contentsAsBytes()),
+        utf8.decode(await bundle.entries['AssetManifest.json'].contentsAsBytes()),
         expectedAssetManifest,
       );
     }
@@ -101,7 +103,7 @@ $assetsSection
     }
   }
 
-  late FileSystem testFileSystem;
+  FileSystem testFileSystem;
 
   setUp(() async {
     testFileSystem = MemoryFileSystem(
@@ -119,15 +121,15 @@ $assetsSection
       writePubspecFile('p/p/pubspec.yaml', 'test_package');
 
       final AssetBundle bundle = AssetBundleFactory.instance.createBundle();
-      await bundle.build(packagesPath: '.packages');
+      await bundle.build(manifestPath: 'pubspec.yaml', packagesPath: '.packages');
       expect(bundle.entries.length, 3); // LICENSE, AssetManifest, FontManifest
       const String expectedAssetManifest = '{}';
       expect(
-        utf8.decode(await bundle.entries['AssetManifest.json']!.contentsAsBytes()),
+        utf8.decode(await bundle.entries['AssetManifest.json'].contentsAsBytes()),
         expectedAssetManifest,
       );
       expect(
-        utf8.decode(await bundle.entries['FontManifest.json']!.contentsAsBytes()),
+        utf8.decode(await bundle.entries['FontManifest.json'].contentsAsBytes()),
         '[]',
       );
     }, overrides: <Type, Generator>{
@@ -144,15 +146,15 @@ $assetsSection
       writeAssets('p/p/', assets);
 
       final AssetBundle bundle = AssetBundleFactory.instance.createBundle();
-      await bundle.build(packagesPath: '.packages');
+      await bundle.build(manifestPath: 'pubspec.yaml', packagesPath: '.packages');
       expect(bundle.entries.length, 3); // LICENSE, AssetManifest, FontManifest
       const String expectedAssetManifest = '{}';
       expect(
-        utf8.decode(await bundle.entries['AssetManifest.json']!.contentsAsBytes()),
+        utf8.decode(await bundle.entries['AssetManifest.json'].contentsAsBytes()),
         expectedAssetManifest,
       );
       expect(
-        utf8.decode(await bundle.entries['FontManifest.json']!.contentsAsBytes()),
+        utf8.decode(await bundle.entries['FontManifest.json'].contentsAsBytes()),
         '[]',
       );
     }, overrides: <Type, Generator>{
@@ -538,7 +540,7 @@ $assetsSection
       writeAssets('p/p/', assetsOnDisk);
 
       final AssetBundle bundle = AssetBundleFactory.instance.createBundle();
-      await bundle.build(packagesPath: '.packages');
+      await bundle.build(manifestPath: 'pubspec.yaml', packagesPath: '.packages');
 
       expect(bundle.entries['AssetManifest.json'], isNull,
         reason: 'Invalid pubspec.yaml should not generate AssetManifest.json'  );

@@ -8,7 +8,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:vector_math/vector_math_64.dart';
-import 'package:xml/xml.dart';
+import 'package:xml/xml.dart' hide parse;
 
 // String to use for a single indentation.
 const String kIndent = '  ';

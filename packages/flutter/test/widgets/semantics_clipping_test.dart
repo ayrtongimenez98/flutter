@@ -18,7 +18,6 @@ void main() {
         child: SizedBox(
           width: 100.0,
           child: Flex(
-            clipBehavior: Clip.hardEdge,
             direction: Axis.horizontal,
             children: const <Widget>[
               SizedBox(
@@ -76,7 +75,6 @@ void main() {
         child: SizedBox(
           width: 100.0,
           child: Flex(
-            clipBehavior: Clip.hardEdge,
             direction: Axis.horizontal,
             children: <Widget>[
               const SizedBox(

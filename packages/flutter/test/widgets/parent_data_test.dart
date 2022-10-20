@@ -41,7 +41,7 @@ void checkTree(WidgetTester tester, List<TestParentData> expectedParentData) {
     }
     expect(child, isNull);
   } catch (e) {
-    debugPrint(renderObject.toStringDeep());
+    print(renderObject.toStringDeep());
     rethrow;
   }
 }
@@ -459,10 +459,10 @@ void main() {
 
 class TestParentDataWidget extends ParentDataWidget<DummyParentData> {
   const TestParentDataWidget({
-    super.key,
+    Key? key,
     required this.string,
-    required super.child,
-  });
+    required Widget child,
+  }) : super(key: key, child: child);
 
   final String string;
 
@@ -483,9 +483,9 @@ class DummyParentData extends ParentData {
 
 class OneAncestorWidget extends SingleChildRenderObjectWidget {
   const OneAncestorWidget({
-    super.key,
-    required Widget super.child,
-  });
+    Key? key,
+    required Widget child,
+  }) : super(key: key, child: child);
 
   @override
   RenderOne createRenderObject(BuildContext context) => RenderOne();
@@ -493,9 +493,9 @@ class OneAncestorWidget extends SingleChildRenderObjectWidget {
 
 class AnotherAncestorWidget extends SingleChildRenderObjectWidget {
   const AnotherAncestorWidget({
-    super.key,
-    required Widget super.child,
-  });
+    Key? key,
+    required Widget child,
+  }) : super(key: key, child: child);
 
   @override
   RenderAnother createRenderObject(BuildContext context) => RenderAnother();
@@ -504,23 +504,21 @@ class AnotherAncestorWidget extends SingleChildRenderObjectWidget {
 class RenderOne extends RenderProxyBox {
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! DummyParentData) {
+    if (child.parentData is! DummyParentData)
       child.parentData = DummyParentData();
-    }
   }
 }
 
 class RenderAnother extends RenderProxyBox {
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! DummyParentData) {
+    if (child.parentData is! DummyParentData)
       child.parentData = DummyParentData();
-    }
   }
 }
 
 class DummyWidget extends StatelessWidget {
-  const DummyWidget({ super.key, required this.child });
+  const DummyWidget({ Key? key, required this.child }) : super(key: key);
 
   final Widget child;
 

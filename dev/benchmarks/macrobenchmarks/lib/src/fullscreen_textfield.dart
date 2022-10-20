@@ -48,7 +48,7 @@ const String textLotsOfText = 'Lorem ipsum dolor sit amet, consectetur '
   '🦻 👃 🫀 🫁 🧠 🦷 🦴 👀 👁 👅 👄 💋 🩸';
 
 class TextFieldPage extends StatelessWidget {
-  const TextFieldPage({super.key});
+  const TextFieldPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

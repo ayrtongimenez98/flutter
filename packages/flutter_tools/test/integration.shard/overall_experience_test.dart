@@ -22,7 +22,13 @@
 // To aid in debugging, consider passing the `debug: true` argument
 // to the runFlutter function.
 
-// This file intentionally assumes the tests run in order.
+// @dart = 2.8
+// This file is ready to transition, just uncomment /*?*/, /*!*/, and /*late*/.
+
+// TODO(gspencergoog): Remove this tag once this test's state leaks/test
+// dependencies have been fixed.
+// https://github.com/flutter/flutter/issues/85160
+// Fails with "flutter test --test-randomize-ordering-seed=1000"
 @Tags(<String>['no-shuffle'])
 
 import 'dart:async';
@@ -30,23 +36,17 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:meta/meta.dart';
+import 'package:pedantic/pedantic.dart';
 import 'package:process/process.dart';
 
 import '../src/common.dart';
-import 'test_utils.dart' show fileSystem;
+import 'test_utils.dart' show fileSystem, platform;
 
 const ProcessManager processManager = LocalProcessManager();
 final String flutterRoot = getFlutterRoot();
 final String flutterBin = fileSystem.path.join(flutterRoot, 'bin', 'flutter');
 
-void debugPrint(String message) {
-  // This is called to intentionally print debugging output when a test is
-  // either taking too long or has failed.
-  // ignore: avoid_print
-  print(message);
-}
-
-typedef LineHandler = String? Function(String line);
+typedef LineHandler = String/*?*/ Function(String line);
 
 abstract class Transition {
   const Transition({this.handler, this.logging});
@@ -56,12 +56,12 @@ abstract class Transition {
   /// This should not throw, even if the test is failing. (For example, don't use "expect"
   /// in these callbacks.) Throwing here would prevent the [runFlutter] function from running
   /// to completion, which would leave zombie `flutter` processes around.
-  final LineHandler? handler;
+  final LineHandler/*?*/ handler;
 
   /// Whether to enable or disable logging when this transition is matched.
   ///
   /// The default value, null, leaves the logging state unaffected.
-  final bool? logging;
+  final bool/*?*/ logging;
 
   bool matches(String line);
 
@@ -86,7 +86,7 @@ abstract class Transition {
 }
 
 class Barrier extends Transition {
-  const Barrier(this.pattern, {super.handler, super.logging});
+  const Barrier(this.pattern, {LineHandler/*?*/ handler, bool/*?*/ logging}) : super(handler: handler, logging: logging);
   final Pattern pattern;
 
   @override
@@ -98,10 +98,11 @@ class Barrier extends Transition {
 
 class Multiple extends Transition {
   Multiple(List<Pattern> patterns, {
-    super.handler,
-    super.logging,
+    LineHandler/*?*/ handler,
+    bool/*?*/ logging,
   }) : _originalPatterns = patterns,
-       patterns = patterns.toList();
+       patterns = patterns.toList(),
+       super(handler: handler, logging: logging);
 
   final List<Pattern> _originalPatterns;
   final List<Pattern> patterns;
@@ -119,7 +120,7 @@ class Multiple extends Transition {
 
   @override
   String toString() {
-    if (patterns.isEmpty) {
+    if (_originalPatterns.length == patterns.length) {
       return '${_originalPatterns.map(describe).join(', ')} (all matched)';
     }
     return '${_originalPatterns.map(describe).join(', ')} (matched ${_originalPatterns.length - patterns.length} so far)';
@@ -138,7 +139,7 @@ class LogLine {
   String toString() => '$stamp $channel: $message';
 
   void printClearly() {
-    debugPrint('$stamp $channel: ${clarify(message)}');
+    print('$stamp $channel: ${clarify(message)}');
   }
 
   static String clarify(String line) {
@@ -155,7 +156,7 @@ class LogLine {
         case 0x0D: return '<CR>';
       }
       return '<${rune.toRadixString(16).padLeft(rune <= 0xFF ? 2 : rune <= 0xFFFF ? 4 : 5, '0')}>';
-    }).join();
+    }).join('');
   }
 }
 
@@ -188,7 +189,7 @@ Future<ProcessTestResult> runFlutter(
   List<Transition> transitions, {
   bool debug = false,
   bool logging = true,
-  Duration expectedMaxDuration = const Duration(minutes: 10), // must be less than test timeout of 15 minutes! See ../../dart_test.yaml.
+  Duration expectedMaxDuration = const Duration(seconds: 25), // must be less than test timeout of 30 seconds!
 }) async {
   final Stopwatch clock = Stopwatch()..start();
   final Process process = await processManager.start(
@@ -199,9 +200,9 @@ Future<ProcessTestResult> runFlutter(
   int nextTransition = 0;
   void describeStatus() {
     if (transitions.isNotEmpty) {
-      debugPrint('Expected state transitions:');
+      print('Expected state transitions:');
       for (int index = 0; index < transitions.length; index += 1) {
-        debugPrint(
+        print(
           '${index.toString().padLeft(5)} '
           '${index <  nextTransition ? 'ALREADY MATCHED ' :
              index == nextTransition ? 'NOW WAITING FOR>' :
@@ -209,29 +210,29 @@ Future<ProcessTestResult> runFlutter(
       }
     }
     if (logs.isEmpty) {
-      debugPrint('So far nothing has been logged${ debug ? "" : "; use debug:true to print all output" }.');
+      print('So far nothing has been logged${ debug ? "" : "; use debug:true to print all output" }.');
     } else {
-      debugPrint('Log${ debug ? "" : " (only contains logged lines; use debug:true to print all output)" }:');
+      print('Log${ debug ? "" : " (only contains logged lines; use debug:true to print all output)" }:');
       for (final LogLine log in logs) {
         log.printClearly();
       }
     }
   }
   bool streamingLogs = false;
-  Timer? timeout;
+  Timer/*?*/ timeout;
   void processTimeout() {
     if (!streamingLogs) {
       streamingLogs = true;
       if (!debug) {
-        debugPrint('Test is taking a long time (${clock.elapsed.inSeconds} seconds so far).');
+        print('Test is taking a long time (${clock.elapsed.inSeconds} seconds so far).');
       }
       describeStatus();
-      debugPrint('(streaming all logs from this point on...)');
+      print('(streaming all logs from this point on...)');
     } else {
-      debugPrint('(taking a long time...)');
+      print('(taking a long time...)');
     }
   }
-  String stamp() => '[${(clock.elapsed.inMilliseconds / 1000.0).toStringAsFixed(1).padLeft(5)}s]';
+  String stamp() => '[${(clock.elapsed.inMilliseconds / 1000.0).toStringAsFixed(1).padLeft(5, " ")}s]';
   void processStdout(String line) {
     final LogLine log = LogLine('stdout', stamp(), line);
     if (logging) {
@@ -242,23 +243,23 @@ Future<ProcessTestResult> runFlutter(
     }
     if (nextTransition < transitions.length && transitions[nextTransition].matches(line)) {
       if (streamingLogs) {
-        debugPrint('(matched ${transitions[nextTransition]})');
+        print('(matched ${transitions[nextTransition]})');
       }
       if (transitions[nextTransition].logging != null) {
-        if (!logging && transitions[nextTransition].logging!) {
+        if (!logging && transitions[nextTransition].logging/*!*/) {
           logs.add(log);
         }
-        logging = transitions[nextTransition].logging!;
+        logging = transitions[nextTransition].logging/*!*/;
         if (streamingLogs) {
           if (logging) {
-            debugPrint('(enabled logging)');
+            print('(enabled logging)');
           } else {
-            debugPrint('(disabled logging)');
+            print('(disabled logging)');
           }
         }
       }
       if (transitions[nextTransition].handler != null) {
-        final String? command = transitions[nextTransition].handler!(line);
+        final String/*?*/ command = transitions[nextTransition].handler/*!*/(line);
         if (command != null) {
           final LogLine inLog = LogLine('stdin', stamp(), command);
           logs.add(inLog);
@@ -270,7 +271,7 @@ Future<ProcessTestResult> runFlutter(
       }
       nextTransition += 1;
       timeout?.cancel();
-      timeout = Timer(expectedMaxDuration ~/ 5, processTimeout); // This is not a failure timeout, just when to start logging verbosely to help debugging.
+      timeout = Timer(expectedMaxDuration ~/ 5, processTimeout);
     }
   }
   void processStderr(String line) {
@@ -283,13 +284,13 @@ Future<ProcessTestResult> runFlutter(
   if (debug) {
     processTimeout();
   } else {
-    timeout = Timer(expectedMaxDuration ~/ 2, processTimeout); // This is not a failure timeout, just when to start logging verbosely to help debugging.
+    timeout = Timer(expectedMaxDuration ~/ 2, processTimeout);
   }
   process.stdout.transform<String>(utf8.decoder).transform<String>(const LineSplitter()).listen(processStdout);
   process.stderr.transform<String>(utf8.decoder).transform<String>(const LineSplitter()).listen(processStderr);
-  unawaited(process.exitCode.timeout(expectedMaxDuration, onTimeout: () { // This is a failure timeout, must not be short.
-    debugPrint('${stamp()} (process is not quitting, trying to send a "q" just in case that helps)');
-    debugPrint('(a functional test should never reach this point)');
+  unawaited(process.exitCode.timeout(expectedMaxDuration, onTimeout: () {
+    print('${stamp()} (process is not quitting, trying to send a "q" just in case that helps)');
+    print('(a functional test should never reach this point)');
     final LogLine inLog = LogLine('stdin', stamp(), 'q');
     logs.add(inLog);
     if (streamingLogs) {
@@ -297,31 +298,27 @@ Future<ProcessTestResult> runFlutter(
     }
     process.stdin.write('q');
     return -1; // discarded
-  })
-  // TODO(srawlins): Fix this static issue,
-  // https://github.com/flutter/flutter/issues/105750.
-  // ignore: body_might_complete_normally_catch_error
-  .catchError((Object error) { /* ignore errors here, they will be reported on the next line */ }));
+  }).catchError((Object error) { /* ignore the error here, it'll be reported on the next line */ }));
   final int exitCode = await process.exitCode;
   if (streamingLogs) {
-    debugPrint('${stamp()} (process terminated with exit code $exitCode)');
+    print('${stamp()} (process terminated with exit code $exitCode)');
   }
   timeout?.cancel();
   if (nextTransition < transitions.length) {
-    debugPrint('The subprocess terminated before all the expected transitions had been matched.');
+    print('The subprocess terminated before all the expected transitions had been matched.');
     if (logs.any((LogLine line) => line.couldBeCrash)) {
-      debugPrint('The subprocess may in fact have crashed. Check the stderr logs below.');
+      print('The subprocess may in fact have crashed. Check the stderr logs below.');
     }
-    debugPrint('The transition that we were hoping to see next but that we never saw was:');
-    debugPrint('${nextTransition.toString().padLeft(5)} NOW WAITING FOR> ${transitions[nextTransition]}');
+    print('The transition that we were hoping to see next but that we never saw was:');
+    print('${nextTransition.toString().padLeft(5)} NOW WAITING FOR> ${transitions[nextTransition]}');
     if (!streamingLogs) {
       describeStatus();
-      debugPrint('(process terminated with exit code $exitCode)');
+      print('(process terminated with exit code $exitCode)');
     }
     throw TestFailure('Missed some expected transitions.');
   }
   if (streamingLogs) {
-    debugPrint('${stamp()} (completed execution successfully!)');
+    print('${stamp()} (completed execution successfully!)');
   }
   return ProcessTestResult(exitCode, logs);
 }
@@ -333,7 +330,7 @@ void main() {
     final String tempDirectory = fileSystem.systemTempDirectory.createTempSync('flutter_overall_experience_test.').resolveSymbolicLinksSync();
     final String pidFile = fileSystem.path.join(tempDirectory, 'flutter.pid');
     final String testDirectory = fileSystem.path.join(flutterRoot, 'examples', 'hello_world');
-    bool? existsDuringTest;
+    bool/*?*/ existsDuringTest;
     try {
       expect(fileSystem.file(pidFile).existsSync(), isFalse);
       final ProcessTestResult result = await runFlutter(
@@ -361,13 +358,14 @@ void main() {
     } finally {
       tryToDelete(fileSystem.directory(tempDirectory));
     }
-  }, skip: Platform.isWindows); // [intended] Windows doesn't support sending signals so we don't care if it can store the PID.
+  }, skip: platform.isWindows);
+
   testWithoutContext('flutter run handle SIGUSR1/2', () async {
     final String tempDirectory = fileSystem.systemTempDirectory.createTempSync('flutter_overall_experience_test.').resolveSymbolicLinksSync();
     final String pidFile = fileSystem.path.join(tempDirectory, 'flutter.pid');
     final String testDirectory = fileSystem.path.join(flutterRoot, 'dev', 'integration_tests', 'ui');
     final String testScript = fileSystem.path.join('lib', 'commands.dart');
-    late int pid;
+    /*late*/ int pid;
     try {
       final ProcessTestResult result = await runFlutter(
         <String>['run', '-dflutter-tester', '--report-ready', '--pid-file', pidFile, '--no-devtools', testScript],
@@ -379,7 +377,7 @@ void main() {
             return null;
           }),
           Barrier('Performing hot reload...'.padRight(progressMessageWidth), logging: true),
-          Multiple(<Pattern>[RegExp(r'^Reloaded 0 libraries in [0-9]+ms \(compile: \d+ ms, reload: \d+ ms, reassemble: \d+ ms\)\.$'), 'called reassemble', 'called paint'], handler: (String line) {
+          Multiple(<Pattern>[RegExp(r'^Reloaded 0 libraries in [0-9]+ms\.$'), 'called reassemble', 'called paint'], handler: (String line) {
             processManager.killPid(pid, ProcessSignal.sigusr2);
             return null;
           }),
@@ -417,7 +415,7 @@ void main() {
     } finally {
       tryToDelete(fileSystem.directory(tempDirectory));
     }
-  }, skip: Platform.isWindows); // [intended] Windows doesn't support sending signals.
+  }, skip: Platform.isWindows); // Windows doesn't support sending signals.
 
   testWithoutContext('flutter run can hot reload and hot restart, handle "p" key', () async {
     final String tempDirectory = fileSystem.systemTempDirectory.createTempSync('flutter_overall_experience_test.').resolveSymbolicLinksSync();
@@ -535,7 +533,7 @@ void main() {
         matches(RegExp(r'^The specific RenderFlex in question is: RenderFlex#..... OVERFLOWING:$')),
         startsWith('  creator: Row ← Test ← '),
         contains(' ← '),
-        endsWith(' ⋯'),
+        endsWith(' ← ⋯'),
         '  parentData: <none> (can use size)',
         '  constraints: BoxConstraints(w=800.0, h=600.0)',
         '  size: Size(800.0, 600.0)',
@@ -612,7 +610,6 @@ void main() {
       'a Toggle timeline events for all widget build methods.                    (debugProfileWidgetBuilds)',
       'M Write SkSL shaders to a unique file in the project directory.',
       'g Run source code generators.',
-      'j Dump frame raster stats for the current frame.',
       'h Repeat this help message.',
       'd Detach (terminate "flutter run" but leave application running).',
       'c Clear the screen',
@@ -625,5 +622,5 @@ void main() {
       '',
       'Application finished.',
     ]);
-  });
+  }, skip: Platform.isWindows); // TODO(jonahwilliams): Re-enable when this test is reliable on device lab, https://github.com/flutter/flutter/issues/81556
 }

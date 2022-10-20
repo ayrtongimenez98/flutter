@@ -9,16 +9,19 @@ import '../../gallery/demo.dart';
 
 class _InputDropdown extends StatelessWidget {
   const _InputDropdown({
+    Key? key,
+    this.child,
     this.labelText,
     this.valueText,
     this.valueStyle,
     this.onPressed,
-  });
+  }) : super(key: key);
 
   final String? labelText;
   final String? valueText;
   final TextStyle? valueStyle;
   final VoidCallback? onPressed;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -46,12 +49,13 @@ class _InputDropdown extends StatelessWidget {
 
 class _DateTimePicker extends StatelessWidget {
   const _DateTimePicker({
+    Key? key,
     this.labelText,
     this.selectedDate,
     this.selectedTime,
     this.selectDate,
     this.selectTime,
-  });
+  }) : super(key: key);
 
   final String? labelText;
   final DateTime? selectedDate;
@@ -109,7 +113,7 @@ class _DateTimePicker extends StatelessWidget {
 }
 
 class DateAndTimePickerDemo extends StatefulWidget {
-  const DateAndTimePickerDemo({super.key});
+  const DateAndTimePickerDemo({Key? key}) : super(key: key);
 
   static const String routeName = '/material/date-and-time-pickers';
 

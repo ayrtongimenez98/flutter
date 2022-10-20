@@ -15,11 +15,11 @@ class AndroidPlatformView extends StatelessWidget {
   /// native view.
   /// `viewType` identifies the type of Android view to create.
   const AndroidPlatformView({
-    super.key,
+    Key? key,
     this.onPlatformViewCreated,
-    this.useHybridComposition = false,
     required this.viewType,
-  })  : assert(viewType != null);
+  })  : assert(viewType != null),
+        super(key: key);
 
   /// The unique identifier for the view type to be embedded by this widget.
   ///
@@ -30,9 +30,6 @@ class AndroidPlatformView extends StatelessWidget {
   ///
   /// May be null.
   final PlatformViewCreatedCallback? onPlatformViewCreated;
-
-  // Use hybrid composition.
-  final bool useHybridComposition;
 
   @override
   Widget build(BuildContext context) {
@@ -47,27 +44,17 @@ class AndroidPlatformView extends StatelessWidget {
         );
       },
       onCreatePlatformView: (PlatformViewCreationParams params) {
-        print('useHybridComposition=$useHybridComposition');
-        late AndroidViewController controller;
-        if (useHybridComposition) {
-          controller = PlatformViewsService.initExpensiveAndroidView(
+        final AndroidViewController controller =
+          PlatformViewsService.initSurfaceAndroidView(
             id: params.id,
             viewType: params.viewType,
             layoutDirection: TextDirection.ltr,
-          );
-        } else {
-          controller = PlatformViewsService.initSurfaceAndroidView(
-            id: params.id,
-            viewType: params.viewType,
-            layoutDirection: TextDirection.ltr,
-          );
-        }
+          )
+          ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated);
         if (onPlatformViewCreated != null) {
           controller.addOnPlatformViewCreatedListener(onPlatformViewCreated!);
         }
-        return controller
-          ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
-          ..create();
+        return controller..create();
       },
     );
   }

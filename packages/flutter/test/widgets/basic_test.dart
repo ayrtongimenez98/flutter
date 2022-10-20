@@ -2,12 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This file is run as part of a reduced test set in CI on Mac and Windows
-// machines.
-@Tags(<String>['reduced-test-set'])
-
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
@@ -16,96 +11,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('RawImage', () {
-    testWidgets('properties', (WidgetTester tester) async {
-      final ui.Image image1 = (await tester.runAsync<ui.Image>(() => createTestImage()))!;
-
-      await tester.pumpWidget(
-        Directionality(
-          textDirection: TextDirection.ltr,
-          child: RawImage(image: image1),
-        ),
-      );
-      final RenderImage renderObject = tester.firstRenderObject<RenderImage>(find.byType(RawImage));
-
-      // Expect default values
-      expect(renderObject.image!.isCloneOf(image1), true);
-      expect(renderObject.debugImageLabel, null);
-      expect(renderObject.width, null);
-      expect(renderObject.height, null);
-      expect(renderObject.scale, 1.0);
-      expect(renderObject.color, null);
-      expect(renderObject.opacity, null);
-      expect(renderObject.colorBlendMode, null);
-      expect(renderObject.fit, null);
-      expect(renderObject.alignment, Alignment.center);
-      expect(renderObject.repeat, ImageRepeat.noRepeat);
-      expect(renderObject.centerSlice, null);
-      expect(renderObject.matchTextDirection, false);
-      expect(renderObject.invertColors, false);
-      expect(renderObject.filterQuality, FilterQuality.low);
-      expect(renderObject.isAntiAlias, false);
-
-      final ui.Image image2 = (await tester.runAsync<ui.Image>(() => createTestImage(width: 2, height: 2)))!;
-      const String debugImageLabel = 'debugImageLabel';
-      const double width = 1;
-      const double height = 1;
-      const double scale = 2.0;
-      const Color color = Colors.black;
-      const Animation<double> opacity = AlwaysStoppedAnimation<double>(0.0);
-      const BlendMode colorBlendMode = BlendMode.difference;
-      const BoxFit fit = BoxFit.contain;
-      const AlignmentGeometry alignment = Alignment.topCenter;
-      const ImageRepeat repeat = ImageRepeat.repeat;
-      const Rect centerSlice = Rect.fromLTWH(0, 0, width, height);
-      const bool matchTextDirection = true;
-      const bool invertColors = true;
-      const FilterQuality filterQuality = FilterQuality.high;
-      const bool isAntiAlias = true;
-
-      await tester.pumpWidget(
-        Directionality(
-          textDirection: TextDirection.ltr,
-          child: RawImage(
-            image: image2,
-            debugImageLabel: debugImageLabel,
-            width: width,
-            height: height,
-            scale: scale,
-            color: color,
-            opacity: opacity,
-            colorBlendMode: colorBlendMode,
-            fit: fit,
-            alignment: alignment,
-            repeat: repeat,
-            centerSlice: centerSlice,
-            matchTextDirection: matchTextDirection,
-            invertColors: invertColors,
-            filterQuality: filterQuality,
-            isAntiAlias: isAntiAlias,
-          ),
-        ),
-      );
-
-      expect(renderObject.image!.isCloneOf(image2), true);
-      expect(renderObject.debugImageLabel, debugImageLabel);
-      expect(renderObject.width, width);
-      expect(renderObject.height, height);
-      expect(renderObject.scale, scale);
-      expect(renderObject.color, color);
-      expect(renderObject.opacity, opacity);
-      expect(renderObject.colorBlendMode, colorBlendMode);
-      expect(renderObject.fit, fit);
-      expect(renderObject.alignment, alignment);
-      expect(renderObject.repeat, repeat);
-      expect(renderObject.centerSlice, centerSlice);
-      expect(renderObject.matchTextDirection, matchTextDirection);
-      expect(renderObject.invertColors, invertColors);
-      expect(renderObject.filterQuality, filterQuality);
-      expect(renderObject.isAntiAlias, isAntiAlias);
-    });
-  });
-
   group('PhysicalShape', () {
     testWidgets('properties', (WidgetTester tester) async {
       await tester.pumpWidget(
@@ -155,15 +60,16 @@ void main() {
   group('FractionalTranslation', () {
     testWidgets('hit test - entirely inside the bounding box', (WidgetTester tester) async {
       final GlobalKey key1 = GlobalKey();
-      bool pointerDown = false;
+      bool _pointerDown = false;
 
       await tester.pumpWidget(
         Center(
           child: FractionalTranslation(
             translation: Offset.zero,
+            transformHitTests: true,
             child: Listener(
               onPointerDown: (PointerDownEvent event) {
-                pointerDown = true;
+                _pointerDown = true;
               },
               child: SizedBox(
                 key: key1,
@@ -177,22 +83,23 @@ void main() {
           ),
         ),
       );
-      expect(pointerDown, isFalse);
+      expect(_pointerDown, isFalse);
       await tester.tap(find.byKey(key1));
-      expect(pointerDown, isTrue);
+      expect(_pointerDown, isTrue);
     });
 
     testWidgets('hit test - partially inside the bounding box', (WidgetTester tester) async {
       final GlobalKey key1 = GlobalKey();
-      bool pointerDown = false;
+      bool _pointerDown = false;
 
       await tester.pumpWidget(
         Center(
           child: FractionalTranslation(
             translation: const Offset(0.5, 0.5),
+            transformHitTests: true,
             child: Listener(
               onPointerDown: (PointerDownEvent event) {
-                pointerDown = true;
+                _pointerDown = true;
               },
               child: SizedBox(
                 key: key1,
@@ -206,22 +113,23 @@ void main() {
           ),
         ),
       );
-      expect(pointerDown, isFalse);
+      expect(_pointerDown, isFalse);
       await tester.tap(find.byKey(key1));
-      expect(pointerDown, isTrue);
+      expect(_pointerDown, isTrue);
     });
 
     testWidgets('hit test - completely outside the bounding box', (WidgetTester tester) async {
       final GlobalKey key1 = GlobalKey();
-      bool pointerDown = false;
+      bool _pointerDown = false;
 
       await tester.pumpWidget(
         Center(
           child: FractionalTranslation(
             translation: const Offset(1.0, 1.0),
+            transformHitTests: true,
             child: Listener(
               onPointerDown: (PointerDownEvent event) {
-                pointerDown = true;
+                _pointerDown = true;
               },
               child: SizedBox(
                 key: key1,
@@ -235,9 +143,9 @@ void main() {
           ),
         ),
       );
-      expect(pointerDown, isFalse);
+      expect(_pointerDown, isFalse);
       await tester.tap(find.byKey(key1));
-      expect(pointerDown, isTrue);
+      expect(_pointerDown, isTrue);
     });
 
     testWidgets('semantics bounds are updated', (WidgetTester tester) async {
@@ -256,6 +164,7 @@ void main() {
                   child: FractionalTranslation(
                     key: fractionalTranslationKey,
                     translation: offset,
+                    transformHitTests: true,
                     child: GestureDetector(
                       onTap: () {
                         setState(() {
@@ -681,7 +590,7 @@ void main() {
       expect(mockContext.offsets.single, Offset.zero);
     });
 
-    testWidgets('ColoredBox - debugFillProperties', (WidgetTester tester) async {
+    testWidgets('ColoredBox - properties', (WidgetTester tester) async {
       const ColoredBox box = ColoredBox(color: colorToPaint);
       final DiagnosticPropertiesBuilder properties = DiagnosticPropertiesBuilder();
       box.debugFillProperties(properties);
@@ -751,6 +660,7 @@ void main() {
 
     final TestGesture gesture = await tester.createGesture(pointer: 1, kind: PointerDeviceKind.mouse);
     await gesture.addPointer(location: const Offset(200, 200));
+    addTearDown(gesture.removePointer);
 
     await tester.pumpWidget(target(ignoring: true));
     expect(logs, isEmpty);
@@ -828,6 +738,7 @@ void main() {
 
     final TestGesture gesture = await tester.createGesture(pointer: 1, kind: PointerDeviceKind.mouse);
     await gesture.addPointer(location: const Offset(200, 200));
+    addTearDown(gesture.removePointer);
 
     await tester.pumpWidget(target(absorbing: true));
     expect(logs, isEmpty);
@@ -857,37 +768,6 @@ void main() {
     await tester.pumpWidget(target(absorbing: true));
     expect(logs, <String>['exit3']);
     logs.clear();
-  });
-
-  testWidgets('Wrap implements debugFillProperties', (WidgetTester tester) async {
-    final DiagnosticPropertiesBuilder builder = DiagnosticPropertiesBuilder();
-    Wrap(
-      spacing: 8.0, // gap between adjacent Text widget
-      runSpacing: 4.0, // gap between lines
-      textDirection: TextDirection.ltr,
-      verticalDirection: VerticalDirection.up,
-      children: const <Widget>[
-        Text('Hamilton'),
-        Text('Lafayette'),
-        Text('Mulligan'),
-      ],
-    ).debugFillProperties(builder);
-
-    final List<String> description = builder.properties
-      .where((DiagnosticsNode node) => !node.isFiltered(DiagnosticLevel.info))
-      .map((DiagnosticsNode node) => node.toString())
-      .toList();
-
-    expect(description, unorderedMatches(<dynamic>[
-      contains('direction: horizontal'),
-      contains('alignment: start'),
-      contains('spacing: 8.0'),
-      contains('runAlignment: start'),
-      contains('runSpacing: 4.0'),
-      contains('crossAxisAlignment: start'),
-      contains('textDirection: ltr'),
-      contains('verticalDirection: up'),
-    ]));
   });
 }
 

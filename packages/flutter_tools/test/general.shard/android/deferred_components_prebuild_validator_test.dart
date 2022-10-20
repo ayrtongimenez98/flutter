@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:file/memory.dart';
 import 'package:flutter_tools/src/android/deferred_components_prebuild_validator.dart';
 import 'package:flutter_tools/src/android/deferred_components_validator.dart';
@@ -14,11 +16,11 @@ import '../../src/common.dart';
 import '../../src/context.dart';
 
 void main() {
-  late FileSystem fileSystem;
-  late BufferLogger logger;
-  late Directory projectDir;
-  late Platform platform;
-  late Directory flutterRootDir;
+  FileSystem fileSystem;
+  BufferLogger logger;
+  Directory projectDir;
+  Platform platform;
+  Directory flutterRootDir;
 
   setUp(() {
     fileSystem = MemoryFileSystem.test();

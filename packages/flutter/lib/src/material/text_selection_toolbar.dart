@@ -36,12 +36,13 @@ const double _kToolbarHeight = 44.0;
 class TextSelectionToolbar extends StatelessWidget {
   /// Creates an instance of TextSelectionToolbar.
   const TextSelectionToolbar({
-    super.key,
+    Key? key,
     required this.anchorAbove,
     required this.anchorBelow,
     this.toolbarBuilder = _defaultToolbarBuilder,
     required this.children,
-  }) : assert(children.length > 0);
+  }) : assert(children.length > 0),
+       super(key: key);
 
   /// {@template flutter.material.TextSelectionToolbar.anchorAbove}
   /// The focal point above which the toolbar attempts to position itself.
@@ -125,10 +126,12 @@ class TextSelectionToolbar extends StatelessWidget {
 // menu.
 class _TextSelectionToolbarOverflowable extends StatefulWidget {
   const _TextSelectionToolbarOverflowable({
+    Key? key,
     required this.isAbove,
     required this.toolbarBuilder,
     required this.children,
-  }) : assert(children.length > 0);
+  }) : assert(children.length > 0),
+       super(key: key);
 
   final List<Widget> children;
 
@@ -224,12 +227,13 @@ class _TextSelectionToolbarOverflowableState extends State<_TextSelectionToolbar
 // to that side.
 class _TextSelectionToolbarTrailingEdgeAlign extends SingleChildRenderObjectWidget {
   const _TextSelectionToolbarTrailingEdgeAlign({
-    super.key,
-    required Widget super.child,
+    Key? key,
+    required Widget child,
     required this.overflowOpen,
     required this.textDirection,
   }) : assert(child != null),
-       assert(overflowOpen != null);
+       assert(overflowOpen != null),
+       super(key: key, child: child);
 
   final bool overflowOpen;
   final TextDirection textDirection;
@@ -354,12 +358,14 @@ class _TextSelectionToolbarTrailingEdgeAlignRenderBox extends RenderProxyBox {
 // submenu based on calculating which item would first overflow.
 class _TextSelectionToolbarItemsLayout extends MultiChildRenderObjectWidget {
   _TextSelectionToolbarItemsLayout({
+    Key? key,
     required this.isAbove,
     required this.overflowOpen,
-    required super.children,
+    required List<Widget> children,
   }) : assert(children != null),
        assert(isAbove != null),
-       assert(overflowOpen != null);
+       assert(overflowOpen != null),
+       super(key: key, children: children);
 
   final bool isAbove;
   final bool overflowOpen;
@@ -385,8 +391,8 @@ class _TextSelectionToolbarItemsLayout extends MultiChildRenderObjectWidget {
 
 class _TextSelectionToolbarItemsLayoutElement extends MultiChildRenderObjectElement {
   _TextSelectionToolbarItemsLayoutElement(
-    super.widget,
-  );
+    MultiChildRenderObjectWidget widget,
+  ) : super(widget);
 
   static bool _shouldPaint(Element child) {
     return (child.renderObject!.parentData! as ToolbarItemsParentData).shouldPaint;
@@ -593,9 +599,9 @@ class _RenderTextSelectionToolbarItemsLayout extends RenderBox with ContainerRen
 
   @override
   bool hitTestChildren(BoxHitTestResult result, { required Offset position }) {
+    // The x, y parameters have the top left of the node's box as the origin.
     RenderBox? child = lastChild;
     while (child != null) {
-      // The x, y parameters have the top left of the node's box as the origin.
       final ToolbarItemsParentData childParentData = child.parentData! as ToolbarItemsParentData;
 
       // Don't hit test children aren't shown.
@@ -612,9 +618,8 @@ class _RenderTextSelectionToolbarItemsLayout extends RenderBox with ContainerRen
           return child!.hitTest(result, position: transformed);
         },
       );
-      if (isHit) {
+      if (isHit)
         return true;
-      }
       child = childParentData.previousSibling;
     }
     return false;
@@ -637,8 +642,9 @@ class _RenderTextSelectionToolbarItemsLayout extends RenderBox with ContainerRen
 // overflow ability.
 class _TextSelectionToolbarContainer extends StatelessWidget {
   const _TextSelectionToolbarContainer({
+    Key? key,
     required this.child,
-  });
+  }) : super(key: key);
 
   final Widget child;
 
@@ -660,10 +666,11 @@ class _TextSelectionToolbarContainer extends StatelessWidget {
 // forward and back controls.
 class _TextSelectionToolbarOverflowButton extends StatelessWidget {
   const _TextSelectionToolbarOverflowButton({
+    Key? key,
     required this.icon,
     this.onPressed,
     this.tooltip,
-  });
+  }) : super(key: key);
 
   final Icon icon;
   final VoidCallback? onPressed;

@@ -600,7 +600,7 @@ void main() {
             size: size,
             child: LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
               builderInvocationCount += 1;
-              return const _LayoutSpy();
+              return _LayoutSpy();
             }),
           ),
         ),
@@ -681,8 +681,8 @@ void main() {
                 final _RenderLayoutSpy spy = tester.renderObject(find.byType(_LayoutSpy));
                 childSize = spy.size;
               }
-              return const ColoredBox(
-                color: Color(0xffffffff),
+              return ColoredBox(
+                color: const Color(0xffffffff),
                 child: _LayoutSpy(),
               );
             }),
@@ -699,8 +699,6 @@ void main() {
 }
 
 class _LayoutSpy extends LeafRenderObjectWidget {
-  const _LayoutSpy();
-
   @override
   LeafRenderObjectElement createElement() => _LayoutSpyElement(this);
 
@@ -709,7 +707,7 @@ class _LayoutSpy extends LeafRenderObjectWidget {
 }
 
 class _LayoutSpyElement extends LeafRenderObjectElement {
-  _LayoutSpyElement(super.widget);
+  _LayoutSpyElement(LeafRenderObjectWidget widget) : super(widget);
 }
 
 class _RenderLayoutSpy extends RenderBox {

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:ui' as ui;
-import 'dart:ui' show WindowPadding;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -160,7 +159,7 @@ class MutatingRoute extends MaterialPageRoute<void> {
 }
 
 class _SimpleStatefulWidget extends StatefulWidget {
-  const _SimpleStatefulWidget({ super.key });
+  const _SimpleStatefulWidget({ Key? key }) : super(key: key);
   @override
   _SimpleState createState() => _SimpleState();
 }
@@ -173,7 +172,7 @@ class _SimpleState extends State<_SimpleStatefulWidget> {
 }
 
 class MyStatefulWidget extends StatefulWidget {
-  const MyStatefulWidget({ super.key, this.value = '123' });
+  const MyStatefulWidget({ Key? key, this.value = '123' }) : super(key: key);
   final String value;
   @override
   MyStatefulWidgetState createState() => MyStatefulWidgetState();
@@ -183,25 +182,6 @@ class MyStatefulWidgetState extends State<MyStatefulWidget> {
   @override
   Widget build(BuildContext context) => Text(widget.value);
 }
-
-class FakeWindowPadding implements WindowPadding {
-  const FakeWindowPadding({
-    this.left = 0.0,
-    this.top = 0.0,
-    this.right = 0.0,
-    this.bottom = 0.0,
-  });
-
-  @override
-  final double left;
-  @override
-  final double top;
-  @override
-  final double right;
-  @override
-  final double bottom;
-}
-
 
 Future<void> main() async {
   final ui.Image testImage = await createTestImage();
@@ -748,14 +728,7 @@ Future<void> main() async {
 
   testWidgets('Hero pop transition interrupted by a push', (WidgetTester tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        routes: routes,
-        theme: ThemeData(pageTransitionsTheme: const PageTransitionsTheme(
-          builders: <TargetPlatform, PageTransitionsBuilder>{
-            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-          },
-        )),
-      ),
+      MaterialApp(routes: routes),
     );
 
     // Pushes MaterialPageRoute '/two'.
@@ -1205,22 +1178,22 @@ Future<void> main() async {
     await tester.pump(const Duration(milliseconds: 100));
     expect(tester.getTopLeft(find.byKey(heroABKey)).dy, 100.0);
 
-    bool isVisible(Element node) {
-      bool visible = true;
+    bool _isVisible(Element node) {
+      bool isVisible = true;
       node.visitAncestorElements((Element ancestor) {
         final RenderObject r = ancestor.renderObject!;
-        if (r is RenderAnimatedOpacity && r.opacity.value == 0) {
-          visible = false;
+        if (r is RenderOpacity && r.opacity == 0) {
+          isVisible = false;
           return false;
         }
         return true;
       });
-      return visible;
+      return isVisible;
     }
 
     // Of all heroes only one should be visible now.
     final Iterable<Element> elements = find.text('Hero').evaluate();
-    expect(elements.where(isVisible).length, 1);
+    expect(elements.where(_isVisible).length, 1);
 
     // Hero BC's flight finishes normally.
     await tester.pump(const Duration(milliseconds: 300));
@@ -1335,6 +1308,7 @@ Future<void> main() async {
       ),
       '/two': (BuildContext context) => Material(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             SizedBox(
               height: 200.0,
@@ -1449,6 +1423,7 @@ Future<void> main() async {
       ),
       '/two': (BuildContext context) => Material(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             SizedBox(
               height: 200.0,
@@ -2669,6 +2644,7 @@ Future<void> main() async {
       end: const Size(100, 100),
     ).chain(CurveTween(curve: Curves.fastOutSlowIn));
 
+
     await tester.pumpWidget(
       MaterialApp(
         navigatorKey: navigator,
@@ -2743,6 +2719,7 @@ Future<void> main() async {
         child: Column(
           children: <Widget>[
             HeroMode(
+              enabled: true,
               child: Card(
                 child: Hero(
                   tag: 'a',
@@ -2943,12 +2920,12 @@ Future<void> main() async {
     final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
     final ScrollController controller = ScrollController();
 
-    RenderAnimatedOpacity? findRenderAnimatedOpacity() {
+    RenderOpacity? findRenderOpacity() {
       AbstractNode? parent = tester.renderObject(find.byType(Placeholder));
-      while (parent is RenderObject && parent is! RenderAnimatedOpacity) {
+      while (parent is RenderObject && parent is! RenderOpacity) {
         parent = parent.parent;
       }
-      return parent is RenderAnimatedOpacity ? parent : null;
+      return parent is RenderOpacity ? parent : null;
     }
 
     await tester.pumpWidget(
@@ -3000,14 +2977,14 @@ Future<void> main() async {
     // Starts Hero animation and scroll animation almost simultaneously.
     // Scroll to make the Hero invisible.
     await tester.pump();
-    expect(findRenderAnimatedOpacity()?.opacity.value, anyOf(isNull, 1.0));
+    expect(findRenderOpacity()?.opacity, anyOf(isNull, 1.0));
 
     // In this frame the Hero animation finds out the toHero is not paintable,
     // and starts fading.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(findRenderAnimatedOpacity()?.opacity.value, lessThan(1.0));
+    expect(findRenderOpacity()?.opacity, lessThan(1.0));
 
     await tester.pumpAndSettle();
     // The Hero on the new route should be invisible.
@@ -3093,70 +3070,4 @@ Future<void> main() async {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
-  testWidgets('smooth transition between different incoming data', (WidgetTester tester) async {
-      final GlobalKey<NavigatorState> navigatorKey = GlobalKey();
-      const Key imageKey1 = Key('image1');
-      const Key imageKey2 = Key('image2');
-      final TestImageProvider imageProvider = TestImageProvider(testImage);
-      final TestWidgetsFlutterBinding testBinding = tester.binding;
-
-      testBinding.window.paddingTestValue = const FakeWindowPadding(top: 50);
-
-      await tester.pumpWidget(
-        MaterialApp(
-          navigatorKey: navigatorKey,
-          home: Scaffold(
-            appBar: AppBar(title: const Text('test')),
-            body: Hero(
-              tag: 'imageHero',
-              child: GridView.count(
-                crossAxisCount: 3,
-                shrinkWrap: true,
-                children: <Widget>[
-                  Image(image: imageProvider, key: imageKey1),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final MaterialPageRoute<void> route2 = MaterialPageRoute<void>(
-        builder: (BuildContext context) {
-          return Scaffold(
-            body: Hero(
-              tag: 'imageHero',
-              child: GridView.count(
-                crossAxisCount: 3,
-                shrinkWrap: true,
-                children: <Widget>[
-                  Image(image: imageProvider, key: imageKey2),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-
-      // Load images.
-      imageProvider.complete();
-      await tester.pump();
-
-      final double forwardRest = tester.getTopLeft(find.byType(Image)).dy;
-      navigatorKey.currentState!.push(route2);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 1));
-      expect(tester.getTopLeft(find.byType(Image)).dy, moreOrLessEquals(forwardRest, epsilon: 0.1));
-      await tester.pumpAndSettle();
-
-      navigatorKey.currentState!.pop(route2);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(tester.getTopLeft(find.byType(Image)).dy, moreOrLessEquals(forwardRest, epsilon: 0.1));
-      await tester.pumpAndSettle();
-      expect(tester.getTopLeft(find.byType(Image)).dy, moreOrLessEquals(forwardRest, epsilon: 0.1));
-
-      testBinding.window.clearAllTestValues();
-    },
-  );
 }

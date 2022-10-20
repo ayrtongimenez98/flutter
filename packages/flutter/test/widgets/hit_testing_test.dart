@@ -26,6 +26,7 @@ void main() {
 
     final TestGesture gesture =
         await tester.startGesture(tester.getCenter(find.byType(_HitTestCounter)), kind: PointerDeviceKind.mouse);
+    addTearDown(gesture.removePointer);
     await gesture.up();
 
     expect(hitCount, 1);
@@ -41,7 +42,7 @@ void main() {
     );
 
     final TestGesture gesture =
-        await tester.startGesture(tester.getCenter(find.byType(_HitTestCounter)));
+        await tester.startGesture(tester.getCenter(find.byType(_HitTestCounter)), kind: PointerDeviceKind.touch);
     await gesture.moveBy(const Offset(1, 1));
     await gesture.up();
 
@@ -54,9 +55,10 @@ void main() {
 // [hitTestChildren] is called.
 class _HitTestCounter extends SingleChildRenderObjectWidget {
   const _HitTestCounter({
-    required Widget super.child,
+    Key? key,
+    required Widget child,
     required this.onHitTestCallback,
-  });
+  }) : super(key: key, child: child);
 
   final VoidCallback? onHitTestCallback;
 

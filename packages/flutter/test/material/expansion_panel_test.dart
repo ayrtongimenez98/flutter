@@ -7,14 +7,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 class SimpleExpansionPanelListTestWidget extends StatefulWidget {
   const SimpleExpansionPanelListTestWidget({
-    super.key,
+    Key? key,
     this.firstPanelKey,
     this.secondPanelKey,
     this.canTapOnHeader = false,
     this.expandedHeaderPadding,
     this.dividerColor,
     this.elevation = 2,
-  });
+  }) : super(key: key);
 
   final Key? firstPanelKey;
   final Key? secondPanelKey;
@@ -42,9 +42,9 @@ class _SimpleExpansionPanelListTestWidgetState extends State<SimpleExpansionPane
   Widget build(BuildContext context) {
     return ExpansionPanelList(
       expandedHeaderPadding: widget.expandedHeaderPadding ?? SimpleExpansionPanelListTestWidget.defaultExpandedHeaderPadding(),
-      expansionCallback: (int index, bool isExpanded) {
+      expansionCallback: (int _index, bool _isExpanded) {
         setState(() {
-          extendedState[index] = !extendedState[index];
+          extendedState[_index] = !extendedState[_index];
         });
       },
       dividerColor: widget.dividerColor,
@@ -72,7 +72,7 @@ class _SimpleExpansionPanelListTestWidgetState extends State<SimpleExpansionPane
 }
 
 class ExpansionPanelListSemanticsTest extends StatefulWidget {
-  const ExpansionPanelListSemanticsTest({ super.key, required this.headerKey });
+  const ExpansionPanelListSemanticsTest({ Key? key, required this.headerKey }) : super(key: key);
 
   final Key headerKey;
 
@@ -89,6 +89,7 @@ class ExpansionPanelListSemanticsTestState extends State<ExpansionPanelListSeman
         ExpansionPanelList(
           children: <ExpansionPanel>[
             ExpansionPanel(
+              canTapOnHeader: false,
               headerBuilder: (BuildContext context, bool isExpanded) {
                 return MergeSemantics(
                   key: widget.headerKey,
@@ -113,16 +114,16 @@ class ExpansionPanelListSemanticsTestState extends State<ExpansionPanelListSeman
 
 void main() {
   testWidgets('ExpansionPanelList test', (WidgetTester tester) async {
-    late int capturedIndex;
-    late bool capturedIsExpanded;
+    late int index;
+    late bool isExpanded;
 
     await tester.pumpWidget(
       MaterialApp(
         home: SingleChildScrollView(
           child: ExpansionPanelList(
-            expansionCallback: (int index, bool isExpanded) {
-              capturedIndex = index;
-              capturedIsExpanded = isExpanded;
+            expansionCallback: (int _index, bool _isExpanded) {
+              index = _index;
+              isExpanded = _isExpanded;
             },
             children: <ExpansionPanel>[
               ExpansionPanel(
@@ -143,8 +144,8 @@ void main() {
     final double oldHeight = box.size.height;
     expect(find.byType(ExpandIcon), findsOneWidget);
     await tester.tap(find.byType(ExpandIcon));
-    expect(capturedIndex, 0);
-    expect(capturedIsExpanded, isFalse);
+    expect(index, 0);
+    expect(isExpanded, isFalse);
     box = tester.renderObject(find.byType(ExpansionPanelList));
     expect(box.size.height, equals(oldHeight));
 
@@ -153,9 +154,9 @@ void main() {
       MaterialApp(
         home: SingleChildScrollView(
           child: ExpansionPanelList(
-            expansionCallback: (int index, bool isExpanded) {
-              capturedIndex = index;
-              capturedIsExpanded = isExpanded;
+            expansionCallback: (int _index, bool _isExpanded) {
+              index = _index;
+              isExpanded = _isExpanded;
             },
             children: <ExpansionPanel>[
               ExpansionPanel(
@@ -359,7 +360,7 @@ void main() {
   });
 
   testWidgets('Radio mode has max of one panel open at a time',  (WidgetTester tester) async {
-    final List<ExpansionPanel> demoItemsRadio = <ExpansionPanelRadio>[
+    final List<ExpansionPanel> _demoItemsRadio = <ExpansionPanelRadio>[
       ExpansionPanelRadio(
         headerBuilder: (BuildContext context, bool isExpanded) {
           return Text(isExpanded ? 'B' : 'A');
@@ -383,14 +384,14 @@ void main() {
       ),
     ];
 
-    final ExpansionPanelList expansionListRadio = ExpansionPanelList.radio(
-      children: demoItemsRadio,
+    final ExpansionPanelList _expansionListRadio = ExpansionPanelList.radio(
+      children: _demoItemsRadio,
     );
 
     await tester.pumpWidget(
       MaterialApp(
         home: SingleChildScrollView(
-          child: expansionListRadio,
+          child: _expansionListRadio,
         ),
       ),
     );
@@ -444,7 +445,7 @@ void main() {
 
     expect(box.size.height, greaterThanOrEqualTo(oldHeight));
 
-    demoItemsRadio.removeAt(0);
+    _demoItemsRadio.removeAt(0);
 
     await tester.pumpAndSettle();
 
@@ -455,35 +456,38 @@ void main() {
     expect(find.text('F'), findsNothing);
 
 
-    final List<ExpansionPanel> demoItems = <ExpansionPanel>[
+    final List<ExpansionPanel> _demoItems = <ExpansionPanel>[
       ExpansionPanel(
         headerBuilder: (BuildContext context, bool isExpanded) {
           return Text(isExpanded ? 'B' : 'A');
         },
         body: const SizedBox(height: 100.0),
+        isExpanded: false,
       ),
       ExpansionPanel(
         headerBuilder: (BuildContext context, bool isExpanded) {
           return Text(isExpanded ? 'D' : 'C');
         },
         body: const SizedBox(height: 100.0),
+        isExpanded: false,
       ),
       ExpansionPanel(
         headerBuilder: (BuildContext context, bool isExpanded) {
           return Text(isExpanded ? 'F' : 'E');
         },
         body: const SizedBox(height: 100.0),
+        isExpanded: false,
       ),
     ];
 
-    final ExpansionPanelList expansionList = ExpansionPanelList(
-      children: demoItems,
+    final ExpansionPanelList _expansionList = ExpansionPanelList(
+      children: _demoItems,
     );
 
     await tester.pumpWidget(
       MaterialApp(
         home: SingleChildScrollView(
-          child: expansionList,
+          child: _expansionList,
         ),
       ),
     );
@@ -498,7 +502,7 @@ void main() {
   });
 
   testWidgets('Radio mode calls expansionCallback once if other panels closed', (WidgetTester tester) async {
-    final List<ExpansionPanel> demoItemsRadio = <ExpansionPanelRadio>[
+    final List<ExpansionPanel> _demoItemsRadio = <ExpansionPanelRadio>[
       ExpansionPanelRadio(
         headerBuilder: (BuildContext context, bool isExpanded) {
           return Text(isExpanded ? 'B' : 'A');
@@ -523,20 +527,20 @@ void main() {
     ];
 
     final List<Map<String, dynamic>> callbackHistory = <Map<String, dynamic>>[];
-    final ExpansionPanelList expansionListRadio = ExpansionPanelList.radio(
-      expansionCallback: (int index, bool isExpanded) {
+    final ExpansionPanelList _expansionListRadio = ExpansionPanelList.radio(
+      expansionCallback: (int _index, bool _isExpanded) {
         callbackHistory.add(<String, dynamic>{
-          'index': index,
-          'isExpanded': isExpanded,
+          'index': _index,
+          'isExpanded': _isExpanded,
         });
       },
-      children: demoItemsRadio,
+      children: _demoItemsRadio,
     );
 
     await tester.pumpWidget(
       MaterialApp(
         home: SingleChildScrollView(
-          child: expansionListRadio,
+          child: _expansionListRadio,
         ),
       ),
     );
@@ -569,7 +573,7 @@ void main() {
   });
 
   testWidgets('Radio mode calls expansionCallback twice if other panel open prior', (WidgetTester tester) async {
-    final List<ExpansionPanel> demoItemsRadio = <ExpansionPanelRadio>[
+    final List<ExpansionPanel> _demoItemsRadio = <ExpansionPanelRadio>[
       ExpansionPanelRadio(
         headerBuilder: (BuildContext context, bool isExpanded) {
           return Text(isExpanded ? 'B' : 'A');
@@ -596,20 +600,20 @@ void main() {
     final List<Map<String, dynamic>> callbackHistory = <Map<String, dynamic>>[];
     Map<String, dynamic> callbackResults;
 
-    final ExpansionPanelList expansionListRadio = ExpansionPanelList.radio(
-      expansionCallback: (int index, bool isExpanded) {
+    final ExpansionPanelList _expansionListRadio = ExpansionPanelList.radio(
+      expansionCallback: (int _index, bool _isExpanded) {
         callbackHistory.add(<String, dynamic>{
-          'index': index,
-          'isExpanded': isExpanded,
+          'index': _index,
+          'isExpanded': _isExpanded,
         });
       },
-      children: demoItemsRadio,
+      children: _demoItemsRadio,
     );
 
     await tester.pumpWidget(
       MaterialApp(
         home: SingleChildScrollView(
-          child: expansionListRadio,
+          child: _expansionListRadio,
         ),
       ),
     );
@@ -653,7 +657,7 @@ void main() {
     'and ExpansionPaneList.radio',
     (WidgetTester tester) async {
       bool isRadioList = false;
-      final List<bool> panelExpansionState = <bool>[
+      final List<bool> _panelExpansionState = <bool>[
         false,
         false,
         false,
@@ -690,24 +694,24 @@ void main() {
 
       ExpansionPanelList buildExpansionPanelList(StateSetter setState) {
         return ExpansionPanelList(
-          expansionCallback: (int index, _) => setState(() { panelExpansionState[index] = !panelExpansionState[index]; }),
+          expansionCallback: (int index, _) => setState(() { _panelExpansionState[index] = !_panelExpansionState[index]; }),
           children: <ExpansionPanel>[
             ExpansionPanel(
-              isExpanded: panelExpansionState[0],
+              isExpanded: _panelExpansionState[0],
               headerBuilder: (BuildContext context, bool isExpanded) {
                 return Text(isExpanded ? 'B' : 'A');
               },
               body: const SizedBox(height: 100.0),
             ),
             ExpansionPanel(
-              isExpanded: panelExpansionState[1],
+              isExpanded: _panelExpansionState[1],
               headerBuilder: (BuildContext context, bool isExpanded) {
                 return Text(isExpanded ? 'D' : 'C');
               },
               body: const SizedBox(height: 100.0),
             ),
             ExpansionPanel(
-              isExpanded: panelExpansionState[2],
+              isExpanded: _panelExpansionState[2],
               headerBuilder: (BuildContext context, bool isExpanded) {
                 return Text(isExpanded ? 'F' : 'E');
               },
@@ -907,7 +911,7 @@ void main() {
     const Key collapsedKey = Key('collapsed');
     const DefaultMaterialLocalizations localizations = DefaultMaterialLocalizations();
     final SemanticsHandle handle = tester.ensureSemantics();
-    final List<ExpansionPanel> demoItems = <ExpansionPanel>[
+    final List<ExpansionPanel> _demoItems = <ExpansionPanel>[
       ExpansionPanel(
         headerBuilder: (BuildContext context, bool isExpanded) {
           return const Text('Expanded', key: expandedKey);
@@ -920,17 +924,18 @@ void main() {
           return const Text('Collapsed', key: collapsedKey);
         },
         body: const SizedBox(height: 100.0),
+        isExpanded: false,
       ),
     ];
 
-    final ExpansionPanelList expansionList = ExpansionPanelList(
-      children: demoItems,
+    final ExpansionPanelList _expansionList = ExpansionPanelList(
+      children: _demoItems,
     );
 
     await tester.pumpWidget(
       MaterialApp(
         home: SingleChildScrollView(
-          child: expansionList,
+          child: _expansionList,
         ),
       ),
     );
@@ -990,7 +995,7 @@ void main() {
     const Key expandedKey = Key('expanded');
     const Key collapsedKey = Key('collapsed');
     final SemanticsHandle handle = tester.ensureSemantics();
-    final List<ExpansionPanel> demoItems = <ExpansionPanel>[
+    final List<ExpansionPanel> _demoItems = <ExpansionPanel>[
       ExpansionPanel(
         headerBuilder: (BuildContext context, bool isExpanded) {
           return const Text('Expanded', key: expandedKey);
@@ -1005,17 +1010,18 @@ void main() {
         },
         canTapOnHeader: true,
         body: const SizedBox(height: 100.0),
+        isExpanded: false,
       ),
     ];
 
-    final ExpansionPanelList expansionList = ExpansionPanelList(
-      children: demoItems,
+    final ExpansionPanelList _expansionList = ExpansionPanelList(
+      children: _demoItems,
     );
 
     await tester.pumpWidget(
       MaterialApp(
         home: SingleChildScrollView(
-          child: expansionList,
+          child: _expansionList,
         ),
       ),
     );
@@ -1040,19 +1046,19 @@ void main() {
   });
 
   testWidgets('Ensure canTapOnHeader is false by default',  (WidgetTester tester) async {
-    final ExpansionPanel expansionPanel = ExpansionPanel(
+    final ExpansionPanel _expansionPanel = ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) => const Text('Demo'),
       body: const SizedBox(height: 100.0),
     );
 
-    expect(expansionPanel.canTapOnHeader, isFalse);
+    expect(_expansionPanel.canTapOnHeader, isFalse);
   });
 
   testWidgets('Toggle ExpansionPanelRadio when tapping header and canTapOnHeader is true',  (WidgetTester tester) async {
     const Key firstPanelKey = Key('firstPanelKey');
     const Key secondPanelKey = Key('secondPanelKey');
 
-    final List<ExpansionPanel> demoItemsRadio = <ExpansionPanelRadio>[
+    final List<ExpansionPanel> _demoItemsRadio = <ExpansionPanelRadio>[
       ExpansionPanelRadio(
         headerBuilder: (BuildContext context, bool isExpanded) {
           return Text(isExpanded ? 'B' : 'A', key: firstPanelKey);
@@ -1071,14 +1077,14 @@ void main() {
       ),
     ];
 
-    final ExpansionPanelList expansionListRadio = ExpansionPanelList.radio(
-      children: demoItemsRadio,
+    final ExpansionPanelList _expansionListRadio = ExpansionPanelList.radio(
+      children: _demoItemsRadio,
     );
 
     await tester.pumpWidget(
       MaterialApp(
         home: SingleChildScrollView(
-          child: expansionListRadio,
+          child: _expansionListRadio,
         ),
       ),
     );
@@ -1211,7 +1217,7 @@ void main() {
     const Key firstPanelKey = Key('firstPanelKey');
     const Key secondPanelKey = Key('secondPanelKey');
 
-    final List<ExpansionPanel> demoItemsRadio = <ExpansionPanelRadio>[
+    final List<ExpansionPanel> _demoItemsRadio = <ExpansionPanelRadio>[
       ExpansionPanelRadio(
         headerBuilder: (BuildContext context, bool isExpanded) {
           return Text(isExpanded ? 'B' : 'A', key: firstPanelKey);
@@ -1228,14 +1234,14 @@ void main() {
       ),
     ];
 
-    final ExpansionPanelList expansionListRadio = ExpansionPanelList.radio(
-      children: demoItemsRadio,
+    final ExpansionPanelList _expansionListRadio = ExpansionPanelList.radio(
+      children: _demoItemsRadio,
     );
 
     await tester.pumpWidget(
       MaterialApp(
         home: SingleChildScrollView(
-          child: expansionListRadio,
+          child: _expansionListRadio,
         ),
       ),
     );
@@ -1391,24 +1397,24 @@ void main() {
   });
 
   testWidgets('elevation is propagated properly to MergeableMaterial', (WidgetTester tester) async {
-    const double elevation = 8;
+    const double _elevation = 8;
 
     // Test for ExpansionPanelList.
     await tester.pumpWidget(const MaterialApp(
       home: SingleChildScrollView(
         child: SimpleExpansionPanelListTestWidget(
-          elevation: elevation,
+          elevation: _elevation,
         ),
       ),
     ));
 
-    expect(tester.widget<MergeableMaterial>(find.byType(MergeableMaterial)).elevation, elevation);
+    expect(tester.widget<MergeableMaterial>(find.byType(MergeableMaterial)).elevation, _elevation);
 
     // Test for ExpansionPanelList.radio.
     await tester.pumpWidget(MaterialApp(
       home: SingleChildScrollView(
         child: ExpansionPanelList.radio(
-          elevation: elevation,
+          elevation: _elevation,
           children: <ExpansionPanelRadio>[
             ExpansionPanelRadio(
               headerBuilder: (BuildContext context, bool isExpanded) {
@@ -1429,7 +1435,7 @@ void main() {
       ),
     ));
 
-    expect(tester.widget<MergeableMaterial>(find.byType(MergeableMaterial)).elevation, elevation);
+    expect(tester.widget<MergeableMaterial>(find.byType(MergeableMaterial)).elevation, _elevation);
   });
 
   testWidgets('Using a value non defined value throws assertion error', (WidgetTester tester) async {
@@ -1459,7 +1465,7 @@ void main() {
       MaterialApp(
         home: SingleChildScrollView(
           child: ExpansionPanelList(
-            expansionCallback: (int index, bool isExpanded) {},
+            expansionCallback: (int _index, bool _isExpanded) {},
             children: <ExpansionPanel>[
               ExpansionPanel(
                 backgroundColor: firstPanelColor,

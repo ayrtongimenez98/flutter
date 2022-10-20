@@ -36,14 +36,15 @@ class DualTransitionBuilder extends StatefulWidget {
   /// The [animation], [forwardBuilder], and [reverseBuilder] arguments are
   /// required and must not be null.
   const DualTransitionBuilder({
-    super.key,
+    Key? key,
     required this.animation,
     required this.forwardBuilder,
     required this.reverseBuilder,
     this.child,
   }) : assert(animation != null),
        assert(forwardBuilder != null),
-       assert(reverseBuilder != null);
+       assert(reverseBuilder != null),
+       super(key: key);
 
   /// The animation that drives the [child]'s transition.
   ///

@@ -70,7 +70,7 @@ Future<void> restoreAndVerify(WidgetTester tester) async {
 }
 
 class TestWidget extends StatefulWidget {
-  const TestWidget({super.key, this.useExternal = false});
+  const TestWidget({Key? key, this.useExternal = false}) : super(key: key);
 
   final bool useExternal;
 
@@ -99,6 +99,7 @@ class TestWidgetState extends State<TestWidget> with RestorationMixin {
   Widget build(BuildContext context) {
     return Material(
       child: Align(
+        alignment: Alignment.center,
         child: SizedBox(
           width: 50,
           child: TextField(

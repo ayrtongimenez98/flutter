@@ -2,14 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:ui' show VoidCallback;
-
 import 'package:meta/meta.dart';
 
 import 'assertions.dart';
+import 'basic_types.dart';
 import 'diagnostics.dart';
-
-export 'dart:ui' show VoidCallback;
 
 /// An object that maintains a list of listeners.
 ///
@@ -50,7 +47,7 @@ export 'dart:ui' show VoidCallback;
 ///  * [InheritedNotifier], an abstract superclass for widgets that use a
 ///    [Listenable]'s notifications to trigger rebuilds in descendant widgets
 ///    that declare a dependency on them, using the [InheritedWidget] mechanism.
-///  * [Listenable.merge], which creates a [Listenable] that triggers
+///  * [new Listenable.merge], which creates a [Listenable] that triggers
 ///    notifications whenever any of a list of other [Listenable]s trigger their
 ///    notifications.
 abstract class Listenable {
@@ -101,53 +98,22 @@ abstract class ValueListenable<T> extends Listenable {
 /// It is O(1) for adding listeners and O(N) for removing listeners and dispatching
 /// notifications (where N is the number of listeners).
 ///
-/// {@macro flutter.flutter.animatedbuilder_changenotifier.rebuild}
-///
 /// See also:
 ///
 ///  * [ValueNotifier], which is a [ChangeNotifier] that wraps a single value.
 class ChangeNotifier implements Listenable {
   int _count = 0;
-  // The _listeners is intentionally set to a fixed-length _GrowableList instead
-  // of const [].
-  //
-  // The const [] creates an instance of _ImmutableList which would be
-  // different from fixed-length _GrowableList used elsewhere in this class.
-  // keeping runtime type the same during the lifetime of this class lets the
-  // compiler to infer concrete type for this property, and thus improves
-  // performance.
-  static final List<VoidCallback?> _emptyListeners = List<VoidCallback?>.filled(0, null);
-  List<VoidCallback?> _listeners = _emptyListeners;
+  List<VoidCallback?> _listeners = List<VoidCallback?>.filled(0, null);
   int _notificationCallStackDepth = 0;
   int _reentrantlyRemovedListeners = 0;
   bool _debugDisposed = false;
 
-  /// Used by subclasses to assert that the [ChangeNotifier] has not yet been
-  /// disposed.
-  ///
-  /// {@tool snippet}
-  /// The `debugAssertNotDisposed` function should only be called inside of an
-  /// assert, as in this example.
-  ///
-  /// ```dart
-  /// class MyNotifier with ChangeNotifier {
-  ///   void doUpdate() {
-  ///     assert(ChangeNotifier.debugAssertNotDisposed(this));
-  ///     // ...
-  ///   }
-  /// }
-  /// ```
-  /// {@end-tool}
-  // This is static and not an instance method because too many people try to
-  // implement ChangeNotifier instead of extending it (and so it is too breaking
-  // to add a method, especially for debug).
-  static bool debugAssertNotDisposed(ChangeNotifier notifier) {
+  bool _debugAssertNotDisposed() {
     assert(() {
-      if (notifier._debugDisposed) {
+      if (_debugDisposed) {
         throw FlutterError(
-          'A ${notifier.runtimeType} was used after being disposed.\n'
-          'Once you have called dispose() on a ${notifier.runtimeType}, it '
-          'can no longer be used.',
+          'A $runtimeType was used after being disposed.\n'
+          'Once you have called dispose() on a $runtimeType, it can no longer be used.',
         );
       }
       return true;
@@ -172,7 +138,7 @@ class ChangeNotifier implements Listenable {
   /// so, stopping that same work.
   @protected
   bool get hasListeners {
-    assert(ChangeNotifier.debugAssertNotDisposed(this));
+    assert(_debugAssertNotDisposed());
     return _count > 0;
   }
 
@@ -204,7 +170,7 @@ class ChangeNotifier implements Listenable {
   ///    the list of closures that are notified when the object changes.
   @override
   void addListener(VoidCallback listener) {
-    assert(ChangeNotifier.debugAssertNotDisposed(this));
+    assert(_debugAssertNotDisposed());
     if (_count == _listeners.length) {
       if (_count == 0) {
         _listeners = List<VoidCallback?>.filled(1, null);
@@ -231,23 +197,20 @@ class ChangeNotifier implements Listenable {
       final List<VoidCallback?> newListeners = List<VoidCallback?>.filled(_count, null);
 
       // Listeners before the index are at the same place.
-      for (int i = 0; i < index; i++) {
+      for (int i = 0; i < index; i++)
         newListeners[i] = _listeners[i];
-      }
 
       // Listeners after the index move towards the start of the list.
-      for (int i = index; i < _count; i++) {
+      for (int i = index; i < _count; i++)
         newListeners[i] = _listeners[i + 1];
-      }
 
       _listeners = newListeners;
     } else {
       // When there are more listeners than half the length of the list, we only
       // shift our listeners, so that we avoid to reallocate memory for the
       // whole list.
-      for (int i = index; i < _count; i++) {
+      for (int i = index; i < _count; i++)
         _listeners[i] = _listeners[i + 1];
-      }
       _listeners[_count] = null;
     }
   }
@@ -257,7 +220,7 @@ class ChangeNotifier implements Listenable {
   ///
   /// If the given listener is not registered, the call is ignored.
   ///
-  /// This method returns immediately if [dispose] has been called.
+  /// This method must not be called after [dispose] has been called.
   ///
   /// {@macro flutter.foundation.ChangeNotifier.addListener}
   ///
@@ -267,14 +230,10 @@ class ChangeNotifier implements Listenable {
   ///    changes.
   @override
   void removeListener(VoidCallback listener) {
-    // This method is allowed to be called on disposed instances for usability
-    // reasons. Due to how our frame scheduling logic between render objects and
-    // overlays, it is common that the owner of this instance would be disposed a
-    // frame earlier than the listeners. Allowing calls to this method after it
-    // is disposed makes it easier for listeners to properly clean up.
+    assert(_debugAssertNotDisposed());
     for (int i = 0; i < _count; i++) {
-      final VoidCallback? listenerAtIndex = _listeners[i];
-      if (listenerAtIndex == listener) {
+      final VoidCallback? _listener = _listeners[i];
+      if (_listener == listener) {
         if (_notificationCallStackDepth > 0) {
           // We don't resize the list during notifyListeners iterations
           // but we set to null, the listeners we want to remove. We will
@@ -294,18 +253,17 @@ class ChangeNotifier implements Listenable {
 
   /// Discards any resources used by the object. After this is called, the
   /// object is not in a usable state and should be discarded (calls to
-  /// [addListener] will throw after the object is disposed).
+  /// [addListener] and [removeListener] will throw after the object is
+  /// disposed).
   ///
   /// This method should only be called by the object's owner.
   @mustCallSuper
   void dispose() {
-    assert(ChangeNotifier.debugAssertNotDisposed(this));
+    assert(_debugAssertNotDisposed());
     assert(() {
       _debugDisposed = true;
       return true;
     }());
-    _listeners = _emptyListeners;
-    _count = 0;
   }
 
   /// Call all the registered listeners.
@@ -327,10 +285,9 @@ class ChangeNotifier implements Listenable {
   @visibleForTesting
   @pragma('vm:notify-debugger-on-exception')
   void notifyListeners() {
-    assert(ChangeNotifier.debugAssertNotDisposed(this));
-    if (_count == 0) {
+    assert(_debugAssertNotDisposed());
+    if (_count == 0)
       return;
-    }
 
     // To make sure that listeners removed during this iteration are not called,
     // we set them to null, but we don't shrink the list right away.
@@ -355,13 +312,13 @@ class ChangeNotifier implements Listenable {
           stack: stack,
           library: 'foundation library',
           context: ErrorDescription('while dispatching notifications for $runtimeType'),
-          informationCollector: () => <DiagnosticsNode>[
-            DiagnosticsProperty<ChangeNotifier>(
+          informationCollector: () sync* {
+            yield DiagnosticsProperty<ChangeNotifier>(
               'The $runtimeType sending notification was',
               this,
               style: DiagnosticsTreeStyle.errorProperty,
-            ),
-          ],
+            );
+          },
         ));
       }
     }
@@ -449,9 +406,8 @@ class ValueNotifier<T> extends ChangeNotifier implements ValueListenable<T> {
   T get value => _value;
   T _value;
   set value(T newValue) {
-    if (_value == newValue) {
+    if (_value == newValue)
       return;
-    }
     _value = newValue;
     notifyListeners();
   }

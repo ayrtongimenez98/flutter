@@ -8,9 +8,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 class Wrapper extends StatelessWidget {
   const Wrapper({
-    super.key,
+    Key? key,
     required this.child,
-  });
+  }) : super(key: key);
 
   final Widget child;
 
@@ -20,9 +20,9 @@ class Wrapper extends StatelessWidget {
 
 class StatefulWrapper extends StatefulWidget {
   const StatefulWrapper({
-    super.key,
+    Key? key,
     required this.child,
-  });
+  }) : super(key: key);
 
   final Widget child;
 

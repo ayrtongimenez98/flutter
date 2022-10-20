@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import '../../artifacts.dart';
 import '../../base/build.dart';
 import '../../base/file_system.dart';
 import '../../base/io.dart';
 import '../../base/process.dart';
 import '../../build_info.dart';
-import '../../globals.dart' as globals show xcode;
+import '../../globals_null_migrated.dart' as globals show xcode;
 import '../build_system.dart';
 import '../depfile.dart';
 import '../exceptions.dart';
@@ -36,7 +38,7 @@ abstract class UnpackMacOS extends Target {
 
   @override
   List<Source> get outputs => const <Source>[
-    Source.pattern('{OUTPUT_DIR}/FlutterMacOS.framework/Versions/A/FlutterMacOS'),
+    Source.pattern('{OUTPUT_DIR}/FlutterMacOS.framework/FlutterMacOS'),
   ];
 
   @override
@@ -44,11 +46,10 @@ abstract class UnpackMacOS extends Target {
 
   @override
   Future<void> build(Environment environment) async {
-    final String? buildModeEnvironment = environment.defines[kBuildMode];
-    if (buildModeEnvironment == null) {
+    if (environment.defines[kBuildMode] == null) {
       throw MissingDefineException(kBuildMode, 'unpack_macos');
     }
-    final BuildMode buildMode = getBuildModeForName(buildModeEnvironment);
+    final BuildMode buildMode = getBuildModeForName(environment.defines[kBuildMode]);
     final String basePath = environment.artifacts.getArtifactPath(Artifact.flutterMacOSFramework, mode: buildMode);
 
     final ProcessResult result = environment.processManager.runSync(<String>[
@@ -67,11 +68,7 @@ abstract class UnpackMacOS extends Target {
       );
     }
 
-    final File frameworkBinary = environment.outputDir
-      .childDirectory('FlutterMacOS.framework')
-      .childDirectory('Versions')
-      .childDirectory('A')
-      .childFile('FlutterMacOS');
+    final File frameworkBinary = environment.outputDir.childDirectory('FlutterMacOS.framework').childFile('FlutterMacOS');
     final String frameworkBinaryPath = frameworkBinary.path;
     if (!frameworkBinary.existsSync()) {
       throw Exception('Binary $frameworkBinaryPath does not exist, cannot thin');
@@ -80,7 +77,7 @@ abstract class UnpackMacOS extends Target {
   }
 
   void _thinFramework(Environment environment, String frameworkBinaryPath) {
-    final String archs = environment.defines[kDarwinArchs] ?? 'x86_64 arm64';
+    final String archs = environment.defines[kDarwinArchs] ?? 'x86_64';
     final List<String> archList = archs.split(' ').toList();
     final ProcessResult infoResult = environment.processManager.runSync(<String>[
       'lipo',
@@ -93,7 +90,7 @@ abstract class UnpackMacOS extends Target {
       'lipo',
       frameworkBinaryPath,
       '-verify_arch',
-      ...archList,
+      ...archList
     ]);
 
     if (verifyResult.exitCode != 0) {
@@ -185,8 +182,8 @@ class DebugMacOSFramework extends Target {
 
     final Iterable<DarwinArch> darwinArchs = environment.defines[kDarwinArchs]
       ?.split(' ')
-      .map(getDarwinArchForName)
-      ?? <DarwinArch>[DarwinArch.x86_64, DarwinArch.arm64];
+      ?.map(getDarwinArchForName)
+      ?? <DarwinArch>[DarwinArch.x86_64];
 
     final Iterable<String> darwinArchArguments =
         darwinArchs.expand((DarwinArch arch) => <String>['-arch', getNameForDarwinArch(arch)]);
@@ -196,7 +193,7 @@ class DebugMacOSFramework extends Target {
         ..writeAsStringSync(r'''
 static const int Moo = 88;
 ''');
-    final RunResult result = await globals.xcode!.clang(<String>[
+    final RunResult result = await globals.xcode.clang(<String>[
       '-x',
       'c',
       debugApp.path,
@@ -234,37 +231,33 @@ class CompileMacOSFramework extends Target {
 
   @override
   Future<void> build(Environment environment) async {
-    final String? buildModeEnvironment = environment.defines[kBuildMode];
-    if (buildModeEnvironment == null) {
+    if (environment.defines[kBuildMode] == null) {
       throw MissingDefineException(kBuildMode, 'compile_macos_framework');
     }
-    final String? targetPlatformEnvironment = environment.defines[kTargetPlatform];
-    if (targetPlatformEnvironment == null) {
-      throw MissingDefineException(kTargetPlatform, 'kernel_snapshot');
-    }
-    final BuildMode buildMode = getBuildModeForName(buildModeEnvironment);
+    final BuildMode buildMode = getBuildModeForName(environment.defines[kBuildMode]);
     if (buildMode == BuildMode.debug) {
       throw Exception('precompiled macOS framework only supported in release/profile builds.');
     }
     final String buildOutputPath = environment.buildDir.path;
-    final String? codeSizeDirectory = environment.defines[kCodeSizeDirectory];
-    final String? splitDebugInfo = environment.defines[kSplitDebugInfo];
+    final String codeSizeDirectory = environment.defines[kCodeSizeDirectory];
+    final String splitDebugInfo = environment.defines[kSplitDebugInfo];
     final bool dartObfuscation = environment.defines[kDartObfuscation] == 'true';
     final List<String> extraGenSnapshotOptions = decodeCommaSeparated(environment.defines, kExtraGenSnapshotOptions);
-    final TargetPlatform targetPlatform = getTargetPlatformForName(targetPlatformEnvironment);
+    final TargetPlatform targetPlatform = getTargetPlatformForName(environment.defines[kTargetPlatform]);
     final List<DarwinArch> darwinArchs = environment.defines[kDarwinArchs]
       ?.split(' ')
-      .map(getDarwinArchForName)
-      .toList()
-      ?? <DarwinArch>[DarwinArch.x86_64, DarwinArch.arm64];
+      ?.map(getDarwinArchForName)
+      ?.toList()
+      ?? <DarwinArch>[DarwinArch.x86_64];
     if (targetPlatform != TargetPlatform.darwin) {
       throw Exception('compile_macos_framework is only supported for darwin TargetPlatform.');
     }
 
     final AOTSnapshotter snapshotter = AOTSnapshotter(
+      reportTimings: false,
       fileSystem: environment.fileSystem,
       logger: environment.logger,
-      xcode: globals.xcode!,
+      xcode: globals.xcode,
       artifacts: environment.artifacts,
       processManager: environment.processManager
     );
@@ -361,11 +354,10 @@ abstract class MacOSBundleFlutterAssets extends Target {
 
   @override
   Future<void> build(Environment environment) async {
-    final String? buildModeEnvironment = environment.defines[kBuildMode];
-    if (buildModeEnvironment == null) {
+    if (environment.defines[kBuildMode] == null) {
       throw MissingDefineException(kBuildMode, 'compile_macos_framework');
     }
-    final BuildMode buildMode = getBuildModeForName(buildModeEnvironment);
+    final BuildMode buildMode = getBuildModeForName(environment.defines[kBuildMode]);
     final Directory frameworkRootDirectory = environment
         .outputDir
         .childDirectory('App.framework');

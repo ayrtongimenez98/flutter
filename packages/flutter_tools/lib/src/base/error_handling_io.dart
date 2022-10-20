@@ -312,7 +312,7 @@ class ErrorHandlingFile
     // First check if the source file can be read. If not, bail through error
     // handling.
     _runSync<void>(
-      () => delegate.openSync().closeSync(),
+      () => delegate.openSync(mode: FileMode.read).closeSync(),
       platform: _platform,
       failureMessage: 'Flutter failed to copy $path to $newPath due to source location error',
       posixPermissionSuggestion: _posixPermissionSuggestion(<String>[path]),
@@ -337,7 +337,7 @@ class ErrorHandlingFile
       RandomAccessFile? source;
       RandomAccessFile? sink;
       try {
-        source = delegate.openSync();
+        source = delegate.openSync(mode: FileMode.read);
         sink = resultFile.openSync(mode: FileMode.writeOnly);
         // 64k is the same sized buffer used by dart:io for `File.openRead`.
         final Uint8List buffer = Uint8List(64 * 1024);
@@ -348,7 +348,7 @@ class ErrorHandlingFile
           sink.writeFromSync(buffer, 0, chunkLength);
           bytes += chunkLength;
         }
-      } catch (err) { // ignore: avoid_catches_without_on_clauses, rethrows
+      } catch (err) { // ignore: avoid_catches_without_on_clauses
         ErrorHandlingFileSystem.deleteIfExists(resultFile, recursive: true);
         rethrow;
       } finally {
@@ -662,8 +662,8 @@ class ErrorHandlingProcessManager extends ProcessManager {
     Map<String, String>? environment,
     bool includeParentEnvironment = true,
     bool runInShell = false,
-    Encoding? stdoutEncoding = io.systemEncoding,
-    Encoding? stderrEncoding = io.systemEncoding,
+    Encoding stdoutEncoding = io.systemEncoding,
+    Encoding stderrEncoding = io.systemEncoding,
   }) {
     return _run(() {
       return _delegate.run(
@@ -705,8 +705,8 @@ class ErrorHandlingProcessManager extends ProcessManager {
     Map<String, String>? environment,
     bool includeParentEnvironment = true,
     bool runInShell = false,
-    Encoding? stdoutEncoding = io.systemEncoding,
-    Encoding? stderrEncoding = io.systemEncoding,
+    Encoding stdoutEncoding = io.systemEncoding,
+    Encoding stderrEncoding = io.systemEncoding,
   }) {
     return _runSync(() {
       return _delegate.runSync(
@@ -768,7 +768,6 @@ void _handleWindowsException(Exception e, String? message, int errorCode) {
   const int kUserMappedSectionOpened = 1224;
   const int kAccessDenied = 5;
   const int kFatalDeviceHardwareError = 483;
-  const int kDeviceDoesNotExist = 433;
 
   // Catch errors and bail when:
   String? errorMessage;
@@ -796,12 +795,6 @@ void _handleWindowsException(Exception e, String? message, int errorCode) {
       errorMessage =
         '$message. There is a problem with the device driver '
         'that this file or directory is stored on.';
-      break;
-    case kDeviceDoesNotExist:
-      errorMessage =
-        '$message. The device was not found.'
-        '\n$e\n'
-        'Verify the device is mounted and try again.';
       break;
     default:
       // Caller must rethrow the exception.

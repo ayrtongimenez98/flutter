@@ -14,7 +14,7 @@ Future<void> main(List<String> args) async {
 }
 
 class FakeBuildTestTask extends BuildTestTask {
-  FakeBuildTestTask(super.args) : super(runFlutterClean: false) {
+  FakeBuildTestTask(List<String> args) : super(args, runFlutterClean: false) {
     deviceOperatingSystem = DeviceOperatingSystem.fake;
   }
 

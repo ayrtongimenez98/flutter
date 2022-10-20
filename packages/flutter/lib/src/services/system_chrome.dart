@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+
 import 'dart:async';
 import 'dart:ui';
 
@@ -10,9 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'binding.dart';
 import 'system_channels.dart';
 
-export 'dart:ui' show Brightness, Color;
-
-export 'binding.dart' show SystemUiChangeCallback;
+export 'dart:ui' show Brightness;
 
 /// Specifies a particular device orientation.
 ///
@@ -147,7 +146,7 @@ enum SystemUiMode {
   /// Fullscreen display with status and navigation elements rendered over the
   /// application.
   ///
-  /// Available starting at SDK 29 or Android 10. Earlier versions of Android
+  /// Available starting at SDK 16 or Android J. Earlier versions of Android
   /// will not be affected by this setting.
   ///
   /// For applications running on iOS, the status bar and home indicator will be
@@ -158,8 +157,8 @@ enum SystemUiMode {
   ///
   /// See also:
   ///
-  ///   * [SystemUiOverlayStyle], can be used to configure transparent status and
-  ///     navigation bars with or without a contrast scrim.
+  ///   * [SystemUiOverlayStyle], can be used to set transparent status and
+  ///     navigation bars for an enhanced effect.
   edgeToEdge,
 
   /// Declares manually configured [SystemUiOverlay]s.
@@ -267,6 +266,8 @@ class SystemUiOverlayStyle {
   /// applications with a dark background.
   static const SystemUiOverlayStyle light = SystemUiOverlayStyle(
     systemNavigationBarColor: Color(0xFF000000),
+    systemNavigationBarDividerColor: null,
+    statusBarColor: null,
     systemNavigationBarIconBrightness: Brightness.light,
     statusBarIconBrightness: Brightness.light,
     statusBarBrightness: Brightness.dark,
@@ -276,6 +277,8 @@ class SystemUiOverlayStyle {
   /// applications with a light background.
   static const SystemUiOverlayStyle dark = SystemUiOverlayStyle(
     systemNavigationBarColor: Color(0xFF000000),
+    systemNavigationBarDividerColor: null,
+    statusBarColor: null,
     systemNavigationBarIconBrightness: Brightness.light,
     statusBarIconBrightness: Brightness.dark,
     statusBarBrightness: Brightness.light,
@@ -286,12 +289,12 @@ class SystemUiOverlayStyle {
     return <String, dynamic>{
       'systemNavigationBarColor': systemNavigationBarColor?.value,
       'systemNavigationBarDividerColor': systemNavigationBarDividerColor?.value,
-      'systemStatusBarContrastEnforced': systemStatusBarContrastEnforced,
+      'systemStatusBarContrastEnforced' : systemStatusBarContrastEnforced ?? true,
       'statusBarColor': statusBarColor?.value,
       'statusBarBrightness': statusBarBrightness?.toString(),
       'statusBarIconBrightness': statusBarIconBrightness?.toString(),
       'systemNavigationBarIconBrightness': systemNavigationBarIconBrightness?.toString(),
-      'systemNavigationBarContrastEnforced': systemNavigationBarContrastEnforced,
+      'systemNavigationBarContrastEnforced' : systemNavigationBarContrastEnforced ?? true,
     };
   }
 
@@ -322,22 +325,23 @@ class SystemUiOverlayStyle {
   }
 
   @override
-  int get hashCode => Object.hash(
-    systemNavigationBarColor,
-    systemNavigationBarDividerColor,
-    systemNavigationBarContrastEnforced,
-    statusBarColor,
-    statusBarBrightness,
-    statusBarIconBrightness,
-    systemStatusBarContrastEnforced,
-    systemNavigationBarIconBrightness,
-  );
+  int get hashCode {
+    return hashValues(
+      systemNavigationBarColor,
+      systemNavigationBarDividerColor,
+      systemNavigationBarContrastEnforced,
+      statusBarColor,
+      statusBarBrightness,
+      statusBarIconBrightness,
+      systemStatusBarContrastEnforced,
+      systemNavigationBarIconBrightness,
+    );
+  }
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
+    if (other.runtimeType != runtimeType)
       return false;
-    }
     return other is SystemUiOverlayStyle
         && other.systemNavigationBarColor == systemNavigationBarColor
         && other.systemNavigationBarDividerColor == systemNavigationBarDividerColor
@@ -498,11 +502,12 @@ class SystemChrome {
   /// [SystemUiMode.leanBack].
   ///
   static Future<void> setSystemUIChangeCallback(SystemUiChangeCallback? callback) async {
-    ServicesBinding.instance.setSystemUiChangeCallback(callback);
+    ServicesBinding.instance!.setSystemUiChangeCallback(callback);
     // Skip setting up the listener if there is no callback.
     if (callback != null) {
       await SystemChannels.platform.invokeMethod<void>(
         'SystemChrome.setSystemUIChangeListener',
+        null,
       );
     }
   }
@@ -519,6 +524,7 @@ class SystemChrome {
   static Future<void> restoreSystemUIOverlays() async {
     await SystemChannels.platform.invokeMethod<void>(
       'SystemChrome.restoreSystemUIOverlays',
+      null,
     );
   }
 
@@ -560,11 +566,49 @@ class SystemChrome {
   /// navigation bar and synthesize them into a single style. This can be used
   /// to configure the system styles when an app bar is not used.
   ///
-  /// {@tool sample}
+  /// {@tool sample --template=stateful_widget_material}
   /// The following example creates a widget that changes the status bar color
   /// to a random value on Android.
   ///
-  /// ** See code in examples/api/lib/services/system_chrome/system_chrome.set_system_u_i_overlay_style.1.dart **
+  /// ```dart dartImports
+  /// import 'dart:math' as math;
+  /// ```
+  ///
+  /// ```dart imports
+  /// import 'package:flutter/services.dart';
+  /// ```
+  ///
+  /// ```dart
+  /// final math.Random _random = math.Random();
+  /// SystemUiOverlayStyle _currentStyle = SystemUiOverlayStyle.light;
+  ///
+  /// void _changeColor() {
+  ///   final Color color = Color.fromRGBO(
+  ///     _random.nextInt(255),
+  ///     _random.nextInt(255),
+  ///     _random.nextInt(255),
+  ///     1.0,
+  ///   );
+  ///   setState(() {
+  ///     _currentStyle = SystemUiOverlayStyle.dark.copyWith(
+  ///       statusBarColor: color,
+  ///     );
+  ///   });
+  /// }
+  ///
+  /// @override
+  /// Widget build(BuildContext context) {
+  ///   return AnnotatedRegion<SystemUiOverlayStyle>(
+  ///     value: _currentStyle,
+  ///     child: Center(
+  ///       child: ElevatedButton(
+  ///         child: const Text('Change Color'),
+  ///         onPressed: _changeColor,
+  ///        ),
+  ///      ),
+  ///    );
+  ///  }
+  /// ```
   /// {@end-tool}
   ///
   /// See also:

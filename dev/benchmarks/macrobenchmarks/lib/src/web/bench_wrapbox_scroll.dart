@@ -29,7 +29,7 @@ class BenchWrapBoxScroll extends WidgetRecorder {
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+  const MyHomePage({Key? key}) : super(key: key);
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -82,7 +82,7 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class ProductPreview extends StatelessWidget {
-  const ProductPreview(this.previewIndex, {super.key});
+  const ProductPreview(this.previewIndex, {Key? key}) : super(key: key);
 
   final int previewIndex;
 
@@ -141,9 +141,9 @@ class ProductPreview extends StatelessWidget {
 
 class ProductOption extends StatelessWidget {
   const ProductOption({
-    super.key,
+    Key? key,
     required this.optionText,
-  });
+  }) : super(key: key);
 
   final String optionText;
 
@@ -155,6 +155,7 @@ class ProductOption extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
       decoration: BoxDecoration(
         border: Border.all(
+          width: 1,
           color: const Color(0xffebebeb),
         ),
         borderRadius: const BorderRadius.all(Radius.circular(15)),

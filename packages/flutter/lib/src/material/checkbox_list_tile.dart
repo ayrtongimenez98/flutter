@@ -6,12 +6,10 @@ import 'package:flutter/widgets.dart';
 
 import 'checkbox.dart';
 import 'list_tile.dart';
-import 'list_tile_theme.dart';
 import 'theme.dart';
 import 'theme_data.dart';
 
 // Examples can assume:
-// bool? _throwShotAway = false;
 // void setState(VoidCallback fn) { }
 
 /// A [ListTile] with a [Checkbox]. In other words, a checkbox with a label.
@@ -42,7 +40,8 @@ import 'theme_data.dart';
 /// To show the [CheckboxListTile] as disabled, pass null as the [onChanged]
 /// callback.
 ///
-/// {@tool dartpad}
+/// {@tool dartpad --template=stateful_widget_scaffold_center}
+///
 /// ![CheckboxListTile sample](https://flutter.github.io/assets-for-api-docs/assets/material/checkbox_list_tile.png)
 ///
 /// This widget shows a checkbox that, when checked, slows down all animations
@@ -51,7 +50,22 @@ import 'theme_data.dart';
 /// This sample requires that you also import 'package:flutter/scheduler.dart',
 /// so that you can reference [timeDilation].
 ///
-/// ** See code in examples/api/lib/material/checkbox_list_tile/checkbox_list_tile.0.dart **
+/// ```dart imports
+/// import 'package:flutter/scheduler.dart' show timeDilation;
+/// ```
+/// ```dart
+/// @override
+/// Widget build(BuildContext context) {
+///   return CheckboxListTile(
+///     title: const Text('Animate Slowly'),
+///     value: timeDilation != 1.0,
+///     onChanged: (bool? value) {
+///       setState(() { timeDilation = value! ? 10.0 : 1.0; });
+///     },
+///     secondary: const Icon(Icons.hourglass_empty),
+///   );
+/// }
+/// ```
 /// {@end-tool}
 ///
 /// ## Semantics in CheckboxListTile
@@ -71,14 +85,82 @@ import 'theme_data.dart';
 /// into one. Therefore, it may be necessary to create a custom radio tile
 /// widget to accommodate similar use cases.
 ///
-/// {@tool dartpad}
+/// {@tool sample --template=stateful_widget_scaffold_center}
+///
 /// ![Checkbox list tile semantics sample](https://flutter.github.io/assets-for-api-docs/assets/material/checkbox_list_tile_semantics.png)
 ///
 /// Here is an example of a custom labeled checkbox widget, called
 /// LinkedLabelCheckbox, that includes an interactive [RichText] widget that
 /// handles tap gestures.
 ///
-/// ** See code in examples/api/lib/material/checkbox_list_tile/checkbox_list_tile.1.dart **
+/// ```dart imports
+/// import 'package:flutter/gestures.dart';
+/// ```
+/// ```dart preamble
+/// class LinkedLabelCheckbox extends StatelessWidget {
+///   const LinkedLabelCheckbox({
+///     Key? key,
+///     required this.label,
+///     required this.padding,
+///     required this.value,
+///     required this.onChanged,
+///   }) : super(key: key);
+///
+///   final String label;
+///   final EdgeInsets padding;
+///   final bool value;
+///   final Function onChanged;
+///
+///   @override
+///   Widget build(BuildContext context) {
+///     return Padding(
+///       padding: padding,
+///       child: Row(
+///         children: <Widget>[
+///           Expanded(
+///             child: RichText(
+///               text: TextSpan(
+///                 text: label,
+///                 style: const TextStyle(
+///                   color: Colors.blueAccent,
+///                   decoration: TextDecoration.underline,
+///                 ),
+///                 recognizer: TapGestureRecognizer()
+///                   ..onTap = () {
+///                   print('Label has been tapped.');
+///                 },
+///               ),
+///             ),
+///           ),
+///           Checkbox(
+///             value: value,
+///             onChanged: (bool? newValue) {
+///               onChanged(newValue);
+///             },
+///           ),
+///         ],
+///       ),
+///     );
+///   }
+/// }
+/// ```
+/// ```dart
+/// bool _isSelected = false;
+///
+/// @override
+/// Widget build(BuildContext context) {
+///   return LinkedLabelCheckbox(
+///     label: 'Linked, tappable label text',
+///     padding: const EdgeInsets.symmetric(horizontal: 20.0),
+///     value: _isSelected,
+///     onChanged: (bool newValue) {
+///       setState(() {
+///         _isSelected = newValue;
+///       });
+///     },
+///   );
+/// }
+/// ```
 /// {@end-tool}
 ///
 /// ## CheckboxListTile isn't exactly what I want
@@ -88,13 +170,69 @@ import 'theme_data.dart';
 /// combining [Checkbox] with other widgets, such as [Text], [Padding] and
 /// [InkWell].
 ///
-/// {@tool dartpad}
+/// {@tool dartpad --template=stateful_widget_scaffold_center}
+///
 /// ![Custom checkbox list tile sample](https://flutter.github.io/assets-for-api-docs/assets/material/checkbox_list_tile_custom.png)
 ///
 /// Here is an example of a custom LabeledCheckbox widget, but you can easily
 /// make your own configurable widget.
 ///
-/// ** See code in examples/api/lib/material/checkbox_list_tile/checkbox_list_tile.2.dart **
+/// ```dart preamble
+/// class LabeledCheckbox extends StatelessWidget {
+///   const LabeledCheckbox({
+///     Key? key,
+///     required this.label,
+///     required this.padding,
+///     required this.value,
+///     required this.onChanged,
+///   }) : super(key: key);
+///
+///   final String label;
+///   final EdgeInsets padding;
+///   final bool value;
+///   final Function onChanged;
+///
+///   @override
+///   Widget build(BuildContext context) {
+///     return InkWell(
+///       onTap: () {
+///         onChanged(!value);
+///       },
+///       child: Padding(
+///         padding: padding,
+///         child: Row(
+///           children: <Widget>[
+///             Expanded(child: Text(label)),
+///             Checkbox(
+///               value: value,
+///               onChanged: (bool? newValue) {
+///                 onChanged(newValue);
+///               },
+///             ),
+///           ],
+///         ),
+///       ),
+///     );
+///   }
+/// }
+/// ```
+/// ```dart
+/// bool _isSelected = false;
+///
+/// @override
+/// Widget build(BuildContext context) {
+///   return LabeledCheckbox(
+///     label: 'This is the label text',
+///     padding: const EdgeInsets.symmetric(horizontal: 20.0),
+///     value: _isSelected,
+///     onChanged: (bool newValue) {
+///       setState(() {
+///         _isSelected = newValue;
+///       });
+///     },
+///   );
+/// }
+/// ```
 /// {@end-tool}
 ///
 /// See also:
@@ -122,12 +260,11 @@ class CheckboxListTile extends StatelessWidget {
   ///
   /// The value of [tristate] must not be null.
   const CheckboxListTile({
-    super.key,
+    Key? key,
     required this.value,
     required this.onChanged,
     this.activeColor,
     this.checkColor,
-    this.enabled,
     this.tileColor,
     this.title,
     this.subtitle,
@@ -140,19 +277,15 @@ class CheckboxListTile extends StatelessWidget {
     this.contentPadding,
     this.tristate = false,
     this.shape,
-    this.checkboxShape,
     this.selectedTileColor,
-    this.side,
-    this.visualDensity,
-    this.focusNode,
-    this.enableFeedback,
   }) : assert(tristate != null),
        assert(tristate || value != null),
        assert(isThreeLine != null),
        assert(!isThreeLine || subtitle != null),
        assert(selected != null),
        assert(controlAffinity != null),
-       assert(autofocus != null);
+       assert(autofocus != null),
+       super(key: key);
 
   /// Whether this checkbox is checked.
   final bool? value;
@@ -165,8 +298,6 @@ class CheckboxListTile extends StatelessWidget {
   ///
   /// If null, the checkbox will be displayed as disabled.
   ///
-  /// {@tool snippet}
-  ///
   /// The callback provided to [onChanged] should update the state of the parent
   /// [StatefulWidget] using the [State.setState] method, so that the parent
   /// gets rebuilt; for example:
@@ -174,15 +305,14 @@ class CheckboxListTile extends StatelessWidget {
   /// ```dart
   /// CheckboxListTile(
   ///   value: _throwShotAway,
-  ///   onChanged: (bool? newValue) {
+  ///   onChanged: (bool newValue) {
   ///     setState(() {
   ///       _throwShotAway = newValue;
   ///     });
   ///   },
-  ///   title: const Text('Throw away your shot'),
+  ///   title: Text('Throw away your shot'),
   /// )
   /// ```
-  /// {@end-tool}
   final ValueChanged<bool?>? onChanged;
 
   /// The color to use when this checkbox is checked.
@@ -221,7 +351,7 @@ class CheckboxListTile extends StatelessWidget {
 
   /// Whether this list tile is part of a vertically dense list.
   ///
-  /// If this property is null then its value is based on [ListTileThemeData.dense].
+  /// If this property is null then its value is based on [ListTileTheme.dense].
   final bool? dense;
 
   /// Whether to render icons and text in the [activeColor].
@@ -259,49 +389,11 @@ class CheckboxListTile extends StatelessWidget {
   /// If tristate is false (the default), [value] must not be null.
   final bool tristate;
 
-  /// {@macro flutter.material.ListTile.shape}
+  /// {@macro flutter.material.ListTileTheme.shape}
   final ShapeBorder? shape;
-
-  /// {@macro flutter.material.checkbox.shape}
-  ///
-  /// If this property is null then [CheckboxThemeData.shape] of [ThemeData.checkboxTheme]
-  /// is used. If that's null then the shape will be a [RoundedRectangleBorder]
-  /// with a circular corner radius of 1.0.
-  final OutlinedBorder? checkboxShape;
 
   /// If non-null, defines the background color when [CheckboxListTile.selected] is true.
   final Color? selectedTileColor;
-
-  /// {@macro flutter.material.checkbox.side}
-  ///
-  /// The given value is passed directly to [Checkbox.side].
-  ///
-  /// If this property is null, then [CheckboxThemeData.side] of
-  /// [ThemeData.checkboxTheme] is used. If that is also null, then the side
-  /// will be width 2.
-  final BorderSide? side;
-
-  /// Defines how compact the list tile's layout will be.
-  ///
-  /// {@macro flutter.material.themedata.visualDensity}
-  final VisualDensity? visualDensity;
-
-  /// {@macro flutter.widgets.Focus.focusNode}
-  final FocusNode? focusNode;
-
-  /// {@macro flutter.material.ListTile.enableFeedback}
-  ///
-  /// See also:
-  ///
-  ///  * [Feedback] for providing platform-specific feedback to certain actions.
-  final bool? enableFeedback;
-
-  /// Whether the CheckboxListTile is interactive.
-  ///
-  /// If false, this list tile is styled with the disabled color from the
-  /// current [Theme] and the [ListTile.onTap] callback is
-  /// inoperative.
-  final bool? enabled;
 
   void _handleValueChange() {
     assert(onChanged != null);
@@ -322,14 +414,12 @@ class CheckboxListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final Widget control = Checkbox(
       value: value,
-      onChanged: enabled ?? true ? onChanged : null ,
+      onChanged: onChanged,
       activeColor: activeColor,
       checkColor: checkColor,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       autofocus: autofocus,
       tristate: tristate,
-      shape: checkboxShape,
-      side: side,
     );
     Widget? leading, trailing;
     switch (controlAffinity) {
@@ -353,7 +443,7 @@ class CheckboxListTile extends StatelessWidget {
           trailing: trailing,
           isThreeLine: isThreeLine,
           dense: dense,
-          enabled: enabled ?? onChanged != null,
+          enabled: onChanged != null,
           onTap: onChanged != null ? _handleValueChange : null,
           selected: selected,
           autofocus: autofocus,
@@ -361,9 +451,6 @@ class CheckboxListTile extends StatelessWidget {
           shape: shape,
           selectedTileColor: selectedTileColor,
           tileColor: tileColor,
-          visualDensity: visualDensity,
-          focusNode: focusNode,
-          enableFeedback: enableFeedback,
         ),
       ),
     );

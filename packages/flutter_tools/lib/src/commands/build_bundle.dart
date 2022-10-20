@@ -2,22 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import '../base/common.dart';
 import '../build_info.dart';
 import '../bundle.dart';
 import '../bundle_builder.dart';
 import '../features.dart';
-import '../globals.dart' as globals;
+import '../globals_null_migrated.dart' as globals;
 import '../project.dart';
 import '../reporting/reporting.dart';
 import '../runner/flutter_command.dart';
 import 'build.dart';
 
 class BuildBundleCommand extends BuildSubCommand {
-  BuildBundleCommand({
-    bool verboseHelp = false,
-    BundleBuilder? bundleBuilder,
-  }) :  _bundleBuilder = bundleBuilder ?? BundleBuilder(), super(verboseHelp: verboseHelp) {
+  BuildBundleCommand({bool verboseHelp = false, this.bundleBuilder}) {
     usesTargetOption();
     usesFilesystemOptions(hide: !verboseHelp);
     usesBuildNumberOption();
@@ -52,14 +51,18 @@ class BuildBundleCommand extends BuildSubCommand {
       )
       ..addFlag(
         'tree-shake-icons',
+        negatable: true,
+        defaultsTo: false,
         hide: !verboseHelp,
         help: '(deprecated) Icon font tree shaking is not supported by this command.',
       );
     usesPubOption();
     usesTrackWidgetCreation(verboseHelp: verboseHelp);
+
+    bundleBuilder ??= BundleBuilder();
   }
 
-  final BundleBuilder _bundleBuilder;
+  BundleBuilder bundleBuilder;
 
   @override
   final String name = 'bundle';
@@ -80,14 +83,14 @@ class BuildBundleCommand extends BuildSubCommand {
       return const CustomDimensions();
     }
     return CustomDimensions(
-      commandBuildBundleTargetPlatform: stringArgDeprecated('target-platform'),
+      commandBuildBundleTargetPlatform: stringArg('target-platform'),
       commandBuildBundleIsModule: flutterProject.isModule,
     );
   }
 
   @override
   Future<void> validateCommand() async {
-    if (boolArgDeprecated('tree-shake-icons')) {
+    if (argResults['tree-shake-icons'] as bool) {
       throwToolExit('The "--tree-shake-icons" flag is deprecated for "build bundle" and will be removed in a future version of Flutter.');
     }
     return super.validateCommand();
@@ -95,7 +98,7 @@ class BuildBundleCommand extends BuildSubCommand {
 
   @override
   Future<FlutterCommandResult> runCommand() async {
-    final String targetPlatform = stringArgDeprecated('target-platform')!;
+    final String targetPlatform = stringArg('target-platform');
     final TargetPlatform platform = getTargetPlatformForName(targetPlatform);
     if (platform == null) {
       throwToolExit('Unknown platform: $targetPlatform');
@@ -113,33 +116,24 @@ class BuildBundleCommand extends BuildSubCommand {
         }
         break;
       case TargetPlatform.linux_x64:
-      case TargetPlatform.linux_arm64:
         if (!featureFlags.isLinuxEnabled) {
           throwToolExit('Linux is not a supported target platform.');
         }
         break;
-      case TargetPlatform.android:
-      case TargetPlatform.android_arm:
-      case TargetPlatform.android_arm64:
-      case TargetPlatform.android_x64:
-      case TargetPlatform.android_x86:
-      case TargetPlatform.fuchsia_arm64:
-      case TargetPlatform.fuchsia_x64:
-      case TargetPlatform.ios:
-      case TargetPlatform.tester:
-      case TargetPlatform.web_javascript:
+      default:
         break;
     }
 
     final BuildInfo buildInfo = await getBuildInfo();
     displayNullSafetyMode(buildInfo);
 
-    await _bundleBuilder.build(
+    await bundleBuilder.build(
       platform: platform,
       buildInfo: buildInfo,
       mainPath: targetFile,
-      depfilePath: stringArgDeprecated('depfile'),
-      assetDirPath: stringArgDeprecated('asset-dir'),
+      manifestPath: defaultManifestPath,
+      depfilePath: stringArg('depfile'),
+      assetDirPath: stringArg('asset-dir'),
     );
     return FlutterCommandResult.success();
   }

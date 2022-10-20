@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'dart:async';
 
 import 'package:flutter_tools/src/application_package.dart';
@@ -28,8 +30,8 @@ List<FakeDeviceJsonData> fakeDevices = <FakeDeviceJsonData>[
         'fastStart': false,
         'flutterExit': true,
         'hardwareRendering': true,
-        'startPaused': true,
-      },
+        'startPaused': true
+      }
     }
   ),
   FakeDeviceJsonData(
@@ -50,9 +52,9 @@ List<FakeDeviceJsonData> fakeDevices = <FakeDeviceJsonData>[
         'fastStart': false,
         'flutterExit': true,
         'hardwareRendering': true,
-        'startPaused': true,
-      },
-    },
+        'startPaused': true
+      }
+    }
   ),
 ];
 
@@ -61,11 +63,9 @@ class FakeDevice extends Device {
   FakeDevice(this.name, String id, {
     bool ephemeral = true,
     bool isSupported = true,
-    bool isSupportedForProject = true,
     PlatformType type = PlatformType.web,
-    LaunchResult? launchResult,
+    LaunchResult launchResult,
   }) : _isSupported = isSupported,
-      _isSupportedForProject = isSupportedForProject,
       _launchResult = launchResult ?? LaunchResult.succeeded(),
       super(
         id,
@@ -75,7 +75,6 @@ class FakeDevice extends Device {
       );
 
   final bool _isSupported;
-  final bool _isSupportedForProject;
   final LaunchResult _launchResult;
 
   @override
@@ -83,24 +82,24 @@ class FakeDevice extends Device {
 
   @override
   Future<LaunchResult> startApp(covariant ApplicationPackage package, {
-    String? mainPath,
-    String? route,
-    DebuggingOptions? debuggingOptions,
-    Map<String, dynamic>? platformArgs,
+    String mainPath,
+    String route,
+    DebuggingOptions debuggingOptions,
+    Map<String, dynamic> platformArgs,
     bool prebuiltApplication = false,
     bool ipv6 = false,
-    String? userIdentifier,
+    String userIdentifier,
   }) async => _launchResult;
 
   @override
   Future<bool> stopApp(covariant ApplicationPackage app, {
-    String? userIdentifier,
+    String userIdentifier,
   }) async => true;
 
   @override
   Future<bool> uninstallApp(
   covariant ApplicationPackage app, {
-    String? userIdentifier,
+    String userIdentifier,
   }) async => true;
 
   @override
@@ -113,7 +112,7 @@ class FakeDevice extends Device {
   void noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 
   @override
-  bool isSupportedForProject(FlutterProject flutterProject) => _isSupportedForProject;
+  bool isSupportedForProject(FlutterProject flutterProject) => _isSupported;
 
   @override
   bool isSupported() => _isSupported;
@@ -141,12 +140,12 @@ class FakePollingDeviceDiscovery extends PollingDeviceDiscovery {
   final StreamController<Device> _onRemovedController = StreamController<Device>.broadcast();
 
   @override
-  Future<List<Device>> pollingGetDevices({ Duration? timeout }) async {
+  Future<List<Device>> pollingGetDevices({ Duration timeout }) async {
     lastPollingTimeout = timeout;
     return _devices;
   }
 
-  Duration? lastPollingTimeout;
+  Duration lastPollingTimeout;
 
   @override
   bool get supportsPlatform => true;
@@ -171,14 +170,6 @@ class FakePollingDeviceDiscovery extends PollingDeviceDiscovery {
     devices.forEach(addDevice);
   }
 
-  bool discoverDevicesCalled = false;
-
-  @override
-  Future<List<Device>> discoverDevices({Duration? timeout}) {
-    discoverDevicesCalled = true;
-    return super.discoverDevices(timeout: timeout);
-  }
-
   @override
   Stream<Device> get onAdded => _onAddedController.stream;
 
@@ -194,15 +185,19 @@ class FakeDeviceLogReader extends DeviceLogReader {
   @override
   String get name => 'FakeLogReader';
 
+  StreamController<String> _cachedLinesController;
+
   bool disposed = false;
 
   final List<String> _lineQueue = <String>[];
-  late final StreamController<String> _linesController =
-    StreamController<String>
+  StreamController<String> get _linesController {
+    _cachedLinesController ??= StreamController<String>
         .broadcast(onListen: () {
       _lineQueue.forEach(_linesController.add);
       _lineQueue.clear();
     });
+    return _cachedLinesController;
+  }
 
   @override
   Stream<String> get logLines => _linesController.stream;

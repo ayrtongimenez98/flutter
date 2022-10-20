@@ -21,7 +21,7 @@ const String _alertWithTitleText =
   'data to Google, even when no apps are running.';
 
 class DialogDemoItem extends StatelessWidget {
-  const DialogDemoItem({ super.key, this.icon, this.color, this.text, this.onPressed });
+  const DialogDemoItem({ Key? key, this.icon, this.color, this.text, this.onPressed }) : super(key: key);
 
   final IconData? icon;
   final Color? color;
@@ -33,6 +33,8 @@ class DialogDemoItem extends StatelessWidget {
     return SimpleDialogOption(
       onPressed: onPressed,
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           Icon(icon, size: 36.0, color: color),
           Padding(
@@ -46,7 +48,7 @@ class DialogDemoItem extends StatelessWidget {
 }
 
 class DialogDemo extends StatefulWidget {
-  const DialogDemo({super.key});
+  const DialogDemo({Key? key}) : super(key: key);
 
   static const String routeName = '/material/dialog';
 

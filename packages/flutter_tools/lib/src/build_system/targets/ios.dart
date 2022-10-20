@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:meta/meta.dart';
 
 import '../../artifacts.dart';
@@ -10,7 +12,7 @@ import '../../base/common.dart';
 import '../../base/file_system.dart';
 import '../../base/io.dart';
 import '../../build_info.dart';
-import '../../globals.dart' as globals show xcode;
+import '../../globals_null_migrated.dart' as globals show xcode;
 import '../../macos/xcode.dart';
 import '../../project.dart';
 import '../build_system.dart';
@@ -19,7 +21,6 @@ import '../exceptions.dart';
 import 'assets.dart';
 import 'common.dart';
 import 'icon_tree_shaker.dart';
-import 'shader_compiler.dart';
 
 /// Supports compiling a dart kernel file to an assembly file.
 ///
@@ -34,49 +35,48 @@ abstract class AotAssemblyBase extends Target {
   @override
   Future<void> build(Environment environment) async {
     final AOTSnapshotter snapshotter = AOTSnapshotter(
+      reportTimings: false,
       fileSystem: environment.fileSystem,
       logger: environment.logger,
-      xcode: globals.xcode!,
+      xcode: globals.xcode,
       artifacts: environment.artifacts,
       processManager: environment.processManager,
     );
     final String buildOutputPath = environment.buildDir.path;
-    final String? environmentBuildMode = environment.defines[kBuildMode];
-    if (environmentBuildMode == null) {
+    if (environment.defines[kBuildMode] == null) {
       throw MissingDefineException(kBuildMode, 'aot_assembly');
     }
-    final String? environmentTargetPlatform = environment.defines[kTargetPlatform];
-    if (environmentTargetPlatform== null) {
+    if (environment.defines[kTargetPlatform] == null) {
       throw MissingDefineException(kTargetPlatform, 'aot_assembly');
     }
-    final String? sdkRoot = environment.defines[kSdkRoot];
-    if (sdkRoot == null) {
+    if (environment.defines[kSdkRoot] == null) {
       throw MissingDefineException(kSdkRoot, 'aot_assembly');
     }
 
     final List<String> extraGenSnapshotOptions = decodeCommaSeparated(environment.defines, kExtraGenSnapshotOptions);
     final bool bitcode = environment.defines[kBitcodeFlag] == 'true';
-    final BuildMode buildMode = getBuildModeForName(environmentBuildMode);
-    final TargetPlatform targetPlatform = getTargetPlatformForName(environmentTargetPlatform);
-    final String? splitDebugInfo = environment.defines[kSplitDebugInfo];
+    final BuildMode buildMode = getBuildModeForName(environment.defines[kBuildMode]);
+    final TargetPlatform targetPlatform = getTargetPlatformForName(environment.defines[kTargetPlatform]);
+    final String splitDebugInfo = environment.defines[kSplitDebugInfo];
     final bool dartObfuscation = environment.defines[kDartObfuscation] == 'true';
     final List<DarwinArch> darwinArchs = environment.defines[kIosArchs]
       ?.split(' ')
-      .map(getIOSArchForName)
-      .toList()
+      ?.map(getIOSArchForName)
+      ?.toList()
       ?? <DarwinArch>[DarwinArch.arm64];
     if (targetPlatform != TargetPlatform.ios) {
       throw Exception('aot_assembly is only supported for iOS applications.');
     }
 
-    final EnvironmentType? environmentType = environmentTypeFromSdkroot(sdkRoot, environment.fileSystem);
+    final String sdkRoot = environment.defines[kSdkRoot];
+    final EnvironmentType environmentType = environmentTypeFromSdkroot(sdkRoot, environment.fileSystem);
     if (environmentType == EnvironmentType.simulator) {
       throw Exception(
         'release/profile builds are only supported for physical devices. '
         'attempted to build for simulator.'
       );
     }
-    final String? codeSizeDirectory = environment.defines[kCodeSizeDirectory];
+    final String codeSizeDirectory = environment.defines[kCodeSizeDirectory];
 
     // If we're building multiple iOS archs the binaries need to be lipo'd
     // together.
@@ -140,7 +140,7 @@ class AotAssemblyRelease extends AotAssemblyBase {
     Source.pattern('{BUILD_DIR}/app.dill'),
     Source.hostArtifact(HostArtifact.engineDartBinary),
     Source.artifact(Artifact.skyEnginePath),
-    // TODO(zanderso): cannot reference gen_snapshot with artifacts since
+    // TODO(jonahwilliams): cannot reference gen_snapshot with artifacts since
     // it resolves to a file (ios/gen_snapshot) that never exists. This was
     // split into gen_snapshot_arm64 and gen_snapshot_armv7.
     // Source.artifact(Artifact.genSnapshot,
@@ -175,7 +175,7 @@ class AotAssemblyProfile extends AotAssemblyBase {
     Source.pattern('{BUILD_DIR}/app.dill'),
     Source.hostArtifact(HostArtifact.engineDartBinary),
     Source.artifact(Artifact.skyEnginePath),
-    // TODO(zanderso): cannot reference gen_snapshot with artifacts since
+    // TODO(jonahwilliams): cannot reference gen_snapshot with artifacts since
     // it resolves to a file (ios/gen_snapshot) that never exists. This was
     // split into gen_snapshot_arm64 and gen_snapshot_armv7.
     // Source.artifact(Artifact.genSnapshot,
@@ -221,13 +221,14 @@ class DebugUniversalFramework extends Target {
 
   @override
   Future<void> build(Environment environment) async {
-    final String? sdkRoot = environment.defines[kSdkRoot];
-    if (sdkRoot == null) {
+    if (environment.defines[kSdkRoot] == null) {
       throw MissingDefineException(kSdkRoot, name);
     }
 
     // Generate a trivial App.framework.
-    final Set<String>? iosArchNames = environment.defines[kIosArchs]?.split(' ').toSet();
+    final Set<String> iosArchNames = environment.defines[kIosArchs]
+      ?.split(' ')
+      ?.toSet();
     final File output = environment.buildDir
       .childDirectory('App.framework')
       .childFile('App');
@@ -236,7 +237,6 @@ class DebugUniversalFramework extends Target {
       output,
       environment,
       iosArchNames,
-      sdkRoot,
     );
   }
 }
@@ -273,31 +273,30 @@ abstract class UnpackIOS extends Target {
 
   @override
   Future<void> build(Environment environment) async {
-    final String? sdkRoot = environment.defines[kSdkRoot];
-    if (sdkRoot == null) {
+    if (environment.defines[kSdkRoot] == null) {
       throw MissingDefineException(kSdkRoot, name);
     }
-    final String? archs = environment.defines[kIosArchs];
-    if (archs == null) {
+    if (environment.defines[kIosArchs] == null) {
       throw MissingDefineException(kIosArchs, name);
     }
     if (environment.defines[kBitcodeFlag] == null) {
       throw MissingDefineException(kBitcodeFlag, name);
     }
-    _copyFramework(environment, sdkRoot);
+    _copyFramework(environment);
 
     final File frameworkBinary = environment.outputDir.childDirectory('Flutter.framework').childFile('Flutter');
     final String frameworkBinaryPath = frameworkBinary.path;
     if (!frameworkBinary.existsSync()) {
       throw Exception('Binary $frameworkBinaryPath does not exist, cannot thin');
     }
-    _thinFramework(environment, frameworkBinaryPath, archs);
+    _thinFramework(environment, frameworkBinaryPath);
     _bitcodeStripFramework(environment, frameworkBinaryPath);
     _signFramework(environment, frameworkBinaryPath, buildMode);
   }
 
-  void _copyFramework(Environment environment, String sdkRoot) {
-    final EnvironmentType? environmentType = environmentTypeFromSdkroot(sdkRoot, environment.fileSystem);
+  void _copyFramework(Environment environment) {
+    final String sdkRoot = environment.defines[kSdkRoot];
+    final EnvironmentType environmentType = environmentTypeFromSdkroot(sdkRoot, environment.fileSystem);
     final String basePath = environment.artifacts.getArtifactPath(
       Artifact.flutterFramework,
       platform: TargetPlatform.ios,
@@ -323,7 +322,8 @@ abstract class UnpackIOS extends Target {
   }
 
   /// Destructively thin Flutter.framework to include only the specified architectures.
-  void _thinFramework(Environment environment, String frameworkBinaryPath, String archs) {
+  void _thinFramework(Environment environment, String frameworkBinaryPath) {
+    final String archs = environment.defines[kIosArchs];
     final List<String> archList = archs.split(' ').toList();
     final ProcessResult infoResult = environment.processManager.runSync(<String>[
       'lipo',
@@ -336,7 +336,7 @@ abstract class UnpackIOS extends Target {
       'lipo',
       frameworkBinaryPath,
       '-verify_arch',
-      ...archList,
+      ...archList
     ]);
 
     if (verifyResult.exitCode != 0) {
@@ -440,13 +440,12 @@ abstract class IosAssetBundle extends Target {
     Source.pattern('{BUILD_DIR}/App.framework/App'),
     Source.pattern('{PROJECT_DIR}/pubspec.yaml'),
     ...IconTreeShaker.inputs,
-    ...ShaderCompiler.inputs,
   ];
 
   @override
   List<Source> get outputs => const <Source>[
     Source.pattern('{OUTPUT_DIR}/App.framework/App'),
-    Source.pattern('{OUTPUT_DIR}/App.framework/Info.plist'),
+    Source.pattern('{OUTPUT_DIR}/App.framework/Info.plist')
   ];
 
   @override
@@ -456,11 +455,10 @@ abstract class IosAssetBundle extends Target {
 
   @override
   Future<void> build(Environment environment) async {
-    final String? environmentBuildMode = environment.defines[kBuildMode];
-    if (environmentBuildMode == null) {
+    if (environment.defines[kBuildMode] == null) {
       throw MissingDefineException(kBuildMode, name);
     }
-    final BuildMode buildMode = getBuildModeForName(environmentBuildMode);
+    final BuildMode buildMode = getBuildModeForName(environment.defines[kBuildMode]);
     final Directory frameworkDirectory = environment.outputDir.childDirectory('App.framework');
     final String frameworkBinaryPath = frameworkDirectory.childFile('App').path;
     final Directory assetDirectory = frameworkDirectory.childDirectory('flutter_assets');
@@ -504,7 +502,7 @@ abstract class IosAssetBundle extends Target {
     );
 
     // Copy the plist from either the project or module.
-    // TODO(zanderso): add plist to inputs
+    // TODO(jonahwilliams): add plist to inputs
     final FlutterProject flutterProject = FlutterProject.fromDirectory(environment.projectDir);
     flutterProject.ios.appFrameworkInfoPlist
       .copySync(environment.outputDir
@@ -577,7 +575,7 @@ class ReleaseIosApplicationBundle extends IosAssetBundle {
 /// but it isn't actually executed. To generate something valid, we compile a trivial
 /// constant.
 Future<void> _createStubAppFramework(File outputFile, Environment environment,
-    Set<String>? iosArchNames, String sdkRoot) async {
+    Set<String> iosArchNames) async {
   try {
     outputFile.createSync(recursive: true);
   } on Exception catch (e) {
@@ -593,20 +591,21 @@ Future<void> _createStubAppFramework(File outputFile, Environment environment,
   static const int Moo = 88;
   ''');
 
-    final EnvironmentType? environmentType = environmentTypeFromSdkroot(sdkRoot, fileSystem);
+    final String sdkRoot = environment.defines[kSdkRoot];
+    final EnvironmentType environmentType = environmentTypeFromSdkroot(sdkRoot, fileSystem);
 
-    await globals.xcode!.clang(<String>[
+    await globals.xcode.clang(<String>[
       '-x',
       'c',
-      for (String arch in iosArchNames ?? <String>{}) ...<String>['-arch', arch],
+      for (String arch in iosArchNames) ...<String>['-arch', arch],
       stubSource.path,
       '-dynamiclib',
       '-fembed-bitcode-marker',
       // Keep version in sync with AOTSnapshotter flag
       if (environmentType == EnvironmentType.physical)
-        '-miphoneos-version-min=11.0'
+        '-miphoneos-version-min=9.0'
       else
-        '-miphonesimulator-version-min=11.0',
+        '-miphonesimulator-version-min=9.0',
       '-Xlinker', '-rpath', '-Xlinker', '@executable_path/Frameworks',
       '-Xlinker', '-rpath', '-Xlinker', '@loader_path/Frameworks',
       '-install_name', '@rpath/App.framework/App',
@@ -627,9 +626,9 @@ Future<void> _createStubAppFramework(File outputFile, Environment environment,
 }
 
 void _signFramework(Environment environment, String binaryPath, BuildMode buildMode) {
-  String? codesignIdentity = environment.defines[kCodesignIdentity];
+  final String codesignIdentity = environment.defines[kCodesignIdentity];
   if (codesignIdentity == null || codesignIdentity.isEmpty) {
-    codesignIdentity = '-';
+    return;
   }
   final ProcessResult result = environment.processManager.runSync(<String>[
     'codesign',

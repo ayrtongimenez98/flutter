@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
+
 import 'package:file/file.dart';
 import 'package:flutter_tools/src/base/file_system.dart';
 
@@ -13,7 +16,7 @@ class TestsProject extends Project {
   final String pubspec = '''
   name: test
   environment:
-    sdk: '>=2.12.0-0 <3.0.0'
+    sdk: ">=2.12.0-0 <3.0.0"
 
   dependencies:
     flutter:
@@ -31,13 +34,8 @@ class TestsProject extends Project {
   import 'package:flutter_test/flutter_test.dart';
 
   void main() {
-    group('Flutter tests', () {
-      testWidgets('can pass', (WidgetTester tester) async {
-        expect(true, isTrue); // BREAKPOINT
-      });
-      testWidgets('can fail', (WidgetTester tester) async {
-        expect(true, isFalse);
-      });
+    testWidgets('Hello world test', (WidgetTester tester) async {
+      expect(true, isTrue); // BREAKPOINT
     });
   }
   ''';

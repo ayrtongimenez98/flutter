@@ -19,7 +19,7 @@ import 'package:flutter_tools/src/commands/build_linux.dart';
 import 'package:flutter_tools/src/commands/build_macos.dart';
 import 'package:flutter_tools/src/commands/build_web.dart';
 import 'package:flutter_tools/src/commands/build_windows.dart';
-import 'package:flutter_tools/src/globals.dart' as globals;
+import 'package:flutter_tools/src/globals_null_migrated.dart' as globals;
 import 'package:flutter_tools/src/runner/flutter_command.dart';
 
 import '../../src/common.dart';
@@ -28,18 +28,18 @@ import '../../src/context.dart';
 void main() {
   testUsingContext('All build commands support null safety options', () {
     final List<FlutterCommand> commands = <FlutterCommand>[
-      BuildWindowsCommand(),
-      BuildLinuxCommand(operatingSystemUtils: globals.os),
+      BuildWindowsCommand(verboseHelp: false),
+      BuildLinuxCommand(verboseHelp: false, operatingSystemUtils: globals.os),
       BuildMacosCommand(verboseHelp: false),
       BuildWebCommand(verboseHelp: false),
-      BuildApkCommand(),
+      BuildApkCommand(verboseHelp: false),
       BuildIOSCommand(verboseHelp: false),
       BuildIOSArchiveCommand(verboseHelp: false),
-      BuildAppBundleCommand(),
+      BuildAppBundleCommand(verboseHelp: false),
       BuildFuchsiaCommand(verboseHelp: false),
       BuildAarCommand(verboseHelp: false),
       BuildIOSFrameworkCommand(verboseHelp: false, buildSystem: globals.buildSystem),
-      AttachCommand(),
+      AttachCommand(verboseHelp: false),
     ];
 
     for (final FlutterCommand command in commands) {
@@ -57,12 +57,15 @@ void main() {
     const BuildInfo unsound = BuildInfo(
       BuildMode.debug,
       '',
+      trackWidgetCreation: false,
       nullSafetyMode: NullSafetyMode.unsound,
       treeShakeIcons: false,
     );
     const BuildInfo sound = BuildInfo(
       BuildMode.debug,
       '',
+      trackWidgetCreation: false,
+      nullSafetyMode: NullSafetyMode.sound,
       treeShakeIcons: false,
     );
 
@@ -83,8 +86,6 @@ void main() {
 }
 
 class FakeBuildSubCommand extends BuildSubCommand {
-  FakeBuildSubCommand() : super(verboseHelp: false);
-
   @override
   String get description => throw UnimplementedError();
 

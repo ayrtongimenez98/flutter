@@ -446,6 +446,7 @@ void main() {
     expect(find.text('Tile 12'), findsNothing);
 
     final TestRestorationData initialData = await tester.getRestorationData();
+
     final TestGesture gesture = await tester.startGesture(tester.getCenter(find.byType(ListView)));
     await gesture.moveBy(const Offset(0, -525));
     await tester.pump();
@@ -456,12 +457,12 @@ void main() {
     expect(find.text('Tile 11'), findsOneWidget);
     expect(find.text('Tile 12'), findsOneWidget);
 
-    // Restoration data hasn't changed.
+    // Restoration data hasn't changed and no frame is scheduled.
     expect(await tester.getRestorationData(), initialData);
+    expect(tester.binding.hasScheduledFrame, isFalse);
 
     // Restoration data changes with up event.
     await gesture.up();
-    await tester.pump();
     expect(await tester.getRestorationData(), isNot(initialData));
   });
 }
@@ -544,7 +545,7 @@ Future<void> restoreScrollAndVerify(WidgetTester tester, {double secondOffset = 
 }
 
 class TestHarness extends StatelessWidget {
-  const TestHarness({super.key, required this.child, this.height = 100});
+  const TestHarness({Key? key, required this.child, this.height = 100}) : super(key: key);
 
   final Widget child;
   final double height;

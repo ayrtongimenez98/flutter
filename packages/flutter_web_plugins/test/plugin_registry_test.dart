@@ -44,7 +44,7 @@ void main() {
       TestPlugin.calledMethods.clear();
 
       const MethodChannel frameworkChannel =
-          MethodChannel('test_plugin');
+          MethodChannel('test_plugin', StandardMethodCodec());
       frameworkChannel.invokeMethod<void>('test1');
 
       expect(TestPlugin.calledMethods, equals(<String>['test1']));
@@ -54,10 +54,10 @@ void main() {
       const StandardMessageCodec codec = StandardMessageCodec();
 
       final List<String> loggedMessages = <String>[];
-      ServicesBinding.instance.defaultBinaryMessenger
+      ServicesBinding.instance!.defaultBinaryMessenger
           .setMessageHandler('test_send', (ByteData? data) {
         loggedMessages.add(codec.decodeMessage(data)! as String);
-        return Future<ByteData?>.value();
+        return Future<ByteData?>.value(null);
       });
 
       await pluginBinaryMessenger.send(
@@ -68,7 +68,7 @@ void main() {
           'test_send', codec.encodeMessage('world'));
       expect(loggedMessages, equals(<String>['hello', 'world']));
 
-      ServicesBinding.instance.defaultBinaryMessenger
+      ServicesBinding.instance!.defaultBinaryMessenger
           .setMessageHandler('test_send', null);
     });
   });

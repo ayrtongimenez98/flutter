@@ -10,13 +10,15 @@
 # for performing pushes to production, and so this image is quite a bit larger
 # than strictly needed for just building Flutter apps.
 
-# Last manual update 2021-09-24 (changing this comment will re-build image)
+# Last manual update 2020-10-05 (changing this comment will re-build image)
 
-FROM debian@sha256:f6957458017ec31c4e325a76f39d6323c4c21b0e31572efa006baa927a160891
+# Note: updating past stretch (Debian 9) will bump Java past version 8,
+# which will break the Android SDK.
+FROM debian:stretch
 MAINTAINER Flutter Developers <flutter-dev@googlegroups.com>
 
-RUN apt-get update -y && \
-  apt-get upgrade -y
+RUN apt-get update -y
+RUN apt-get upgrade -y
 
 # Install basics
 RUN apt-get install -y --no-install-recommends \
@@ -31,8 +33,7 @@ RUN apt-get install -y --no-install-recommends \
 
 # Add repo for chrome stable
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
-RUN echo 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' | \
-    tee /etc/apt/sources.list.d/google-chrome.list
+RUN echo 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' | tee /etc/apt/sources.list.d/google-chrome.list
 
 # Add repo for gcloud sdk and install it
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | \
@@ -45,29 +46,25 @@ RUN apt-get update && apt-get install -y google-cloud-sdk && \
     gcloud config set core/disable_usage_reporting true && \
     gcloud config set component_manager/disable_update_check true
 
-# Add repo for OpenJDK 8 from JFrog.io
-RUN wget -q -O - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -
-RUN echo 'deb [arch=amd64] https://adoptopenjdk.jfrog.io/adoptopenjdk/deb bullseye main' | \
-    tee /etc/apt/sources.list.d/adoptopenjdk.list
+# Add nodejs repository to apt sources and install it.
+ENV NODEJS_INSTALL="/opt/nodejs_install"
+RUN mkdir -p "${NODEJS_INSTALL}"
+RUN wget -q https://deb.nodesource.com/setup_10.x -O "${NODEJS_INSTALL}/nodejs_install.sh"
+RUN bash "${NODEJS_INSTALL}/nodejs_install.sh"
 
-# Install the dependencies needed for the rest of the build.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  adoptopenjdk-8-hotspot \
+# Install the rest of the dependencies.
+RUN apt-get install -y --no-install-recommends \
+  locales \
+  gcc \
+  ruby \
+  ruby-dev \
+  nodejs \
+  lib32stdc++6 \
+  libstdc++6 \
+  libglu1-mesa \
   build-essential \
   default-jdk-headless \
-  gcc \
-  google-chrome-stable \
-  lib32stdc++6 \
-  libglu1-mesa \
-  libstdc++6 \
-  locales \
-  nodejs \
-  npm \
-  ruby \
-  ruby-dev && \
-  apt-get clean
-
-ENV JAVA_HOME="/usr/lib/jvm/adoptopenjdk-8-hotspot-amd64"
+  google-chrome-stable
 
 # Install the Android SDK Dependency.
 ENV ANDROID_SDK_URL="https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip"
@@ -98,20 +95,32 @@ RUN touch ~/.android/repositories.cfg
 
 # Add npm to path.
 ENV PATH="/usr/bin:${PATH}"
+RUN dpkg-query -L nodejs
+# Install Firebase
+# This is why we need nodejs installed.
+RUN /usr/bin/npm --verbose install -g firebase-tools
+
+# Install golang more recent than in repo (necessary for dashing to build)
+RUN curl 'https://dl.google.com/go/go1.13.3.linux-amd64.tar.gz' | tar xvz
+ENV GOBINARY=/go/bin/go
+
+# Install dashing
+RUN mkdir -p /opt/gopath/bin
+ENV GOPATH=/opt/gopath
+ENV PATH="${GOPATH}/bin:${PATH}"
+RUN $GOBINARY get -u github.com/technosophos/dashing
 
 # Set locale to en_US
 RUN locale-gen en_US "en_US.UTF-8" && DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales
 ENV LANG en_US.UTF-8
 
-# Install dependencies for desktop flutter run
-RUN apt-get install -y --no-install-recommends \
-  clang \
-  cmake \
-  libgtk-3-dev \
-  ninja-build \
-	pkg-config \
-	x11-xserver-utils \
-	xauth \
-	xvfb && \
-  apt-get upgrade -y --no-install-recommends && \
-  apt-get clean
+# Install fastlane via pinned Gemfile & Gemfile.lock
+# Skip all the documentation (-N) since it's just on CI.
+RUN gem install bundler -N
+
+# Gemfile last edited 1/6/2019 (update to trigger a rebuild of Docker image)
+COPY ci/docker_linux/Gemfile /Gemfile
+COPY ci/docker_linux/Gemfile.lock /Gemfile.lock
+
+RUN bundle config set system 'true' && \
+  bundle install --system

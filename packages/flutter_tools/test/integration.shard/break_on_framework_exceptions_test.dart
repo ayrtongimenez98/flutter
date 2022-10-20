@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 // TODO(gspencergoog): Remove this tag once this test's state leaks/test
 // dependencies have been fixed.
 // https://github.com/flutter/flutter/issues/85160
@@ -16,7 +18,7 @@ import 'test_driver.dart';
 import 'test_utils.dart';
 
 void main() {
-  late Directory tempDir;
+  Directory tempDir;
 
   setUp(() async {
     tempDir = createResolvedTempDirectorySync('break_on_framework_exceptions.');
@@ -41,7 +43,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'AnimationController listener';"));
   });
 
@@ -60,7 +62,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'AnimationController status listener';"));
   });
 
@@ -79,7 +81,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'ValueNotifier listener';"));
   });
 
@@ -106,7 +108,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'while handling a gesture';"));
   });
 
@@ -124,7 +126,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'platform message callback';"));
   });
 
@@ -145,7 +147,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'cannot build child';"));
   });
 
@@ -169,7 +171,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'onChanged';"));
   });
 
@@ -195,7 +197,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'onEditingComplete';"));
   });
 
@@ -217,7 +219,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'onSelectionChanged';"));
   });
 
@@ -236,7 +238,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'action listener';"));
   });
 
@@ -255,7 +257,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'pointer route';"));
   });
 
@@ -275,7 +277,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'PointerSignalResolver callback';"));
   });
 
@@ -295,7 +297,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'highlight mode listener';"));
   });
 
@@ -322,7 +324,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'onHover';"));
   });
 
@@ -348,7 +350,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'setImage';"));
   });
 
@@ -371,7 +373,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'onError';"));
   });
 
@@ -390,7 +392,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'LayoutBuilder.builder';"));
   });
 
@@ -409,7 +411,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw '_CallbackHookProvider.callback';"));
   });
 
@@ -427,7 +429,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'TimingsCallback';"));
   });
 
@@ -448,7 +450,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'scheduled task';"));
   });
 
@@ -466,7 +468,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'FrameCallback';"));
   });
 
@@ -492,7 +494,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'create element';"));
   });
 
@@ -515,7 +517,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'performLayout';"));
   });
 
@@ -541,7 +543,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'performResize';"));
   });
 
@@ -584,7 +586,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'performLayout without resize';"));
   });
 
@@ -607,7 +609,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'StatelessWidget.build';"));
   });
 
@@ -635,7 +637,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'StatefulWidget.build';"));
   });
 
@@ -667,7 +669,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'dispose';"));
   });
 
@@ -715,7 +717,7 @@ void main() {
     await flutter.test(withDebugger: true, pauseOnExceptions: true);
     await flutter.waitForPause();
 
-    final int? breakLine = (await flutter.getSourceLocation())?.line;
+    final int breakLine = (await flutter.getSourceLocation()).line;
     expect(breakLine, project.lineContaining(project.test, "throw 'rebuild';"));
   });
 }
@@ -724,14 +726,14 @@ class TestProject extends Project {
   TestProject(this.testBody, { this.setup, this.classes });
 
   final String testBody;
-  final String? setup;
-  final String? classes;
+  final String setup;
+  final String classes;
 
   @override
   final String pubspec = '''
     name: test
     environment:
-      sdk: '>=2.12.0-0 <3.0.0'
+      sdk: ">=2.12.0-0 <3.0.0"
 
     dependencies:
       flutter:

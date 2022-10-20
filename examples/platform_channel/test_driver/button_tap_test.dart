@@ -31,11 +31,7 @@ void main() {
         batteryLevel = await driver.getText(batteryLevelLabel);
       }
 
-      // Allow either a battery percentage or "No battery" since it will vary
-      // by device; either indicates that a known response came from the host
-      // implementation.
-      expect(batteryLevel.contains('%') || batteryLevel.contains('No battery'),
-          isTrue);
+      expect(batteryLevel.contains('%'), isTrue);
     });
   });
 }

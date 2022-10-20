@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'capture_output.dart';
 
+String? foo;
+
 void main() {
   test('debugPrint', () {
     expect(

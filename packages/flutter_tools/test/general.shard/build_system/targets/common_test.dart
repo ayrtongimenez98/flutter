@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:file/memory.dart';
 import 'package:flutter_tools/src/artifacts.dart';
 import 'package:flutter_tools/src/base/file_system.dart';
@@ -24,18 +26,18 @@ const String kAssemblyAot = '--snapshot_kind=app-aot-assembly';
 
 final Platform macPlatform = FakePlatform(operatingSystem: 'macos', environment: <String, String>{});
 void main() {
-  late FakeProcessManager processManager;
-  late Environment androidEnvironment;
-  late Environment iosEnvironment;
-  late Artifacts artifacts;
-  late FileSystem fileSystem;
-  late Logger logger;
+  FakeProcessManager processManager;
+  Environment androidEnvironment;
+  Environment iosEnvironment;
+  Artifacts artifacts;
+  FileSystem fileSystem;
+  Logger logger;
 
   setUp(() {
     processManager = FakeProcessManager.empty();
     logger = BufferLogger.test();
     artifacts = Artifacts.test();
-    fileSystem = MemoryFileSystem.test();
+    fileSystem = MemoryFileSystem.test(style: FileSystemStyle.posix);
     androidEnvironment = Environment.test(
       fileSystem.currentDirectory,
       defines: <String, String>{
@@ -91,7 +93,6 @@ void main() {
         '--target=flutter',
         '--no-print-incremental-dependencies',
         ...buildModeOptions(BuildMode.profile, <String>[]),
-        '--track-widget-creation',
         '--aot',
         '--tfa',
         '--packages',
@@ -100,7 +101,6 @@ void main() {
         '$build/app.dill',
         '--depfile',
         '$build/kernel_snapshot.d',
-        '--verbosity=error',
         'file:///lib/main.dart',
       ], exitCode: 1),
     ]);
@@ -109,7 +109,7 @@ void main() {
     expect(processManager, hasNoRemainingExpectations);
   });
 
-  testWithoutContext('KernelSnapshot does use track widget creation on profile builds', () async {
+  testWithoutContext('KernelSnapshot does not use track widget creation on profile builds', () async {
     fileSystem.file('.dart_tool/package_config.json')
       ..createSync(recursive: true)
       ..writeAsStringSync('{"configVersion": 2, "packages":[]}');
@@ -129,7 +129,6 @@ void main() {
         '--target=flutter',
         '--no-print-incremental-dependencies',
         ...buildModeOptions(BuildMode.profile, <String>[]),
-        '--track-widget-creation',
         '--aot',
         '--tfa',
         '--packages',
@@ -138,7 +137,6 @@ void main() {
         '$build/app.dill',
         '--depfile',
         '$build/kernel_snapshot.d',
-        '--verbosity=error',
         'file:///lib/main.dart',
       ], stdout: 'result $kBoundaryKey\n$kBoundaryKey\n$kBoundaryKey $build/app.dill 0\n'),
     ]);
@@ -168,7 +166,6 @@ void main() {
         '--target=flutter',
         '--no-print-incremental-dependencies',
         ...buildModeOptions(BuildMode.profile, <String>[]),
-        '--track-widget-creation',
         '--aot',
         '--tfa',
         '--packages',
@@ -177,7 +174,6 @@ void main() {
         '$build/app.dill',
         '--depfile',
         '$build/kernel_snapshot.d',
-        '--verbosity=error',
         'file:///lib/main.dart',
       ], stdout: 'result $kBoundaryKey\n$kBoundaryKey\n$kBoundaryKey $build/app.dill 0\n'),
     ]);
@@ -208,7 +204,6 @@ void main() {
         '--target=flutter',
         '--no-print-incremental-dependencies',
         ...buildModeOptions(BuildMode.profile, <String>[]),
-        '--track-widget-creation',
         '--aot',
         '--tfa',
         '--packages',
@@ -217,7 +212,6 @@ void main() {
         '$build/app.dill',
         '--depfile',
         '$build/kernel_snapshot.d',
-        '--verbosity=error',
         'foo',
         'bar',
         'file:///lib/main.dart',
@@ -257,10 +251,6 @@ void main() {
         '$build/app.dill',
         '--depfile',
         '$build/kernel_snapshot.d',
-        '--incremental',
-        '--initialize-from-dill',
-        '$build/app.dill',
-        '--verbosity=error',
         'file:///lib/main.dart',
       ], stdout: 'result $kBoundaryKey\n$kBoundaryKey\n$kBoundaryKey $build/app.dill 0\n'),
     ]);
@@ -298,10 +288,6 @@ void main() {
         '$build/app.dill',
         '--depfile',
         '$build/kernel_snapshot.d',
-        '--incremental',
-        '--initialize-from-dill',
-        '$build/app.dill',
-        '--verbosity=error',
         'file:///lib/main.dart',
       ], stdout: 'result $kBoundaryKey\n$kBoundaryKey\n$kBoundaryKey $build/app.dill 0\n'),
     ]);
@@ -354,10 +340,6 @@ void main() {
         '$build/app.dill',
         '--depfile',
         '$build/kernel_snapshot.d',
-        '--incremental',
-        '--initialize-from-dill',
-        '$build/app.dill',
-        '--verbosity=error',
         'file:///lib/main.dart',
       ], stdout: 'result $kBoundaryKey\n$kBoundaryKey\n$kBoundaryKey /build/653e11a8e6908714056a57cd6b4f602a/app.dill 0\n'),
     ]);
@@ -383,7 +365,7 @@ void main() {
         '--no-sim-use-hardfp',
         '--no-use-integer-division',
         '$build/app.dill',
-      ]),
+      ])
     ]);
     androidEnvironment.buildDir.childFile('app.dill').createSync(recursive: true);
 
@@ -411,7 +393,7 @@ void main() {
         '--no-sim-use-hardfp',
         '--no-use-integer-division',
         '$build/app.dill',
-      ]),
+      ])
     ]);
     androidEnvironment.buildDir.childFile('app.dill').createSync(recursive: true);
 
@@ -465,7 +447,123 @@ void main() {
     ProcessManager: () => processManager,
   });
 
-  testUsingContext('AotAssemblyProfile with bitcode sends correct argument to snapshotter', () async {
+  testUsingContext('AotAssemblyProfile generates multiple arches and lipos together', () async {
+    final String build = iosEnvironment.buildDir.path;
+    processManager.addCommands(<FakeCommand>[
+      FakeCommand(command: <String>[
+        // This path is not known by the cache due to the iOS gen_snapshot split.
+        'Artifact.genSnapshot.TargetPlatform.ios.profile_armv7',
+        '--deterministic',
+        kAssemblyAot,
+        '--assembly=$build/armv7/snapshot_assembly.S',
+        '--strip',
+        '--no-sim-use-hardfp',
+        '--no-use-integer-division',
+        '$build/app.dill',
+      ]),
+      FakeCommand(command: <String>[
+        // This path is not known by the cache due to the iOS gen_snapshot split.
+        'Artifact.genSnapshot.TargetPlatform.ios.profile_arm64',
+        '--deterministic',
+        kAssemblyAot,
+        '--assembly=$build/arm64/snapshot_assembly.S',
+        '--strip',
+        '$build/app.dill',
+      ]),
+      FakeCommand(command: <String>[
+        'xcrun',
+        'cc',
+        '-arch',
+        'armv7',
+        '-miphoneos-version-min=9.0',
+        '-isysroot',
+        'path/to/iPhoneOS.sdk',
+        '-c',
+        '$build/armv7/snapshot_assembly.S',
+        '-o',
+        '$build/armv7/snapshot_assembly.o',
+      ]),
+      FakeCommand(command: <String>[
+        'xcrun',
+        'cc',
+        '-arch',
+        'arm64',
+        '-miphoneos-version-min=9.0',
+        '-isysroot',
+        'path/to/iPhoneOS.sdk',
+        '-c',
+        '$build/arm64/snapshot_assembly.S',
+        '-o',
+        '$build/arm64/snapshot_assembly.o',
+      ]),
+      FakeCommand(command: <String>[
+        'xcrun',
+        'clang',
+        '-arch',
+        'armv7',
+        '-miphoneos-version-min=9.0',
+        '-isysroot',
+        'path/to/iPhoneOS.sdk',
+        '-dynamiclib',
+        '-Xlinker',
+        '-rpath',
+        '-Xlinker',
+        '@executable_path/Frameworks',
+        '-Xlinker',
+        '-rpath',
+        '-Xlinker',
+        '@loader_path/Frameworks',
+        '-install_name',
+        '@rpath/App.framework/App',
+        '-o',
+        '$build/armv7/App.framework/App',
+        '$build/armv7/snapshot_assembly.o',
+      ]),
+      FakeCommand(command: <String>[
+        'xcrun',
+        'clang',
+        '-arch',
+        'arm64',
+        '-miphoneos-version-min=9.0',
+        '-isysroot',
+        'path/to/iPhoneOS.sdk',
+        '-dynamiclib',
+        '-Xlinker',
+        '-rpath',
+        '-Xlinker',
+        '@executable_path/Frameworks',
+        '-Xlinker',
+        '-rpath',
+        '-Xlinker',
+        '@loader_path/Frameworks',
+        '-install_name',
+        '@rpath/App.framework/App',
+        '-o',
+        '$build/arm64/App.framework/App',
+        '$build/arm64/snapshot_assembly.o',
+      ]),
+      FakeCommand(command: <String>[
+        'lipo',
+        '$build/armv7/App.framework/App',
+        '$build/arm64/App.framework/App',
+        '-create',
+        '-output',
+        '$build/App.framework/App',
+      ]),
+    ]);
+    iosEnvironment.defines[kIosArchs] ='armv7 arm64';
+    iosEnvironment.defines[kSdkRoot] = 'path/to/iPhoneOS.sdk';
+
+    await const AotAssemblyProfile().build(iosEnvironment);
+
+    expect(processManager, hasNoRemainingExpectations);
+  }, overrides: <Type, Generator>{
+    Platform: () => macPlatform,
+    FileSystem: () => fileSystem,
+    ProcessManager: () => processManager,
+  });
+
+  testUsingContext('AotAssemblyProfile with bitcode sends correct argument to snapshotter (one arch)', () async {
     iosEnvironment.defines[kIosArchs] = 'arm64';
     iosEnvironment.defines[kBitcodeFlag] = 'true';
     iosEnvironment.defines[kSdkRoot] = 'path/to/iPhoneOS.sdk';
@@ -485,7 +583,7 @@ void main() {
         'cc',
         '-arch',
         'arm64',
-        '-miphoneos-version-min=11.0',
+        '-miphoneos-version-min=9.0',
         '-isysroot',
         'path/to/iPhoneOS.sdk',
         // Contains bitcode flag.
@@ -500,7 +598,7 @@ void main() {
         'clang',
         '-arch',
         'arm64',
-        '-miphoneos-version-min=11.0',
+        '-miphoneos-version-min=9.0',
         '-isysroot',
         'path/to/iPhoneOS.sdk',
         '-dynamiclib',
@@ -561,7 +659,7 @@ void main() {
         'cc',
         '-arch',
         'arm64',
-        '-miphoneos-version-min=11.0',
+        '-miphoneos-version-min=9.0',
         '-isysroot',
         'path/to/iPhoneOS.sdk',
         // Contains bitcode flag.
@@ -576,7 +674,7 @@ void main() {
         'clang',
         '-arch',
         'arm64',
-        '-miphoneos-version-min=11.0',
+        '-miphoneos-version-min=9.0',
         '-isysroot',
         'path/to/iPhoneOS.sdk',
         '-dynamiclib',

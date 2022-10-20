@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:file/memory.dart';
 import 'package:flutter_tools/src/base/file_system.dart';
 import 'package:flutter_tools/src/base/io.dart';
@@ -15,11 +17,12 @@ import '../src/common.dart';
 import '../src/context.dart';
 
 void main() {
-  late FileSystem fileSystem;
+  FileSystem fileSystem;
 
   setUp(() {
     fileSystem = MemoryFileSystem.test();
-    fileSystem.file('.dart_tool/package_config.json')
+    fileSystem
+      .file('.dart_tool/package_config.json')
       ..createSync(recursive: true)
       ..writeAsStringSync('{"configVersion":2,"packages":[]}');
   });
@@ -66,6 +69,7 @@ void main() {
           BuildInfo.debug,
           startPaused: true,
         ),
+        enableObservatory: false,
       ), throwsAssertionError);
 
       expect(() => installHook(
@@ -75,9 +79,10 @@ void main() {
           startPaused: true,
           hostVmServicePort: 123,
         ),
+        enableObservatory: false,
       ), throwsAssertionError);
 
-      FlutterPlatform? capturedPlatform;
+      FlutterPlatform capturedPlatform;
       final Map<String, String> expectedPrecompiledDillFiles = <String, String>{'Key': 'Value'};
       final FlutterPlatform flutterPlatform = installHook(
         shellPath: 'abc',
@@ -92,7 +97,7 @@ void main() {
         precompiledDillPath: 'def',
         precompiledDillFiles: expectedPrecompiledDillFiles,
         updateGoldens: true,
-        testAssetDirectory: '/build/test',
+        buildTestAssets: true,
         serverType: InternetAddressType.IPv6,
         icudtlPath: 'ghi',
         platformPluginRegistration: (FlutterPlatform platform) {
@@ -111,10 +116,24 @@ void main() {
       expect(flutterPlatform.precompiledDillPath, equals('def'));
       expect(flutterPlatform.precompiledDillFiles, expectedPrecompiledDillFiles);
       expect(flutterPlatform.updateGoldens, equals(true));
-      expect(flutterPlatform.testAssetDirectory, '/build/test');
+      expect(flutterPlatform.buildTestAssets, equals(true));
       expect(flutterPlatform.icudtlPath, equals('ghi'));
     });
   });
 }
 
 class FakeSuitePlatform extends Fake implements SuitePlatform { }
+
+// A FlutterPlatform with enough fields set to load and start a test.
+class TestFlutterPlatform extends FlutterPlatform {
+  TestFlutterPlatform() : super(
+    shellPath: '/',
+    debuggingOptions: DebuggingOptions.enabled(
+      const BuildInfo(
+        BuildMode.debug,
+        '',
+        treeShakeIcons: false,
+      ),
+    ),
+  );
+}

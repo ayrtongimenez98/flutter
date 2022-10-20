@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -14,10 +15,10 @@ import '../rendering/rendering_tester.dart';
 import 'mocks_for_image_cache.dart';
 
 void main() {
-  TestRenderingFlutterBinding.ensureInitialized();
+  TestRenderingFlutterBinding();
 
-  Future<ui.Codec> basicDecoder(ui.ImmutableBuffer bytes, {int? cacheWidth, int? cacheHeight, bool? allowUpscaling}) {
-    return PaintingBinding.instance.instantiateImageCodecFromBuffer(bytes, cacheWidth: cacheWidth, cacheHeight: cacheHeight, allowUpscaling: allowUpscaling ?? false);
+  Future<ui.Codec> _basicDecoder(Uint8List bytes, {int? cacheWidth, int? cacheHeight, bool? allowUpscaling}) {
+    return PaintingBinding.instance!.instantiateImageCodec(bytes, cacheWidth: cacheWidth, cacheHeight: cacheHeight, allowUpscaling: allowUpscaling ?? false);
   }
 
   FlutterExceptionHandler? oldError;
@@ -27,12 +28,12 @@ void main() {
 
   tearDown(() {
     FlutterError.onError = oldError;
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
+    PaintingBinding.instance!.imageCache!.clear();
+    PaintingBinding.instance!.imageCache!.clearLiveImages();
   });
 
   tearDown(() {
-    imageCache.clear();
+    imageCache!.clear();
   });
 
   test('AssetImageProvider - evicts on failure to load', () async {
@@ -43,18 +44,18 @@ void main() {
 
     const ImageProvider provider = ExactAssetImage('does-not-exist');
     final Object key = await provider.obtainKey(ImageConfiguration.empty);
-    expect(imageCache.statusForKey(provider).untracked, true);
-    expect(imageCache.pendingImageCount, 0);
+    expect(imageCache!.statusForKey(provider).untracked, true);
+    expect(imageCache!.pendingImageCount, 0);
 
     provider.resolve(ImageConfiguration.empty);
 
-    expect(imageCache.statusForKey(key).pending, true);
-    expect(imageCache.pendingImageCount, 1);
+    expect(imageCache!.statusForKey(key).pending, true);
+    expect(imageCache!.pendingImageCount, 1);
 
     await error.future;
 
-    expect(imageCache.statusForKey(provider).untracked, true);
-    expect(imageCache.pendingImageCount, 0);
+    expect(imageCache!.statusForKey(provider).untracked, true);
+    expect(imageCache!.pendingImageCount, 0);
   }, skip: isBrowser); // https://github.com/flutter/flutter/issues/56314
 
   test('ImageProvider can evict images', () async {
@@ -65,9 +66,9 @@ void main() {
     stream.addListener(ImageStreamListener((ImageInfo info, bool syncCall) => completer.complete()));
     await completer.future;
 
-    expect(imageCache.currentSize, 1);
+    expect(imageCache!.currentSize, 1);
     expect(await MemoryImage(bytes).evict(), true);
-    expect(imageCache.currentSize, 0);
+    expect(imageCache!.currentSize, 0);
   });
 
   test('ImageProvider.evict respects the provided ImageCache', () async {
@@ -75,7 +76,7 @@ void main() {
     final Uint8List bytes = Uint8List.fromList(kTransparentImage);
     final MemoryImage imageProvider = MemoryImage(bytes);
     final ImageStreamCompleter cacheStream = otherCache.putIfAbsent(
-      imageProvider, () => imageProvider.loadBuffer(imageProvider, basicDecoder),
+      imageProvider, () => imageProvider.load(imageProvider, _basicDecoder),
     )!;
     final ImageStream stream = imageProvider.resolve(ImageConfiguration.empty);
     final Completer<void> completer = Completer<void>();
@@ -89,10 +90,10 @@ void main() {
     await Future.wait(<Future<void>>[completer.future, cacheCompleter.future]);
 
     expect(otherCache.currentSize, 1);
-    expect(imageCache.currentSize, 1);
+    expect(imageCache!.currentSize, 1);
     expect(await imageProvider.evict(cache: otherCache), true);
     expect(otherCache.currentSize, 0);
-    expect(imageCache.currentSize, 1);
+    expect(imageCache!.currentSize, 1);
   });
 
   test('ImageProvider errors can always be caught', () async {

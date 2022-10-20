@@ -5,7 +5,7 @@
 import 'package:flutter/cupertino.dart';
 
 class CupertinoTextFieldDemo extends StatefulWidget {
-  const CupertinoTextFieldDemo({super.key});
+  const CupertinoTextFieldDemo({Key? key}) : super(key: key);
 
   static const String routeName = '/cupertino/text_fields';
 
@@ -168,7 +168,6 @@ class _CupertinoTextFieldDemoState extends State<CupertinoTextFieldDemo> {
         ),
         child: CupertinoScrollbar(
           child: ListView(
-            primary: true,
             children: <Widget>[
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 16.0),

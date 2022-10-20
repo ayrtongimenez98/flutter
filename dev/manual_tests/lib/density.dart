@@ -22,7 +22,7 @@ final MaterialColor m2Swatch = MaterialColor(m2SwatchColors[500]!.value, m2Swatc
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   static const String _title = 'Density Test';
 
@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  const MyHomePage({Key? key, required this.title}) : super(key: key);
 
   final String title;
 
@@ -112,7 +112,7 @@ class OptionModel extends ChangeNotifier {
 }
 
 class LabeledCheckbox extends StatelessWidget {
-  const LabeledCheckbox({super.key, required this.label, this.onChanged, this.value});
+  const LabeledCheckbox({Key? key, required this.label, this.onChanged, this.value}) : super(key: key);
 
   final String label;
   final ValueChanged<bool?>? onChanged;
@@ -134,7 +134,7 @@ class LabeledCheckbox extends StatelessWidget {
 }
 
 class Options extends StatefulWidget {
-  const Options(this.model, {super.key});
+  const Options(this.model, {Key? key}) : super(key: key);
 
   final OptionModel model;
 
@@ -322,14 +322,14 @@ class _OptionsState extends State<Options> {
                   LabeledCheckbox(
                     label: 'Enabled',
                     onChanged: (bool? checked) {
-                      widget.model.enable = checked ?? false;
+                      widget.model.enable = checked == true;
                     },
                     value: widget.model.enable,
                   ),
                   LabeledCheckbox(
                     label: 'Slow',
                     onChanged: (bool? checked) {
-                      widget.model.slowAnimations = checked ?? false;
+                      widget.model.slowAnimations = checked == true;
                       Future<void>.delayed(const Duration(milliseconds: 150)).then((_) {
                         if (widget.model.slowAnimations) {
                           timeDilation = 20.0;
@@ -343,7 +343,7 @@ class _OptionsState extends State<Options> {
                   LabeledCheckbox(
                     label: 'RTL',
                     onChanged: (bool? checked) {
-                      widget.model.rtl = checked ?? false;
+                      widget.model.rtl = checked == true;
                     },
                     value: widget.model.rtl,
                   ),
@@ -365,9 +365,10 @@ class _OptionsState extends State<Options> {
 }
 
 class _ControlTile extends StatelessWidget {
-  const _ControlTile({required this.label, required this.child})
+  const _ControlTile({Key? key, required this.label, required this.child})
       : assert(label != null),
-        assert(child != null);
+        assert(child != null),
+        super(key: key);
 
   final String label;
   final Widget child;
@@ -534,7 +535,7 @@ class _MyHomePageState extends State<MyHomePage> {
         label: _model.rtl ? 'زر مسطح' : 'Text Button',
         child: TextButton(
           style: TextButton.styleFrom(
-            foregroundColor: Colors.white,
+            primary: Colors.white,
             backgroundColor: m2Swatch[200]
           ),
           onPressed: _model.enable ? () {} : null,
@@ -565,7 +566,7 @@ class _MyHomePageState extends State<MyHomePage> {
               onChanged: _model.enable
                   ? (bool? value) {
                       setState(() {
-                        checkboxValues[index] = value ?? false;
+                        checkboxValues[index] = value == true;
                       });
                     }
                   : null,

@@ -55,6 +55,7 @@ final FakePlatform macosPlatformCustomEnv = FakePlatform(
 );
 
 final Platform notMacosPlatform = FakePlatform(
+  operatingSystem: 'linux',
   environment: <String, String>{
     'FLUTTER_ROOT': '/',
   }
@@ -104,7 +105,6 @@ void main() {
         '-configuration', configuration,
         '-scheme', 'Runner',
         '-derivedDataPath', flutterBuildDir.absolute.path,
-        '-destination', 'platform=macOS',
         'OBJROOT=${fileSystem.path.join(flutterBuildDir.absolute.path, 'Build', 'Intermediates.noindex')}',
         'SYMROOT=${fileSystem.path.join(flutterBuildDir.absolute.path, 'Build', 'Products')}',
         if (verbose)
@@ -113,18 +113,7 @@ void main() {
           '-quiet',
         'COMPILER_INDEX_STORE_ENABLE=NO',
       ],
-      stdout: '''
-STDOUT STUFF
-note: Using new build system
-note: Planning
-note: Build preparation complete
-note: Building targets in dependency order
-''',
-        stderr: '''
-2022-03-24 10:07:21.954 xcodebuild[2096:1927385] Requested but did not find extension point with identifier Xcode.IDEKit.ExtensionSentinelHostApplications for extension Xcode.DebuggerFoundation.AppExtensionHosts.watchOS of plug-in com.apple.dt.IDEWatchSupportCore
-2022-03-24 10:07:21.954 xcodebuild[2096:1927385] Requested but did not find extension point with identifier Xcode.IDEKit.ExtensionPointIdentifierToBundleIdentifier for extension Xcode.DebuggerFoundation.AppExtensionToBundleIdentifierMap.watchOS of plug-in com.apple.dt.IDEWatchSupportCore
-STDERR STUFF
-''',
+      stdout: 'STDOUT STUFF',
       onRun: () {
         fileSystem.file(fileSystem.path.join('macos', 'Flutter', 'ephemeral', '.app_filename'))
           ..createSync(recursive: true)
@@ -143,7 +132,7 @@ STDERR STUFF
     expect(createTestCommandRunner(command).run(
       const <String>['build', 'macos', '--no-pub']
     ), throwsToolExit(message: 'No macOS desktop project configured. See '
-      'https://docs.flutter.dev/desktop#add-desktop-support-to-an-existing-flutter-app '
+      'https://flutter.dev/desktop#add-desktop-support-to-an-existing-flutter-app '
       'to learn about adding macOS support to a project.'));
   }, overrides: <Type, Generator>{
     Platform: () => macosPlatform,
@@ -181,7 +170,7 @@ STDERR STUFF
     Platform: () => macosPlatform,
     FileSystem: () => fileSystem,
     ProcessManager: () => FakeProcessManager.any(),
-    FeatureFlags: () => TestFeatureFlags(),
+    FeatureFlags: () => TestFeatureFlags(isMacOSEnabled: false),
   });
 
   testUsingContext('macOS build forwards error stdout to status logger error', () async {
@@ -194,15 +183,10 @@ STDERR STUFF
     expect(testLogger.statusText, isNot(contains('STDOUT STUFF')));
     expect(testLogger.traceText, isNot(contains('STDOUT STUFF')));
     expect(testLogger.errorText, contains('STDOUT STUFF'));
-    expect(testLogger.errorText, contains('STDERR STUFF'));
-    // Filters out some xcodebuild logging spew.
-    expect(testLogger.errorText, isNot(contains('xcodebuild[2096:1927385]')));
-    expect(testLogger.errorText, isNot(contains('Using new build system')));
-    expect(testLogger.errorText, isNot(contains('Building targets in dependency order')));
   }, overrides: <Type, Generator>{
     FileSystem: () => fileSystem,
     ProcessManager: () => FakeProcessManager.list(<FakeCommand>[
-      setUpFakeXcodeBuildHandler('Debug'),
+      setUpFakeXcodeBuildHandler('Debug')
     ]),
     Platform: () => macosPlatform,
     FeatureFlags: () => TestFeatureFlags(isMacOSEnabled: true),
@@ -218,7 +202,7 @@ STDERR STUFF
   }, overrides: <Type, Generator>{
     FileSystem: () => fileSystem,
     ProcessManager: () => FakeProcessManager.list(<FakeCommand>[
-      setUpFakeXcodeBuildHandler('Debug'),
+      setUpFakeXcodeBuildHandler('Debug')
     ]),
     Platform: () => macosPlatform,
     FeatureFlags: () => TestFeatureFlags(isMacOSEnabled: true),
@@ -234,7 +218,7 @@ STDERR STUFF
   }, overrides: <Type, Generator>{
     FileSystem: () => fileSystem,
     ProcessManager: () => FakeProcessManager.list(<FakeCommand>[
-      setUpFakeXcodeBuildHandler('Debug', verbose: true),
+      setUpFakeXcodeBuildHandler('Debug', verbose: true)
     ]),
     Platform: () => macosPlatform,
     FeatureFlags: () => TestFeatureFlags(isMacOSEnabled: true),
@@ -251,7 +235,7 @@ STDERR STUFF
   }, overrides: <Type, Generator>{
     FileSystem: () => fileSystem,
     ProcessManager: () => FakeProcessManager.list(<FakeCommand>[
-      setUpFakeXcodeBuildHandler('Profile'),
+      setUpFakeXcodeBuildHandler('Profile')
     ]),
     Platform: () => macosPlatform,
     XcodeProjectInterpreter: () => FakeXcodeProjectInterpreterWithProfile(),
@@ -268,7 +252,7 @@ STDERR STUFF
   }, overrides: <Type, Generator>{
     FileSystem: () => fileSystem,
     ProcessManager: () => FakeProcessManager.list(<FakeCommand>[
-      setUpFakeXcodeBuildHandler('Release'),
+      setUpFakeXcodeBuildHandler('Release')
     ]),
     Platform: () => macosPlatform,
     FeatureFlags: () => TestFeatureFlags(isMacOSEnabled: true),
@@ -308,6 +292,7 @@ STDERR STUFF
       'FLUTTER_BUILD_DIR=build',
       'FLUTTER_BUILD_NAME=1.0.0',
       'FLUTTER_BUILD_NUMBER=1',
+      'EXCLUDED_ARCHS=arm64',
       'DART_DEFINES=Zm9vLmJhcj0y,Zml6ei5mYXI9Mw==',
       'DART_OBFUSCATION=true',
       'EXTRA_FRONT_END_OPTIONS=--enable-experiment=non-nullable',
@@ -319,11 +304,10 @@ STDERR STUFF
       'PACKAGE_CONFIG=/.dart_tool/package_config.json',
       'COCOAPODS_PARALLEL_CODE_SIGN=true',
     ]));
-    expect(contents, isNot(contains('EXCLUDED_ARCHS')));
   }, overrides: <Type, Generator>{
     FileSystem: () => fileSystem,
     ProcessManager: () => FakeProcessManager.list(<FakeCommand>[
-      setUpFakeXcodeBuildHandler('Release'),
+      setUpFakeXcodeBuildHandler('Release')
     ]),
     Platform: () => macosPlatform,
     FeatureFlags: () => TestFeatureFlags(isMacOSEnabled: true),
@@ -333,7 +317,7 @@ STDERR STUFF
   testUsingContext('build settings contains Flutter Xcode environment variables', () async {
 
     macosPlatformCustomEnv.environment = Map<String, String>.unmodifiable(<String, String>{
-      'FLUTTER_XCODE_ASSETCATALOG_COMPILER_APPICON_NAME': 'AppIcon.special',
+      'FLUTTER_XCODE_ASSETCATALOG_COMPILER_APPICON_NAME': 'AppIcon.special'
     });
 
     final FlutterProject flutterProject = FlutterProject.fromDirectory(fileSystem.currentDirectory);
@@ -349,7 +333,6 @@ STDERR STUFF
           '-configuration', 'Debug',
           '-scheme', 'Runner',
           '-derivedDataPath', flutterBuildDir.absolute.path,
-          '-destination', 'platform=macOS',
           'OBJROOT=${fileSystem.path.join(flutterBuildDir.absolute.path, 'Build', 'Intermediates.noindex')}',
           'SYMROOT=${fileSystem.path.join(flutterBuildDir.absolute.path, 'Build', 'Products')}',
           '-quiet',
@@ -398,7 +381,7 @@ STDERR STUFF
   }, overrides: <Type, Generator>{
     FileSystem: () => fileSystem,
     ProcessManager: () => FakeProcessManager.list(<FakeCommand>[
-      setUpFakeXcodeBuildHandler('Debug'),
+      setUpFakeXcodeBuildHandler('Debug')
     ]),
     Platform: () => macosPlatform,
     FeatureFlags: () => TestFeatureFlags(isMacOSEnabled: true),
@@ -411,13 +394,13 @@ STDERR STUFF
     expect(() => runner.run(<String>['build', 'macos', '--no-pub']),
       supported ? throwsToolExit() : throwsA(isA<UsageException>()));
   }, overrides: <Type, Generator>{
-    FeatureFlags: () => TestFeatureFlags(),
+    FeatureFlags: () => TestFeatureFlags(isMacOSEnabled: false),
   });
 
   testUsingContext('hidden when not enabled on macOS host', () {
     expect(BuildMacosCommand(verboseHelp: false).hidden, true);
   }, overrides: <Type, Generator>{
-    FeatureFlags: () => TestFeatureFlags(),
+    FeatureFlags: () => TestFeatureFlags(isMacOSEnabled: false),
     Platform: () => macosPlatform,
   });
 

@@ -20,7 +20,7 @@
 ///
 ///     main() {
 ///       enableFlutterDriverExtension();
-///       runApp(ExampleApp());
+///       runApp(new ExampleApp());
 ///     }
 library flutter_driver_extension;
 

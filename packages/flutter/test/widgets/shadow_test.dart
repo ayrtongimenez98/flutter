@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This file is run as part of a reduced test set in CI on Mac and Windows
-// machines.
-@Tags(<String>['reduced-test-set'])
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -50,7 +46,7 @@ void main() {
           child: Container(
             margin: const EdgeInsets.all(150.0),
             decoration: ShapeDecoration(
-              shape: const BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20.0))),
+              shape: BeveledRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
               shadows: kElevationToShadow[elevation],
             ),
             height: 100.0,
@@ -114,9 +110,9 @@ void main() {
             color: Colors.yellow[200],
             child: PhysicalShape(
               color: Colors.green[900]!,
-              clipper: const ShapeBorderClipper(
+              clipper: ShapeBorderClipper(
                 shape: BeveledRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(20.0)),
+                  borderRadius: BorderRadius.circular(20.0),
                 ),
               ),
               elevation: elevation,

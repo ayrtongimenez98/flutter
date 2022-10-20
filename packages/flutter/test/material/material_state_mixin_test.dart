@@ -14,7 +14,7 @@ const Color falseColor = Colors.green;
 /// Mock widget which plays the role of a button -- it can emit notifications
 /// that [MaterialState] values are now in or out of play.
 class _InnerWidget extends StatefulWidget {
-  const _InnerWidget({required this.onValueChanged, required this.controller});
+  const _InnerWidget({required this.onValueChanged, required this.controller, Key? key}) : super(key: key);
   final ValueChanged<bool> onValueChanged;
   final StreamController<bool> controller;
 
@@ -37,7 +37,8 @@ class _MyWidget extends StatefulWidget {
     required this.controller,
     required this.evaluator,
     required this.materialState,
-  });
+    Key? key,
+  }) : super(key: key);
 
   /// Wrapper around `MaterialStateMixin.isPressed/isHovered/isFocused/etc`.
   final bool Function(_MyWidgetState state) evaluator;
@@ -71,7 +72,7 @@ class _MyWidgetState extends State<_MyWidget> with MaterialStateMixin {
 
 void main() {
 
-  Future<void> verify(WidgetTester tester, Widget widget, StreamController<bool> controller,) async {
+  Future<void> _verify(WidgetTester tester, Widget widget, StreamController<bool> controller,) async {
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: widget)));
     // Set the value to True
     controller.sink.add(true);
@@ -91,7 +92,7 @@ void main() {
       evaluator: (_MyWidgetState state) => state.isPressed,
       materialState: MaterialState.pressed,
     );
-    await verify(tester, widget, controller);
+    await _verify(tester, widget, controller);
   });
 
   testWidgets('MaterialState.focused is tracked', (WidgetTester tester) async {
@@ -101,7 +102,7 @@ void main() {
       evaluator: (_MyWidgetState state) => state.isFocused,
       materialState: MaterialState.focused,
     );
-    await verify(tester, widget, controller);
+    await _verify(tester, widget, controller);
   });
 
   testWidgets('MaterialState.hovered is tracked', (WidgetTester tester) async {
@@ -111,7 +112,7 @@ void main() {
       evaluator: (_MyWidgetState state) => state.isHovered,
       materialState: MaterialState.hovered,
     );
-    await verify(tester, widget, controller);
+    await _verify(tester, widget, controller);
   });
 
   testWidgets('MaterialState.disabled is tracked', (WidgetTester tester) async {
@@ -121,7 +122,7 @@ void main() {
       evaluator: (_MyWidgetState state) => state.isDisabled,
       materialState: MaterialState.disabled,
     );
-    await verify(tester, widget, controller);
+    await _verify(tester, widget, controller);
   });
 
   testWidgets('MaterialState.selected is tracked', (WidgetTester tester) async {
@@ -131,7 +132,7 @@ void main() {
       evaluator: (_MyWidgetState state) => state.isSelected,
       materialState: MaterialState.selected,
     );
-    await verify(tester, widget, controller);
+    await _verify(tester, widget, controller);
   });
 
   testWidgets('MaterialState.scrolledUnder is tracked', (WidgetTester tester) async {
@@ -141,7 +142,7 @@ void main() {
       evaluator: (_MyWidgetState state) => state.isScrolledUnder,
       materialState: MaterialState.scrolledUnder,
     );
-    await verify(tester, widget, controller);
+    await _verify(tester, widget, controller);
   });
 
   testWidgets('MaterialState.dragged is tracked', (WidgetTester tester) async {
@@ -151,7 +152,7 @@ void main() {
       evaluator: (_MyWidgetState state) => state.isDragged,
       materialState: MaterialState.dragged,
     );
-    await verify(tester, widget, controller);
+    await _verify(tester, widget, controller);
   });
 
   testWidgets('MaterialState.error is tracked', (WidgetTester tester) async {
@@ -161,6 +162,6 @@ void main() {
       evaluator: (_MyWidgetState state) => state.isErrored,
       materialState: MaterialState.error,
     );
-    await verify(tester, widget, controller);
+    await _verify(tester, widget, controller);
   });
 }

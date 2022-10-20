@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
 import 'package:flutter_tools/src/base/io.dart';
 
 import '../src/common.dart';
@@ -16,5 +17,5 @@ void main() {
       '"^(?!Golden).+"',
     ]);
     expect(result.stdout, contains('args: ["(?!Golden).+"]'));
-  }, skip: 'Reverted in https://github.com/flutter/flutter/pull/86000'); // https://github.com/flutter/flutter/issues/87934
+  }, skip: 'Reverted in https://github.com/flutter/flutter/pull/86000');
 }

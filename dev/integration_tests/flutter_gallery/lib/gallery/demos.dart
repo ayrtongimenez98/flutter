@@ -29,7 +29,7 @@ class GalleryDemoCategory {
   }
 
   @override
-  int get hashCode => Object.hash(name, icon);
+  int get hashCode => hashValues(name, icon);
 
   @override
   String toString() {

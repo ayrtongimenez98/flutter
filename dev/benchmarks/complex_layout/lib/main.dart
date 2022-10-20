@@ -14,7 +14,7 @@ void main() {
 enum ScrollMode { complex, tile }
 
 class ComplexLayoutApp extends StatefulWidget {
-  const ComplexLayoutApp({super.key});
+  const ComplexLayoutApp({Key? key}) : super(key: key);
 
   @override
   ComplexLayoutAppState createState() => ComplexLayoutAppState();
@@ -55,7 +55,7 @@ class ComplexLayoutAppState extends State<ComplexLayoutApp> {
 }
 
 class TileScrollLayout extends StatelessWidget {
-  const TileScrollLayout({ super.key });
+  const TileScrollLayout({ Key? key }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +81,7 @@ class TileScrollLayout extends StatelessWidget {
 }
 
 class ComplexLayout extends StatefulWidget {
-  const ComplexLayout({ super.key });
+  const ComplexLayout({ Key? key }) : super(key: key);
 
   @override
   ComplexLayoutState createState() => ComplexLayoutState();
@@ -129,7 +129,7 @@ class ComplexLayoutState extends State<ComplexLayout> {
 }
 
 class TopBarMenu extends StatelessWidget {
-  const TopBarMenu({super.key});
+  const TopBarMenu({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +182,7 @@ class TopBarMenu extends StatelessWidget {
 }
 
 class MenuItemWithIcon extends StatelessWidget {
-  const MenuItemWithIcon(this.icon, this.title, this.subtitle, {super.key});
+  const MenuItemWithIcon(this.icon, this.title, this.subtitle, {Key? key}) : super(key: key);
 
   final IconData icon;
   final String title;
@@ -204,7 +204,7 @@ class MenuItemWithIcon extends StatelessWidget {
 }
 
 class FancyImageItem extends StatelessWidget {
-  const FancyImageItem(this.index, {super.key});
+  const FancyImageItem(this.index, {Key? key}) : super(key: key);
 
   final int index;
 
@@ -228,7 +228,7 @@ class FancyImageItem extends StatelessWidget {
 }
 
 class FancyGalleryItem extends StatelessWidget {
-  const FancyGalleryItem(this.index, {super.key});
+  const FancyGalleryItem(this.index, {Key? key}) : super(key: key);
 
   final int index;
   @override
@@ -250,7 +250,7 @@ class FancyGalleryItem extends StatelessWidget {
 }
 
 class InfoBar extends StatelessWidget {
-  const InfoBar({super.key});
+  const InfoBar({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -268,7 +268,7 @@ class InfoBar extends StatelessWidget {
 }
 
 class IconBar extends StatelessWidget {
-  const IconBar({super.key});
+  const IconBar({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +287,7 @@ class IconBar extends StatelessWidget {
 }
 
 class IconWithText extends StatelessWidget {
-  const IconWithText(this.icon, this.title, {super.key});
+  const IconWithText(this.icon, this.title, {Key? key}) : super(key: key);
 
   final IconData icon;
   final String title;
@@ -308,7 +308,7 @@ class IconWithText extends StatelessWidget {
 }
 
 class MiniIconWithText extends StatelessWidget {
-  const MiniIconWithText(this.icon, this.title, {super.key});
+  const MiniIconWithText(this.icon, this.title, {Key? key}) : super(key: key);
 
   final IconData icon;
   final String title;
@@ -337,7 +337,7 @@ class MiniIconWithText extends StatelessWidget {
 }
 
 class FatDivider extends StatelessWidget {
-  const FatDivider({super.key});
+  const FatDivider({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -349,7 +349,7 @@ class FatDivider extends StatelessWidget {
 }
 
 class UserHeader extends StatelessWidget {
-  const UserHeader(this.userName, {super.key});
+  const UserHeader(this.userName, {Key? key}) : super(key: key);
 
   final String userName;
 
@@ -370,6 +370,7 @@ class UserHeader extends StatelessWidget {
           ),
           Expanded(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 RichText(text: TextSpan(
@@ -397,7 +398,7 @@ class UserHeader extends StatelessWidget {
 }
 
 class ItemDescription extends StatelessWidget {
-  const ItemDescription({super.key});
+  const ItemDescription({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -409,7 +410,7 @@ class ItemDescription extends StatelessWidget {
 }
 
 class ItemImageBox extends StatelessWidget {
-  const ItemImageBox({super.key});
+  const ItemImageBox({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -490,7 +491,7 @@ class ItemImageBox extends StatelessWidget {
 }
 
 class ItemGalleryBox extends StatelessWidget {
-  const ItemGalleryBox(this.index, {super.key});
+  const ItemGalleryBox(this.index, {Key? key}) : super(key: key);
 
   final int index;
 
@@ -559,7 +560,7 @@ class ItemGalleryBox extends StatelessWidget {
 }
 
 class BottomBar extends StatelessWidget {
-  const BottomBar({super.key});
+  const BottomBar({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -568,6 +569,7 @@ class BottomBar extends StatelessWidget {
         border: Border(
           top: BorderSide(
             color: Theme.of(context).dividerColor,
+            width: 1.0,
           ),
         ),
       ),
@@ -586,7 +588,7 @@ class BottomBar extends StatelessWidget {
 }
 
 class BottomBarButton extends StatelessWidget {
-  const BottomBarButton(this.icon, this.title, {super.key});
+  const BottomBarButton(this.icon, this.title, {Key? key}) : super(key: key);
 
   final IconData icon;
   final String title;
@@ -609,7 +611,7 @@ class BottomBarButton extends StatelessWidget {
 }
 
 class GalleryDrawer extends StatelessWidget {
-  const GalleryDrawer({ super.key });
+  const GalleryDrawer({ Key? key }) : super(key: key);
 
   void _changeTheme(BuildContext context, bool value) {
     ComplexLayoutApp.of(context)?.lightTheme = value;
@@ -680,7 +682,7 @@ class GalleryDrawer extends StatelessWidget {
 }
 
 class FancyDrawerHeader extends StatelessWidget {
-  const FancyDrawerHeader({super.key});
+  const FancyDrawerHeader({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

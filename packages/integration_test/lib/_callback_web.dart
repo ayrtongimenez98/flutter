@@ -65,7 +65,8 @@ class WebCallbackManager implements CallbackManager {
             'driver side');
       }
     } catch (exception) {
-      throw Exception('Web Driver Command failed: ${command.type} with exception $exception');
+      throw Exception('Web Driver Command failed: ${command.type} with '
+          'exception $exception');
     } finally {
       // Reset the completer.
       _driverCommandComplete = Completer<bool>();
@@ -124,7 +125,7 @@ class WebCallbackManager implements CallbackManager {
             'message': Response.webDriverCommand(data: data).toJson(),
           };
           break;
-        case WebDriverCommandType.ack:
+        default:
           throw UnimplementedError('${command.type} is not implemented');
       }
     } else {

@@ -8,10 +8,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _TimePickerLauncher extends StatelessWidget {
   const _TimePickerLauncher({
+    Key? key,
     this.onChanged,
     required this.locale,
     this.entryMode = TimePickerEntryMode.dial,
-  });
+  }) : super(key: key);
 
   final ValueChanged<TimeOfDay?>? onChanged;
   final Locale locale;

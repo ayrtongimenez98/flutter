@@ -20,7 +20,7 @@ import 'material_localizations.dart';
 import 'progress_indicator.dart';
 import 'theme.dart';
 
-/// A Material Design data table that shows data using multiple pages.
+/// A material design data table that shows data using multiple pages.
 ///
 /// A paginated data table shows [rowsPerPage] rows of data per page and
 /// provides controls for showing other pages.
@@ -64,7 +64,7 @@ class PaginatedDataTable extends StatefulWidget {
   /// To modify the border or background color of the [PaginatedDataTable], use
   /// [CardTheme], since a [Card] wraps the inner [DataTable].
   PaginatedDataTable({
-    super.key,
+    Key? key,
     this.header,
     this.actions,
     required this.columns,
@@ -86,8 +86,6 @@ class PaginatedDataTable extends StatefulWidget {
     this.arrowHeadColor,
     required this.source,
     this.checkboxHorizontalMargin,
-    this.controller,
-    this.primary,
   }) : assert(actions == null || (actions != null && header != null)),
        assert(columns != null),
        assert(dragStartBehavior != null),
@@ -103,16 +101,12 @@ class PaginatedDataTable extends StatefulWidget {
        assert(rowsPerPage != null),
        assert(rowsPerPage > 0),
        assert(() {
-         if (onRowsPerPageChanged != null) {
+         if (onRowsPerPageChanged != null)
            assert(availableRowsPerPage != null && availableRowsPerPage.contains(rowsPerPage));
-         }
          return true;
        }()),
        assert(source != null),
-       assert(!(controller != null && (primary ?? false)),
-          'Primary ScrollViews obtain their ScrollController via inheritance from a PrimaryScrollController widget. '
-          'You cannot both set primary to true and pass an explicit controller.',
-       );
+       super(key: key);
 
   /// The table card's optional header.
   ///
@@ -244,12 +238,6 @@ class PaginatedDataTable extends StatefulWidget {
   /// Defines the color of the arrow heads in the footer.
   final Color? arrowHeadColor;
 
-  /// {@macro flutter.widgets.scroll_view.controller}
-  final ScrollController? controller;
-
-  /// {@macro flutter.widgets.scroll_view.primary}
-  final bool? primary;
-
   @override
   PaginatedDataTableState createState() => PaginatedDataTableState();
 }
@@ -305,9 +293,8 @@ class PaginatedDataTableState extends State<PaginatedDataTable> {
       _firstRowIndex = (rowIndex ~/ rowsPerPage) * rowsPerPage;
     });
     if ((widget.onPageChanged != null) &&
-        (oldFirstRowIndex != _firstRowIndex)) {
+        (oldFirstRowIndex != _firstRowIndex))
       widget.onPageChanged!(_firstRowIndex);
-    }
   }
 
   DataRow _getBlankRowFor(int index) {
@@ -429,6 +416,7 @@ class PaginatedDataTableState extends State<PaginatedDataTable> {
                 value: widget.rowsPerPage,
                 onChanged: widget.onRowsPerPageChanged,
                 style: footerTextStyle,
+                iconSize: 24.0,
               ),
             ),
           ),
@@ -479,11 +467,11 @@ class PaginatedDataTableState extends State<PaginatedDataTable> {
     ]);
 
     // CARD
-    return Card(
-      semanticContainer: false,
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          return Column(
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Card(
+          semanticContainer: false,
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               if (headerWidgets.isNotEmpty)
@@ -515,8 +503,6 @@ class PaginatedDataTableState extends State<PaginatedDataTable> {
                 ),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                primary: widget.primary,
-                controller: widget.controller,
                 dragStartBehavior: widget.dragStartBehavior,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minWidth: constraints.minWidth),
@@ -562,9 +548,9 @@ class PaginatedDataTableState extends State<PaginatedDataTable> {
                 ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:ui' as ui;
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../scheduler/scheduler_tester.dart';
 
 class BogusCurve extends Curve {
-  const BogusCurve();
-
   @override
   double transform(double t) => 100.0;
 }
@@ -17,10 +17,9 @@ class BogusCurve extends Curve {
 void main() {
   setUp(() {
     WidgetsFlutterBinding.ensureInitialized();
-    WidgetsBinding.instance
-      ..resetEpoch()
-      ..platformDispatcher.onBeginFrame = null
-      ..platformDispatcher.onDrawFrame = null;
+    WidgetsBinding.instance!.resetEpoch();
+    ui.window.onBeginFrame = null;
+    ui.window.onDrawFrame = null;
   });
 
   test('toString control test', () {
@@ -236,7 +235,7 @@ void main() {
     final AnimationController controller = AnimationController(
       vsync: const TestVSync(),
     );
-    final CurvedAnimation curved = CurvedAnimation(parent: controller, curve: const BogusCurve());
+    final CurvedAnimation curved = CurvedAnimation(parent: controller, curve: BogusCurve());
     FlutterError? error;
     try {
       curved.value;

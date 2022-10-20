@@ -29,16 +29,16 @@ class PerformanceOverlay extends LeafRenderObjectWidget {
   /// mask is created by shifting 1 by the index of the specific
   /// [PerformanceOverlayOption] to enable.
   const PerformanceOverlay({
-    super.key,
+    Key? key,
     this.optionsMask = 0,
     this.rasterizerThreshold = 0,
     this.checkerboardRasterCacheImages = false,
     this.checkerboardOffscreenLayers = false,
-  });
+  }) : super(key: key);
 
   /// Create a performance overlay that displays all available statistics.
   PerformanceOverlay.allEnabled({
-    super.key,
+    Key? key,
     this.rasterizerThreshold = 0,
     this.checkerboardRasterCacheImages = false,
     this.checkerboardOffscreenLayers = false,
@@ -46,7 +46,8 @@ class PerformanceOverlay extends LeafRenderObjectWidget {
         1 << PerformanceOverlayOption.displayRasterizerStatistics.index |
         1 << PerformanceOverlayOption.visualizeRasterizerStatistics.index |
         1 << PerformanceOverlayOption.displayEngineStatistics.index |
-        1 << PerformanceOverlayOption.visualizeEngineStatistics.index;
+        1 << PerformanceOverlayOption.visualizeEngineStatistics.index,
+      super(key: key);
 
   /// The mask is created by shifting 1 by the index of the specific
   /// [PerformanceOverlayOption] to enable.

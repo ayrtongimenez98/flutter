@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This file is run as part of a reduced test set in CI on Mac and Windows
-// machines.
-@Tags(<String>['reduced-test-set'])
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -38,6 +34,7 @@ void main() {
     await tester.pumpFrames(
       builder.record(
         const _DecuplePixels(Duration(seconds: 1)),
+        recording: true,
       ),
       const Duration(milliseconds: 400),
       const Duration(milliseconds: 100),
@@ -92,6 +89,7 @@ void main() {
     await tester.pumpFrames(
       builder.record(
         const _DecuplePixels(Duration(seconds: 1)),
+        recording: true,
       ),
       const Duration(milliseconds: 400),
       const Duration(milliseconds: 100),

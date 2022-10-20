@@ -35,7 +35,9 @@ void main() {
         await tester.pumpWidget(MaterialApp(
           supportedLocales: <Locale>[locale],
           locale: locale,
-          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+            GlobalMaterialLocalizations.delegate,
+          ],
           home: Builder(builder: (BuildContext context) {
             completer.complete(MaterialLocalizations.of(context).formatHour(timeOfDay));
             return Container();
@@ -80,7 +82,9 @@ void main() {
         await tester.pumpWidget(MaterialApp(
           supportedLocales: <Locale>[locale],
           locale: locale,
-          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+            GlobalMaterialLocalizations.delegate,
+          ],
           home: Builder(builder: (BuildContext context) {
             completer.complete(MaterialLocalizations.of(context).formatTimeOfDay(timeOfDay));
             return Container();
@@ -122,7 +126,9 @@ void main() {
         await tester.pumpWidget(MaterialApp(
           supportedLocales: <Locale>[locale],
           locale: locale,
-          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+            GlobalMaterialLocalizations.delegate,
+          ],
           home: Builder(builder: (BuildContext context) {
             final MaterialLocalizations localizations = MaterialLocalizations.of(context);
             completer.complete(<DateType, String>{
@@ -138,7 +144,7 @@ void main() {
       }
 
       testWidgets('formats dates in English', (WidgetTester tester) async {
-        final Map<DateType, String> formatted = await formatDate(tester, const Locale('en'), DateTime(2018, 8));
+        final Map<DateType, String> formatted = await formatDate(tester, const Locale('en'), DateTime(2018, 8, 1));
         expect(formatted[DateType.year], '2018');
         expect(formatted[DateType.medium], 'Wed, Aug 1');
         expect(formatted[DateType.full], 'Wednesday, August 1, 2018');
@@ -146,7 +152,7 @@ void main() {
       });
 
       testWidgets('formats dates in German', (WidgetTester tester) async {
-        final Map<DateType, String> formatted = await formatDate(tester, const Locale('de'), DateTime(2018, 8));
+        final Map<DateType, String> formatted = await formatDate(tester, const Locale('de'), DateTime(2018, 8, 1));
         expect(formatted[DateType.year], '2018');
         expect(formatted[DateType.medium], 'Mi., 1. Aug.');
         expect(formatted[DateType.full], 'Mittwoch, 1. August 2018');
@@ -154,7 +160,7 @@ void main() {
       });
 
       testWidgets('formats dates in Serbian', (WidgetTester tester) async {
-        final Map<DateType, String> formatted = await formatDate(tester, const Locale('sr'), DateTime(2018, 8));
+        final Map<DateType, String> formatted = await formatDate(tester, const Locale('sr'), DateTime(2018, 8, 1));
         expect(formatted[DateType.year], '2018.');
         expect(formatted[DateType.medium], 'сре 1. авг');
         expect(formatted[DateType.full], 'среда, 1. август 2018.');
@@ -163,7 +169,7 @@ void main() {
 
       testWidgets('formats dates in Serbian (Latin)', (WidgetTester tester) async {
         final Map<DateType, String> formatted = await formatDate(tester,
-          const Locale.fromSubtags(languageCode:'sr', scriptCode: 'Latn'), DateTime(2018, 8));
+          const Locale.fromSubtags(languageCode:'sr', scriptCode: 'Latn'), DateTime(2018, 8, 1));
         expect(formatted[DateType.year], '2018.');
         expect(formatted[DateType.medium], 'sre 1. avg');
         expect(formatted[DateType.full], 'sreda, 1. avgust 2018.');
@@ -177,10 +183,16 @@ void main() {
     late DateFormat dateFormat;
 
     await tester.pumpWidget(MaterialApp(
+      supportedLocales: const <Locale>[
+        Locale('en', 'US'),
+      ],
       locale: const Locale('en', 'US'),
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        GlobalMaterialLocalizations.delegate,
+      ],
       home: Builder(builder: (BuildContext context) {
         dateFormat = DateFormat('EEE, d MMM yyyy HH:mm:ss', 'en_US');
+
         return Container();
       }),
     ));

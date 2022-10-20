@@ -47,7 +47,7 @@ typedef ValueWidgetBuilder<T> = Widget Function(BuildContext context, T value, W
 ///
 /// ```dart
 /// class MyHomePage extends StatefulWidget {
-///   const MyHomePage({super.key, required this.title});
+///   const MyHomePage({Key? key, required this.title}) : super(key: key);
 ///   final String title;
 ///
 ///   @override
@@ -115,12 +115,13 @@ class ValueListenableBuilder<T> extends StatefulWidget {
   /// The [child] is optional but is good practice to use if part of the widget
   /// subtree does not depend on the value of the [valueListenable].
   const ValueListenableBuilder({
-    super.key,
+    Key? key,
     required this.valueListenable,
     required this.builder,
     this.child,
   }) : assert(valueListenable != null),
-       assert(builder != null);
+       assert(builder != null),
+       super(key: key);
 
   /// The [ValueListenable] whose value you depend on in order to build.
   ///
@@ -163,12 +164,12 @@ class _ValueListenableBuilderState<T> extends State<ValueListenableBuilder<T>> {
 
   @override
   void didUpdateWidget(ValueListenableBuilder<T> oldWidget) {
-    super.didUpdateWidget(oldWidget);
     if (oldWidget.valueListenable != widget.valueListenable) {
       oldWidget.valueListenable.removeListener(_valueChanged);
       value = widget.valueListenable.value;
       widget.valueListenable.addListener(_valueChanged);
     }
+    super.didUpdateWidget(oldWidget);
   }
 
   @override

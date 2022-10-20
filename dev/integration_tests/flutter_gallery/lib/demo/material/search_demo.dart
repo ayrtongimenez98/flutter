@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import '../../gallery/demo.dart';
 
 class SearchDemo extends StatefulWidget {
-  const SearchDemo({super.key});
+  const SearchDemo({Key? key}) : super(key: key);
 
   static const String routeName = '/material/search';
 

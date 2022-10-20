@@ -34,10 +34,11 @@ bool _isDigit(String? char) {
   return charCode >= charDigit0 && charCode <= charDigit9;
 }
 
-/// Generates the keyboard_maps.g.dart files, based on the information in the key
+/// Generates the keyboard_maps.dart files, based on the information in the key
 /// data structure given to it.
 class KeyboardMapsCodeGenerator extends BaseCodeGenerator {
-  KeyboardMapsCodeGenerator(super.keyData, super.logicalData);
+  KeyboardMapsCodeGenerator(PhysicalKeyData keyData, LogicalKeyData logicalData)
+    : super(keyData, logicalData);
 
   List<PhysicalKeyEntry> get _numpadKeyData {
     return keyData.entries.where((PhysicalKeyEntry entry) {
@@ -176,7 +177,7 @@ class KeyboardMapsCodeGenerator extends BaseCodeGenerator {
   String get _windowsKeyCodeMap {
     final OutputLines<int> lines = OutputLines<int>('Windows key code map');
     for (final LogicalKeyEntry entry in logicalData.entries) {
-      // Letter keys on Windows are not recorded in logical_key_data.g.json,
+      // Letter keys on Windows are not recorded in logical_key_data.json,
       // because they are not used by the embedding. Add them manually.
       final List<int>? keyCodes = entry.windowsValues.isNotEmpty
         ? entry.windowsValues
@@ -303,10 +304,10 @@ class KeyboardMapsCodeGenerator extends BaseCodeGenerator {
 
   /// This generates the map of Web KeyboardEvent codes to physical keys.
   String get _webPhysicalKeyMap {
-    final OutputLines<String> lines = OutputLines<String>('Web physical key map', behavior: DeduplicateBehavior.kKeep);
+    final OutputLines<String> lines = OutputLines<String>('Web physical key map');
     for (final PhysicalKeyEntry entry in keyData.entries) {
-      for (final String webCodes in entry.webCodes()) {
-        lines.add(entry.name, "  '$webCodes': PhysicalKeyboardKey.${entry.constantName},");
+      if (entry.name != null) {
+        lines.add(entry.name, "  '${entry.name}': PhysicalKeyboardKey.${entry.constantName},");
       }
     }
     return lines.sortedJoin().trimRight();

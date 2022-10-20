@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+
 import 'dart:ui' as ui show lerpDouble;
 
 import 'package:flutter/foundation.dart';
@@ -77,7 +78,7 @@ class FractionalOffset extends Alignment {
   ///
   /// The offset is assumed to be relative to the same origin as the rectangle.
   ///
-  /// If the offset is relative to the top left of the rectangle, use [
+  /// If the offset is relative to the top left of the rectangle, use [new
   /// FractionalOffset.fromOffsetAndSize] instead, passing `rect.size`.
   ///
   /// The returned [FractionalOffset] describes the position of the
@@ -135,17 +136,15 @@ class FractionalOffset extends Alignment {
 
   @override
   Alignment operator -(Alignment other) {
-    if (other is! FractionalOffset) {
+    if (other is! FractionalOffset)
       return super - other;
-    }
     return FractionalOffset(dx - other.dx, dy - other.dy);
   }
 
   @override
   Alignment operator +(Alignment other) {
-    if (other is! FractionalOffset) {
+    if (other is! FractionalOffset)
       return super + other;
-    }
     return FractionalOffset(dx + other.dx, dy + other.dy);
   }
 
@@ -181,15 +180,12 @@ class FractionalOffset extends Alignment {
   /// {@macro dart.ui.shadow.lerp}
   static FractionalOffset? lerp(FractionalOffset? a, FractionalOffset? b, double t) {
     assert(t != null);
-    if (a == null && b == null) {
+    if (a == null && b == null)
       return null;
-    }
-    if (a == null) {
+    if (a == null)
       return FractionalOffset(ui.lerpDouble(0.5, b!.dx, t)!, ui.lerpDouble(0.5, b.dy, t)!);
-    }
-    if (b == null) {
+    if (b == null)
       return FractionalOffset(ui.lerpDouble(a.dx, 0.5, t)!, ui.lerpDouble(a.dy, 0.5, t)!);
-    }
     return FractionalOffset(ui.lerpDouble(a.dx, b.dx, t)!, ui.lerpDouble(a.dy, b.dy, t)!);
   }
 

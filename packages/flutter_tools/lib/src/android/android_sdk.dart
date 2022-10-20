@@ -9,7 +9,7 @@ import '../base/platform.dart';
 import '../base/process.dart';
 import '../base/version.dart';
 import '../convert.dart';
-import '../globals.dart' as globals;
+import '../globals_null_migrated.dart' as globals;
 import 'android_studio.dart';
 
 // ANDROID_HOME is deprecated.
@@ -169,7 +169,8 @@ class AndroidSdk {
 
   AndroidSdkVersion? get latestVersion => _latestVersion;
 
-  late final String? adbPath = getPlatformToolsPath(globals.platform.isWindows ? 'adb.exe' : 'adb');
+  String? get adbPath => _adbPath ??= getPlatformToolsPath(globals.platform.isWindows ? 'adb.exe' : 'adb');
+  String? _adbPath;
 
   String? get emulatorPath => getEmulatorPath();
 
@@ -198,7 +199,7 @@ class AndroidSdk {
       }
     }
 
-    for (final String searchPath in searchPaths) {
+    for (final String searchPath in searchPaths.whereType<String>()) {
       if (globals.fs.directory(searchPath).existsSync()) {
         return searchPath;
       }

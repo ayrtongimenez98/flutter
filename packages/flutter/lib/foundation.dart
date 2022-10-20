@@ -33,7 +33,6 @@ export 'src/foundation/diagnostics.dart';
 export 'src/foundation/isolates.dart';
 export 'src/foundation/key.dart';
 export 'src/foundation/licenses.dart';
-export 'src/foundation/math.dart';
 export 'src/foundation/node.dart';
 export 'src/foundation/object.dart';
 export 'src/foundation/observer_list.dart';

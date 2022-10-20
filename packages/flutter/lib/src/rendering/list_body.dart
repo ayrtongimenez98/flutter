@@ -39,9 +39,8 @@ class RenderListBody extends RenderBox
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! ListBodyParentData) {
+    if (child.parentData is! ListBodyParentData)
       child.parentData = ListBodyParentData();
-    }
   }
 
   /// The direction in which the children are laid out.
@@ -52,9 +51,8 @@ class RenderListBody extends RenderBox
   AxisDirection _axisDirection;
   set axisDirection(AxisDirection value) {
     assert(value != null);
-    if (_axisDirection == value) {
+    if (_axisDirection == value)
       return;
-    }
     _axisDirection = value;
     markNeedsLayout();
   }
@@ -94,14 +92,12 @@ class RenderListBody extends RenderBox
     assert(() {
       switch (mainAxis) {
         case Axis.horizontal:
-          if (!constraints.hasBoundedWidth) {
+          if (!constraints.hasBoundedWidth)
             return true;
-          }
           break;
         case Axis.vertical:
-          if (!constraints.hasBoundedHeight) {
+          if (!constraints.hasBoundedHeight)
             return true;
-          }
           break;
       }
       throw FlutterError.fromParts(<DiagnosticsNode>[
@@ -120,14 +116,12 @@ class RenderListBody extends RenderBox
     assert(() {
       switch (mainAxis) {
         case Axis.horizontal:
-          if (constraints.hasBoundedHeight) {
+          if (constraints.hasBoundedHeight)
             return true;
-          }
           break;
         case Axis.vertical:
-          if (constraints.hasBoundedWidth) {
+          if (constraints.hasBoundedWidth)
             return true;
-          }
           break;
       }
       // TODO(ianh): Detect if we're actually nested blocks and say something

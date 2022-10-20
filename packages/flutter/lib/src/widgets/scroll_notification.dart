@@ -25,25 +25,16 @@ mixin ViewportNotificationMixin on Notification {
   int _depth = 0;
 
   @override
+  bool visitAncestor(Element element) {
+    if (element is RenderObjectElement && element.renderObject is RenderAbstractViewport)
+      _depth += 1;
+    return super.visitAncestor(element);
+  }
+
+  @override
   void debugFillDescription(List<String> description) {
     super.debugFillDescription(description);
     description.add('depth: $depth (${ depth == 0 ? "local" : "remote"})');
-  }
-}
-
-/// A mixin that allows [Element]s containing [Viewport] like widgets to correctly
-/// modify the notification depth of a [ViewportNotificationMixin].
-///
-/// See also:
-///   * [Viewport], which creates a custom [MultiChildRenderObjectElement] that mixes
-///     this in.
-mixin ViewportElementMixin  on NotifiableElementMixin {
-  @override
-  bool onNotification(Notification notification) {
-    if (notification is ViewportNotificationMixin) {
-      notification._depth += 1;
-    }
-    return false;
   }
 }
 
@@ -118,10 +109,10 @@ abstract class ScrollNotification extends LayoutChangedNotification with Viewpor
 class ScrollStartNotification extends ScrollNotification {
   /// Creates a notification that a [Scrollable] widget has started scrolling.
   ScrollStartNotification({
-    required super.metrics,
-    required super.context,
+    required ScrollMetrics metrics,
+    required BuildContext? context,
     this.dragDetails,
-  });
+  }) : super(metrics: metrics, context: context);
 
   /// If the [Scrollable] started scrolling because of a drag, the details about
   /// that drag start.
@@ -132,9 +123,8 @@ class ScrollStartNotification extends ScrollNotification {
   @override
   void debugFillDescription(List<String> description) {
     super.debugFillDescription(description);
-    if (dragDetails != null) {
+    if (dragDetails != null)
       description.add('$dragDetails');
-    }
   }
 }
 
@@ -150,16 +140,11 @@ class ScrollUpdateNotification extends ScrollNotification {
   /// Creates a notification that a [Scrollable] widget has changed its scroll
   /// position.
   ScrollUpdateNotification({
-    required super.metrics,
-    required BuildContext super.context,
+    required ScrollMetrics metrics,
+    required BuildContext context,
     this.dragDetails,
     this.scrollDelta,
-    int? depth,
-  }) {
-    if (depth != null) {
-      _depth = depth;
-    }
-  }
+  }) : super(metrics: metrics, context: context);
 
   /// If the [Scrollable] changed its scroll position because of a drag, the
   /// details about that drag update.
@@ -174,9 +159,8 @@ class ScrollUpdateNotification extends ScrollNotification {
   void debugFillDescription(List<String> description) {
     super.debugFillDescription(description);
     description.add('scrollDelta: $scrollDelta');
-    if (dragDetails != null) {
+    if (dragDetails != null)
       description.add('$dragDetails');
-    }
   }
 }
 
@@ -193,15 +177,16 @@ class OverscrollNotification extends ScrollNotification {
   /// Creates a notification that a [Scrollable] widget has changed its scroll
   /// position outside of its scroll bounds.
   OverscrollNotification({
-    required super.metrics,
-    required BuildContext super.context,
+    required ScrollMetrics metrics,
+    required BuildContext context,
     this.dragDetails,
     required this.overscroll,
     this.velocity = 0.0,
   }) : assert(overscroll != null),
        assert(overscroll.isFinite),
        assert(overscroll != 0.0),
-       assert(velocity != null);
+       assert(velocity != null),
+       super(metrics: metrics, context: context);
 
   /// If the [Scrollable] overscrolled because of a drag, the details about that
   /// drag update.
@@ -228,9 +213,8 @@ class OverscrollNotification extends ScrollNotification {
     super.debugFillDescription(description);
     description.add('overscroll: ${overscroll.toStringAsFixed(1)}');
     description.add('velocity: ${velocity.toStringAsFixed(1)}');
-    if (dragDetails != null) {
+    if (dragDetails != null)
       description.add('$dragDetails');
-    }
   }
 }
 
@@ -243,10 +227,10 @@ class OverscrollNotification extends ScrollNotification {
 class ScrollEndNotification extends ScrollNotification {
   /// Creates a notification that a [Scrollable] widget has stopped scrolling.
   ScrollEndNotification({
-    required super.metrics,
-    required BuildContext super.context,
+    required ScrollMetrics metrics,
+    required BuildContext context,
     this.dragDetails,
-  });
+  }) : super(metrics: metrics, context: context);
 
   /// If the [Scrollable] stopped scrolling because of a drag, the details about
   /// that drag end.
@@ -264,9 +248,8 @@ class ScrollEndNotification extends ScrollNotification {
   @override
   void debugFillDescription(List<String> description) {
     super.debugFillDescription(description);
-    if (dragDetails != null) {
+    if (dragDetails != null)
       description.add('$dragDetails');
-    }
   }
 }
 
@@ -280,10 +263,10 @@ class UserScrollNotification extends ScrollNotification {
   /// Creates a notification that the user has changed the direction in which
   /// they are scrolling.
   UserScrollNotification({
-    required super.metrics,
-    required BuildContext super.context,
+    required ScrollMetrics metrics,
+    required BuildContext context,
     required this.direction,
-  });
+  }) : super(metrics: metrics, context: context);
 
   /// The direction in which the user is scrolling.
   final ScrollDirection direction;

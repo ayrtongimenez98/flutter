@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -45,7 +47,7 @@ void main() {
         stdout: '[ro.hardware]: [goldfish]\n[ro.build.characteristics]: [unused]',
         // Heap corruption exit code.
         exitCode: -1073740940,
-      ),
+      )
     ];
 
     final AndroidDevice windowsDevice = setUpAndroidDevice(
@@ -54,7 +56,7 @@ void main() {
     );
     final AndroidDevice linuxDevice = setUpAndroidDevice(
       processManager: FakeProcessManager.list(commands.toList()),
-      platform: FakePlatform(),
+      platform: FakePlatform(operatingSystem: 'linux'),
     );
     final AndroidDevice macOsDevice = setUpAndroidDevice(
       processManager: FakeProcessManager.list(commands.toList()),
@@ -88,8 +90,8 @@ void main() {
           FakeCommand(
             command: const <String>['adb', '-s', '1234', 'shell', 'getprop'],
             stdout: '[ro.product.cpu.abi]: [${entry.key.first}]\n'
-              '[ro.product.cpu.abilist]: [${entry.key.last}]',
-          ),
+              '[ro.product.cpu.abilist]: [${entry.key.last}]'
+          )
         ]),
       );
 
@@ -117,7 +119,7 @@ void main() {
             command: const <String>['adb', '-s', '1234', 'shell', 'getprop'],
             stdout: '[ro.product.cpu.abi]: [${entry.key.first}]\n'
               '[ro.product.cpu.abilist]: [${entry.key.last}]'
-          ),
+          )
         ]),
       );
 
@@ -234,7 +236,7 @@ flutter:
         const FakeCommand(
           command: <String>['adb', '-s', 'emulator-5555', 'shell', 'getprop'],
           stdout: '[ro.hardware]: [goldfish]'
-        ),
+        )
       ]),
       id: 'emulator-5555',
       androidConsoleSocketFactory: (String host, int port) async =>
@@ -256,11 +258,11 @@ flutter:
         const FakeCommand(
           command: <String>['adb', '-s', 'emulator-5555', 'shell', 'getprop'],
           stdout: '[ro.hardware]: [samsungexynos7420]'
-        ),
+        )
       ]),
       androidConsoleSocketFactory: (String host, int port) async {
         socketWasCreated = true;
-        throw Exception('Socket was created for non-emulator');
+        throw 'Socket was created for non-emulator';
       }
     );
 
@@ -275,11 +277,11 @@ flutter:
         const FakeCommand(
           command: <String>['adb', '-s', '1234', 'shell', 'getprop'],
           stdout: '[ro.hardware]: [goldfish]'
-        ),
+        )
       ]),
       androidConsoleSocketFactory: (String host, int port) async {
         socketWasCreated = true;
-        throw Exception('Socket was created for emulator without port in ID');
+        throw 'Socket was created for emulator without port in ID';
       },
     );
 
@@ -293,7 +295,7 @@ flutter:
         const FakeCommand(
           command: <String>['adb', '-s', '1234', 'shell', 'getprop'],
           stdout: '[ro.hardware]: [goldfish]'
-        ),
+        )
       ]),
       androidConsoleSocketFactory: (String host, int port) => throw Exception('Fake socket error'),
     );
@@ -307,7 +309,7 @@ flutter:
         const FakeCommand(
           command: <String>['adb', '-s', '1234', 'shell', 'getprop'],
           stdout: '[ro.hardware]: [goldfish]'
-        ),
+        )
       ]),
       androidConsoleSocketFactory: (String host, int port) async =>
         FakeUnresponsiveAndroidConsoleSocket(),
@@ -322,7 +324,7 @@ flutter:
         const FakeCommand(
           command: <String>['adb', '-s', '1234', 'shell', 'getprop'],
           stdout: '[ro.hardware]: [goldfish]'
-        ),
+        )
       ]),
       androidConsoleSocketFactory: (String host, int port) async =>
         FakeDisconnectingAndroidConsoleSocket()
@@ -337,7 +339,7 @@ flutter:
         const FakeCommand(
           command: <String>['adb', '-s', '1234', 'shell', '-x', 'logcat', '-v', 'time', '-t', '1'],
           exitCode: 1,
-        ),
+        )
       ])
     );
 
@@ -357,7 +359,7 @@ flutter:
         ),
         const FakeCommand(
           command: <String>['adb', '-s', '1234', 'shell', '-x', 'logcat', '-v', 'time'],
-        ),
+        )
       ])
     );
 
@@ -457,18 +459,17 @@ Uptime: 441088659 Realtime: 521464097
 }
 
 AndroidDevice setUpAndroidDevice({
-  String? id,
-  AndroidSdk? androidSdk,
-  FileSystem? fileSystem,
-  ProcessManager? processManager,
-  Platform? platform,
+  String id,
+  AndroidSdk androidSdk,
+  FileSystem fileSystem,
+  ProcessManager processManager,
+  Platform platform,
   AndroidConsoleSocketFactory androidConsoleSocketFactory = kAndroidConsoleSocketFactory,
 }) {
   androidSdk ??= FakeAndroidSdk();
   return AndroidDevice(id ?? '1234',
-    modelID: 'TestModel',
     logger: BufferLogger.test(),
-    platform: platform ?? FakePlatform(),
+    platform: platform ?? FakePlatform(operatingSystem: 'linux'),
     androidSdk: androidSdk,
     fileSystem: fileSystem ?? MemoryFileSystem.test(),
     processManager: processManager ?? FakeProcessManager.any(),
@@ -664,7 +665,7 @@ class FakeWorkingAndroidConsoleSocket extends Fake implements Socket {
       // as part of the previous text to ensure both are handled.
       _controller.add('OK\n');
     } else {
-      throw Exception('Unexpected command $text');
+      throw 'Unexpected command $text';
     }
   }
 

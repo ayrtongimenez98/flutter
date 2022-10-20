@@ -18,14 +18,52 @@ import 'will_pop_scope.dart';
 /// with a context whose ancestor is the [Form], or pass a [GlobalKey] to the
 /// [Form] constructor and call [GlobalKey.currentState].
 ///
-/// {@tool dartpad}
+/// {@tool dartpad --template=stateful_widget_scaffold}
 /// This example shows a [Form] with one [TextFormField] to enter an email
 /// address and an [ElevatedButton] to submit the form. A [GlobalKey] is used here
 /// to identify the [Form] and validate input.
 ///
 /// ![](https://flutter.github.io/assets-for-api-docs/assets/widgets/form.png)
 ///
-/// ** See code in examples/api/lib/widgets/form/form.0.dart **
+/// ```dart
+/// final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+///
+/// @override
+/// Widget build(BuildContext context) {
+///   return Form(
+///     key: _formKey,
+///     child: Column(
+///       crossAxisAlignment: CrossAxisAlignment.start,
+///       children: <Widget>[
+///         TextFormField(
+///           decoration: const InputDecoration(
+///             hintText: 'Enter your email',
+///           ),
+///           validator: (String? value) {
+///             if (value == null || value.isEmpty) {
+///               return 'Please enter some text';
+///             }
+///             return null;
+///           },
+///         ),
+///         Padding(
+///           padding: const EdgeInsets.symmetric(vertical: 16.0),
+///           child: ElevatedButton(
+///             onPressed: () {
+///               // Validate will return true if the form is valid, or false if
+///               // the form is invalid.
+///               if (_formKey.currentState!.validate()) {
+///                 // Process data.
+///               }
+///             },
+///             child: const Text('Submit'),
+///           ),
+///         ),
+///       ],
+///     ),
+///   );
+/// }
+/// ```
 /// {@end-tool}
 ///
 /// See also:
@@ -38,13 +76,27 @@ class Form extends StatefulWidget {
   ///
   /// The [child] argument must not be null.
   const Form({
-    super.key,
+    Key? key,
     required this.child,
+    @Deprecated(
+      'Use autovalidateMode parameter which provides more specific '
+      'behavior related to auto validation. '
+      'This feature was deprecated after v1.19.0.',
+    )
+    this.autovalidate = false,
     this.onWillPop,
     this.onChanged,
     AutovalidateMode? autovalidateMode,
   }) : assert(child != null),
-       autovalidateMode = autovalidateMode ?? AutovalidateMode.disabled;
+       assert(autovalidate != null),
+       assert(
+         autovalidate == false ||
+         autovalidate == true && autovalidateMode == null,
+         'autovalidate and autovalidateMode should not be used together.',
+       ),
+       autovalidateMode = autovalidateMode ??
+         (autovalidate ? AutovalidateMode.always : AutovalidateMode.disabled),
+       super(key: key);
 
   /// Returns the closest [FormState] which encloses the given context.
   ///
@@ -89,6 +141,15 @@ class Form extends StatefulWidget {
   ///
   /// {@macro flutter.widgets.FormField.autovalidateMode}
   final AutovalidateMode autovalidateMode;
+
+  /// Used to enable/disable form fields auto validation and update their error
+  /// text.
+  @Deprecated(
+    'Use autovalidateMode parameter which provides more specific '
+    'behavior related to auto validation. '
+    'This feature was deprecated after v1.19.0.',
+  )
+  final bool autovalidate;
 
   @override
   FormState createState() => FormState();
@@ -156,9 +217,8 @@ class FormState extends State<Form> {
 
   /// Saves every [FormField] that is a descendant of this [Form].
   void save() {
-    for (final FormFieldState<dynamic> field in _fields) {
+    for (final FormFieldState<dynamic> field in _fields)
       field.save();
-    }
   }
 
   /// Resets every [FormField] that is a descendant of this [Form] back to its
@@ -169,9 +229,8 @@ class FormState extends State<Form> {
   /// If the form's [Form.autovalidateMode] property is [AutovalidateMode.always],
   /// the fields will all be revalidated after being reset.
   void reset() {
-    for (final FormFieldState<dynamic> field in _fields) {
+    for (final FormFieldState<dynamic> field in _fields)
       field.reset();
-    }
     _hasInteractedByUser = false;
     _fieldDidChange();
   }
@@ -188,20 +247,21 @@ class FormState extends State<Form> {
 
   bool _validate() {
     bool hasError = false;
-    for (final FormFieldState<dynamic> field in _fields) {
+    for (final FormFieldState<dynamic> field in _fields)
       hasError = !field.validate() || hasError;
-    }
     return !hasError;
   }
 }
 
 class _FormScope extends InheritedWidget {
   const _FormScope({
-    required super.child,
+    Key? key,
+    required Widget child,
     required FormState formState,
     required int generation,
   }) : _formState = formState,
-       _generation = generation;
+       _generation = generation,
+       super(key: key, child: child);
 
   final FormState _formState;
 
@@ -260,16 +320,29 @@ class FormField<T> extends StatefulWidget {
   ///
   /// The [builder] argument must not be null.
   const FormField({
-    super.key,
+    Key? key,
     required this.builder,
     this.onSaved,
     this.validator,
     this.initialValue,
+    @Deprecated(
+      'Use autovalidateMode parameter which provides more specific '
+      'behavior related to auto validation. '
+      'This feature was deprecated after v1.19.0.',
+    )
+    this.autovalidate = false,
     this.enabled = true,
     AutovalidateMode? autovalidateMode,
     this.restorationId,
   }) : assert(builder != null),
-       autovalidateMode = autovalidateMode ?? AutovalidateMode.disabled;
+       assert(
+         autovalidate == false ||
+         autovalidate == true && autovalidateMode == null,
+         'autovalidate and autovalidateMode should not be used together.',
+       ),
+       autovalidateMode = autovalidateMode ??
+         (autovalidate ? AutovalidateMode.always : AutovalidateMode.disabled),
+       super(key: key);
 
   /// An optional method to call with the final value when the form is saved via
   /// [FormState.save].
@@ -309,14 +382,25 @@ class FormField<T> extends StatefulWidget {
   /// error text.
   ///
   /// {@template flutter.widgets.FormField.autovalidateMode}
-  /// If [AutovalidateMode.onUserInteraction], this FormField will only
-  /// auto-validate after its content changes. If [AutovalidateMode.always], it
-  /// will auto-validate even without user interaction. If
-  /// [AutovalidateMode.disabled], auto-validation will be disabled.
+  /// If [AutovalidateMode.onUserInteraction] this form field will only
+  /// auto-validate after its content changes, if [AutovalidateMode.always] it
+  /// will auto validate even without user interaction and
+  /// if [AutovalidateMode.disabled] the auto validation will be disabled.
   ///
-  /// Defaults to [AutovalidateMode.disabled], cannot be null.
+  /// Defaults to [AutovalidateMode.disabled] if `autovalidate` is false which
+  /// means no auto validation will occur. If `autovalidate` is true then this
+  /// is set to [AutovalidateMode.always] for backward compatibility.
   /// {@endtemplate}
   final AutovalidateMode autovalidateMode;
+
+  /// Used to enable/disable auto validation and update their error
+  /// text.
+  @Deprecated(
+    'Use autovalidateMode parameter which provides more specific '
+    'behavior related to auto validation. '
+    'This feature was deprecated after v1.19.0.',
+  )
+  final bool autovalidate;
 
   /// Restoration ID to save and restore the state of the form field.
   ///
@@ -394,9 +478,8 @@ class FormFieldState<T> extends State<FormField<T>> with RestorationMixin {
   }
 
   void _validate() {
-    if (widget.validator != null) {
+    if (widget.validator != null)
       _errorText.value = widget.validator!(_value);
-    }
   }
 
   /// Updates this field's state to the new value. Useful for responding to
@@ -421,7 +504,6 @@ class FormFieldState<T> extends State<FormField<T>> with RestorationMixin {
   /// the value should be set by a call to [didChange], which ensures that
   /// `setState` is called.
   @protected
-  // ignore: use_setters_to_change_properties, (API predates enforcing the lint)
   void setValue(T? value) {
     _value = value;
   }

@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'dart:async';
+import 'dart:io';
 
 import 'package:file/memory.dart';
 import 'package:flutter_tools/src/android/android_device.dart';
@@ -11,7 +14,6 @@ import 'package:flutter_tools/src/artifacts.dart';
 import 'package:flutter_tools/src/base/common.dart';
 import 'package:flutter_tools/src/base/dds.dart';
 import 'package:flutter_tools/src/base/file_system.dart';
-import 'package:flutter_tools/src/base/io.dart';
 import 'package:flutter_tools/src/base/logger.dart';
 import 'package:flutter_tools/src/base/terminal.dart';
 import 'package:flutter_tools/src/build_info.dart';
@@ -19,24 +21,42 @@ import 'package:flutter_tools/src/cache.dart';
 import 'package:flutter_tools/src/commands/attach.dart';
 import 'package:flutter_tools/src/device.dart';
 import 'package:flutter_tools/src/device_port_forwarder.dart';
-import 'package:flutter_tools/src/globals.dart' as globals;
+import 'package:flutter_tools/src/globals_null_migrated.dart' as globals;
 import 'package:flutter_tools/src/ios/application_package.dart';
 import 'package:flutter_tools/src/ios/devices.dart';
 import 'package:flutter_tools/src/macos/macos_ipad_device.dart';
-import 'package:flutter_tools/src/mdns_discovery.dart';
 import 'package:flutter_tools/src/project.dart';
-import 'package:flutter_tools/src/reporting/reporting.dart';
 import 'package:flutter_tools/src/resident_runner.dart';
 import 'package:flutter_tools/src/run_hot.dart';
 import 'package:flutter_tools/src/vmservice.dart';
-import 'package:multicast_dns/multicast_dns.dart';
+import 'package:meta/meta.dart';
 import 'package:test/fake.dart';
 import 'package:vm_service/vm_service.dart' as vm_service;
 
 import '../../src/common.dart';
 import '../../src/context.dart';
 import '../../src/fake_devices.dart';
+import '../../src/fake_vm_services.dart';
 import '../../src/test_flutter_command_runner.dart';
+
+final vm_service.Isolate fakeUnpausedIsolate = vm_service.Isolate(
+  id: '1',
+  pauseEvent: vm_service.Event(
+    kind: vm_service.EventKind.kResume,
+    timestamp: 0
+  ),
+  breakpoints: <vm_service.Breakpoint>[],
+  exceptionPauseMode: null,
+  isolateFlags: <vm_service.IsolateFlag>[],
+  libraries: <vm_service.LibraryRef>[],
+  livePorts: 0,
+  name: 'test',
+  number: '1',
+  pauseOnExit: false,
+  runnable: true,
+  startTime: 0,
+  isSystemIsolate: false,
+);
 
 void main() {
   tearDown(() {
@@ -44,8 +64,8 @@ void main() {
   });
 
   group('attach', () {
-    late StreamLogger logger;
-    late FileSystem testFileSystem;
+    StreamLogger logger;
+    FileSystem testFileSystem;
 
     setUp(() {
       Cache.disableLocking();
@@ -63,10 +83,10 @@ void main() {
       const int devicePort = 499;
       const int hostPort = 42;
 
-      late FakeDeviceLogReader fakeLogReader;
-      late RecordingPortForwarder portForwarder;
-      late FakeDartDevelopmentService fakeDds;
-      late FakeAndroidDevice device;
+      FakeDeviceLogReader fakeLogReader;
+      RecordingPortForwarder portForwarder;
+      FakeDartDevelopmentService fakeDds;
+      FakeAndroidDevice device;
 
       setUp(() {
         fakeLogReader = FakeDeviceLogReader();
@@ -81,49 +101,10 @@ void main() {
         fakeLogReader.dispose();
       });
 
-      testUsingContext('succeeds with iOS device', () async {
-        final FakeIOSDevice device = FakeIOSDevice(
-          logReader: fakeLogReader,
-          portForwarder: portForwarder,
-          onGetLogReader: () {
-            fakeLogReader.addLine('Foo');
-            fakeLogReader.addLine('The Dart VM service is listening on http://127.0.0.1:$devicePort');
-            return fakeLogReader;
-          },
-        );
-
-        testDeviceManager.addDevice(device);
-        final Completer<void> completer = Completer<void>();
-        final StreamSubscription<String> loggerSubscription = logger.stream.listen((String message) {
-          if (message == '[verbose] Observatory URL on device: http://127.0.0.1:$devicePort') {
-            // The "Observatory URL on device" message is output by the ProtocolDiscovery when it found the observatory.
-            completer.complete();
-          }
-        });
-        final Future<void> task = createTestCommandRunner(AttachCommand()).run(<String>['attach']);
-        await completer.future;
-
-        expect(portForwarder.devicePort, devicePort);
-        expect(portForwarder.hostPort, hostPort);
-
-        await fakeLogReader.dispose();
-        await expectLoggerInterruptEndsTask(task, logger);
-        await loggerSubscription.cancel();
-      }, overrides: <Type, Generator>{
-        FileSystem: () => testFileSystem,
-        ProcessManager: () => FakeProcessManager.any(),
-        Logger: () => logger,
-        MDnsObservatoryDiscovery: () => MDnsObservatoryDiscovery(
-          mdnsClient: FakeMDnsClient(<PtrResourceRecord>[], <String, List<SrvResourceRecord>>{}),
-          logger: logger,
-          flutterUsage: TestUsage(),
-        ),
-      });
-
       testUsingContext('finds observatory port and forwards', () async {
         device.onGetLogReader = () {
           fakeLogReader.addLine('Foo');
-          fakeLogReader.addLine('The Dart VM service is listening on http://127.0.0.1:$devicePort');
+          fakeLogReader.addLine('Observatory listening on http://127.0.0.1:$devicePort');
           return fakeLogReader;
         };
         testDeviceManager.addDevice(device);
@@ -152,7 +133,7 @@ void main() {
       testUsingContext('Fails with tool exit on bad Observatory uri', () async {
         device.onGetLogReader = () {
           fakeLogReader.addLine('Foo');
-          fakeLogReader.addLine('The Dart VM service is listening on http://127.0.0.1:$devicePort');
+          fakeLogReader.addLine('Observatory listening on http://127.0.0.1:$devicePort');
           fakeLogReader.dispose();
           return fakeLogReader;
         };
@@ -167,7 +148,7 @@ void main() {
       testUsingContext('accepts filesystem parameters', () async {
         device.onGetLogReader = () {
           fakeLogReader.addLine('Foo');
-          fakeLogReader.addLine('The Dart VM service is listening on http://127.0.0.1:$devicePort');
+          fakeLogReader.addLine('Observatory listening on http://127.0.0.1:$devicePort');
           return fakeLogReader;
         };
         testDeviceManager.addDevice(device);
@@ -179,8 +160,8 @@ void main() {
 
         final FakeHotRunner hotRunner = FakeHotRunner();
         hotRunner.onAttach = (
-          Completer<DebugConnectionInfo>? connectionInfoCompleter,
-          Completer<void>? appStartedCompleter,
+          Completer<DebugConnectionInfo> connectionInfoCompleter,
+          Completer<void> appStartedCompleter,
           bool allowExistingDdsInstance,
           bool enableDevTools,
         ) async => 0;
@@ -242,7 +223,7 @@ void main() {
       testUsingContext('exits when observatory-port is specified and debug-port is not', () async {
         device.onGetLogReader = () {
           fakeLogReader.addLine('Foo');
-          fakeLogReader.addLine('The Dart VM service is listening on http://127.0.0.1:$devicePort');
+          fakeLogReader.addLine('Observatory listening on http://127.0.0.1:$devicePort');
           return fakeLogReader;
         };
         testDeviceManager.addDevice(device);
@@ -264,8 +245,8 @@ void main() {
     group('forwarding to given port', () {
       const int devicePort = 499;
       const int hostPort = 42;
-      late RecordingPortForwarder portForwarder;
-      late FakeAndroidDevice device;
+      RecordingPortForwarder portForwarder;
+      FakeAndroidDevice device;
 
       setUp(() {
         final FakeDartDevelopmentService fakeDds = FakeDartDevelopmentService();
@@ -448,8 +429,8 @@ void main() {
       final FakeHotRunnerFactory hotRunnerFactory = FakeHotRunnerFactory()
         ..hotRunner = hotRunner;
       hotRunner.onAttach = (
-        Completer<DebugConnectionInfo>? connectionInfoCompleter,
-        Completer<void>? appStartedCompleter,
+        Completer<DebugConnectionInfo> connectionInfoCompleter,
+        Completer<void> appStartedCompleter,
         bool allowExistingDdsInstance,
         bool enableDevTools,
       ) async {
@@ -478,14 +459,15 @@ void main() {
         ..hotRunner = hotRunner;
 
       hotRunner.onAttach = (
-        Completer<DebugConnectionInfo>? connectionInfoCompleter,
-        Completer<void>? appStartedCompleter,
+        Completer<DebugConnectionInfo> connectionInfoCompleter,
+        Completer<void> appStartedCompleter,
         bool allowExistingDdsInstance,
         bool enableDevTools,
       ) async {
         await null;
         throw vm_service.RPCError('flutter._listViews', RPCErrorCodes.kInvalidParams, '');
       };
+
 
       testDeviceManager.addDevice(device);
       testFileSystem.file('lib/main.dart').createSync();
@@ -502,7 +484,7 @@ void main() {
 }
 
 class FakeHotRunner extends Fake implements HotRunner {
-  late Future<int> Function(Completer<DebugConnectionInfo>?, Completer<void>?, bool, bool) onAttach;
+  Future<int> Function(Completer<DebugConnectionInfo>, Completer<void>, bool, bool) onAttach;
 
   @override
   bool exited = false;
@@ -512,36 +494,35 @@ class FakeHotRunner extends Fake implements HotRunner {
 
   @override
   Future<int> attach({
-    Completer<DebugConnectionInfo>? connectionInfoCompleter,
-    Completer<void>? appStartedCompleter,
+    Completer<DebugConnectionInfo> connectionInfoCompleter,
+    Completer<void> appStartedCompleter,
     bool allowExistingDdsInstance = false,
     bool enableDevTools = false,
-    bool needsFullRestart = true,
   }) {
     return onAttach(connectionInfoCompleter, appStartedCompleter, allowExistingDdsInstance, enableDevTools);
   }
 }
 
 class FakeHotRunnerFactory extends Fake implements HotRunnerFactory {
-  late HotRunner hotRunner;
-  String? dillOutputPath;
-  String? projectRootPath;
-  late List<FlutterDevice> devices;
+  HotRunner hotRunner;
+  String dillOutputPath;
+  String projectRootPath;
+  List<FlutterDevice> devices;
 
   @override
   HotRunner build(
     List<FlutterDevice> devices, {
-    required String target,
-    required DebuggingOptions debuggingOptions,
+    String target,
+    DebuggingOptions debuggingOptions,
     bool benchmarkMode = false,
-    File? applicationBinary,
+    File applicationBinary,
     bool hostIsIde = false,
-    String? projectRootPath,
-    String? packagesFilePath,
-    String? dillOutputPath,
+    String projectRootPath,
+    String packagesFilePath,
+    String dillOutputPath,
     bool stayResident = true,
     bool ipv6 = false,
-    FlutterProject? flutterProject,
+    FlutterProject flutterProject,
   }) {
     this.devices = devices;
     this.dillOutputPath = dillOutputPath;
@@ -553,17 +534,17 @@ class FakeHotRunnerFactory extends Fake implements HotRunnerFactory {
 class RecordingPortForwarder implements DevicePortForwarder {
   RecordingPortForwarder([this.hostPort]);
 
-  int? devicePort;
-  int? hostPort;
+  int devicePort;
+  int hostPort;
 
   @override
   Future<void> dispose() async { }
 
   @override
-  Future<int> forward(int devicePort, {int? hostPort}) async {
+  Future<int> forward(int devicePort, {int hostPort}) async {
     this.devicePort = devicePort;
     this.hostPort ??= hostPort;
-    return this.hostPort!;
+    return this.hostPort;
   }
 
   @override
@@ -580,53 +561,27 @@ class StreamLogger extends Logger {
   @override
   void printError(
     String message, {
-    StackTrace? stackTrace,
-    bool? emphasis,
-    TerminalColor? color,
-    int? indent,
-    int? hangingIndent,
-    bool? wrap,
+    StackTrace stackTrace,
+    bool emphasis,
+    TerminalColor color,
+    int indent,
+    int hangingIndent,
+    bool wrap,
   }) {
-    hadErrorOutput = true;
-    _log('[stderr] $message');
-  }
-
-  @override
-  void printWarning(
-    String message, {
-    bool? emphasis,
-    TerminalColor? color,
-    int? indent,
-    int? hangingIndent,
-    bool? wrap,
-  }) {
-    hadWarningOutput = true;
     _log('[stderr] $message');
   }
 
   @override
   void printStatus(
     String message, {
-    bool? emphasis,
-    TerminalColor? color,
-    bool? newline,
-    int? indent,
-    int? hangingIndent,
-    bool? wrap,
+    bool emphasis,
+    TerminalColor color,
+    bool newline,
+    int indent,
+    int hangingIndent,
+    bool wrap,
   }) {
     _log('[stdout] $message');
-  }
-
-  @override
-  void printBox(
-    String message, {
-    String? title,
-  }) {
-    if (title == null) {
-      _log('[stdout] $message');
-    } else {
-      _log('[stdout] $title: $message');
-    }
   }
 
   @override
@@ -637,8 +592,8 @@ class StreamLogger extends Logger {
   @override
   Status startProgress(
     String message, {
-    Duration? timeout,
-    String? progressId,
+    @required Duration timeout,
+    String progressId,
     bool multilineOutput = false,
     bool includeTiming = true,
     int progressIndicatorPadding = kDefaultStatusPadding,
@@ -650,11 +605,7 @@ class StreamLogger extends Logger {
   }
 
   @override
-  Status startSpinner({
-    VoidCallback? onFinish,
-    Duration? timeout,
-    SlowWarningCallback? slowWarningCallback,
-  }) {
+  Status startSpinner({ VoidCallback onFinish }) {
     return SilentStatus(
       stopwatch: Stopwatch(),
       onFinish: onFinish,
@@ -680,7 +631,7 @@ class StreamLogger extends Logger {
   Stream<String> get stream => _controller.stream;
 
   @override
-  void sendEvent(String name, [Map<String, dynamic>? args]) { }
+  void sendEvent(String name, [Map<String, dynamic> args]) { }
 
   @override
   bool get supportsColor => throw UnimplementedError();
@@ -707,6 +658,108 @@ Future<void> expectLoggerInterruptEndsTask(Future<void> task, StreamLogger logge
   );
 }
 
+VMServiceConnector getFakeVmServiceFactory({
+  @required Completer<void> vmServiceDoneCompleter,
+}) {
+  assert(vmServiceDoneCompleter != null);
+
+  return (
+    Uri httpUri, {
+    ReloadSources reloadSources,
+    Restart restart,
+    CompileExpression compileExpression,
+    GetSkSLMethod getSkSLMethod,
+    PrintStructuredErrorLogMethod printStructuredErrorLogMethod,
+    CompressionOptions compression,
+    Device device,
+    Logger logger,
+  }) async {
+    final FakeVmServiceHost fakeVmServiceHost = FakeVmServiceHost(
+      requests: <VmServiceExpectation>[
+        FakeVmServiceRequest(
+          method: kListViewsMethod,
+          args: null,
+          jsonResponse: <String, Object>{
+            'views': <Object>[
+              <String, Object>{
+                'id': '1',
+                'isolate': fakeUnpausedIsolate.toJson()
+              },
+            ],
+          },
+        ),
+        FakeVmServiceRequest(
+          method: 'getVM',
+          args: null,
+          jsonResponse: vm_service.VM.parse(<String, Object>{})
+            .toJson(),
+        ),
+        FakeVmServiceRequest(
+          method: '_createDevFS',
+          args: <String, Object>{
+            'fsName': globals.fs.currentDirectory.absolute.path,
+          },
+          jsonResponse: <String, Object>{
+            'uri': globals.fs.currentDirectory.absolute.path,
+          },
+        ),
+        FakeVmServiceRequest(
+          method: kListViewsMethod,
+          args: null,
+          jsonResponse: <String, Object>{
+            'views': <Object>[
+              <String, Object>{
+                'id': '1',
+                'isolate': fakeUnpausedIsolate.toJson()
+              },
+            ],
+          },
+        ),
+      ],
+    );
+    return fakeVmServiceHost.vmService;
+  };
+}
+
+class TestHotRunnerFactory extends HotRunnerFactory {
+  HotRunner _runner;
+
+  @override
+  HotRunner build(
+    List<FlutterDevice> devices, {
+    String target,
+    DebuggingOptions debuggingOptions,
+    bool benchmarkMode = false,
+    File applicationBinary,
+    bool hostIsIde = false,
+    String projectRootPath,
+    String packagesFilePath,
+    String dillOutputPath,
+    bool stayResident = true,
+    bool ipv6 = false,
+    FlutterProject flutterProject,
+  }) {
+    _runner ??= HotRunner(
+      devices,
+      target: target,
+      debuggingOptions: debuggingOptions,
+      benchmarkMode: benchmarkMode,
+      applicationBinary: applicationBinary,
+      hostIsIde: hostIsIde,
+      projectRootPath: projectRootPath,
+      dillOutputPath: dillOutputPath,
+      stayResident: stayResident,
+      ipv6: ipv6,
+    );
+    return _runner;
+  }
+
+  Future<void> exitApp() async {
+    assert(_runner != null);
+    await _runner.exit();
+  }
+}
+
 class FakeDartDevelopmentService extends Fake implements DartDevelopmentService {
   @override
   Future<void> get done => noopCompleter.future;
@@ -714,26 +767,22 @@ class FakeDartDevelopmentService extends Fake implements DartDevelopmentService 
 
   @override
   Future<void> startDartDevelopmentService(
-    Uri observatoryUri, {
-    required Logger logger,
-    int? hostPort,
-    bool? ipv6,
-    bool? disableServiceAuthCodes,
-    bool cacheStartupProfile = false,
+    Uri observatoryUri,
+    int hostPort,
+    bool ipv6,
+    bool disableServiceAuthCodes, {
+    @required Logger logger,
   }) async {}
 
   @override
   Uri get uri => Uri.parse('http://localhost:8181');
 }
 
-// Unfortunately Device, despite not being immutable, has an `operator ==`.
-// Until we fix that, we have to also ignore related lints here.
-// ignore: avoid_implementing_value_types
 class FakeAndroidDevice extends Fake implements AndroidDevice {
-  FakeAndroidDevice({required this.id});
+  FakeAndroidDevice({@required this.id});
 
   @override
-  late DartDevelopmentService dds;
+  DartDevelopmentService dds;
 
   @override
   final String id;
@@ -766,25 +815,20 @@ class FakeAndroidDevice extends Fake implements AndroidDevice {
   bool isSupportedForProject(FlutterProject flutterProject) => true;
 
   @override
-  DevicePortForwarder? portForwarder;
+  DevicePortForwarder portForwarder;
 
-  DeviceLogReader Function()? onGetLogReader;
+  DeviceLogReader Function() onGetLogReader;
 
   @override
   FutureOr<DeviceLogReader> getLogReader({
-    AndroidApk? app,
+    AndroidApk app,
     bool includePastLogs = false,
   }) {
-    if (onGetLogReader == null) {
-      throw UnimplementedError(
-        'Called getLogReader but no onGetLogReader callback was supplied in the constructor to FakeAndroidDevice.',
-      );
-    }
-    return onGetLogReader!();
+    return onGetLogReader();
   }
 
   @override
-  OverrideArtifacts? get artifactOverrides => null;
+  OverrideArtifacts get artifactOverrides => null;
 
   @override
   final PlatformType platformType = PlatformType.android;
@@ -793,44 +837,25 @@ class FakeAndroidDevice extends Fake implements AndroidDevice {
   Category get category => Category.mobile;
 }
 
-// Unfortunately Device, despite not being immutable, has an `operator ==`.
-// Until we fix that, we have to also ignore related lints here.
-// ignore: avoid_implementing_value_types
 class FakeIOSDevice extends Fake implements IOSDevice {
-  FakeIOSDevice({
-    DevicePortForwarder? portForwarder,
-    DeviceLogReader? logReader,
-    this.onGetLogReader,
-  }) : _portForwarder = portForwarder, _logReader = logReader;
-
-  final DevicePortForwarder? _portForwarder;
+  FakeIOSDevice({this.dds, this.portForwarder, this.logReader});
 
   @override
-  DevicePortForwarder get portForwarder => _portForwarder!;
+  final DevicePortForwarder portForwarder;
 
   @override
-  DartDevelopmentService get dds => throw UnimplementedError('getter dds not implemented');
+  final DartDevelopmentService dds;
 
-  final DeviceLogReader? _logReader;
-  DeviceLogReader get logReader => _logReader!;
-
-  final DeviceLogReader Function()? onGetLogReader;
+  final DeviceLogReader logReader;
 
   @override
   DeviceLogReader getLogReader({
-    IOSApp? app,
+    IOSApp app,
     bool includePastLogs = false,
-  }) {
-    if (onGetLogReader == null) {
-      throw UnimplementedError(
-        'Called getLogReader but no onGetLogReader callback was supplied in the constructor to FakeIOSDevice',
-      );
-    }
-    return onGetLogReader!();
-  }
+  }) => logReader;
 
   @override
-  OverrideArtifacts? get artifactOverrides => null;
+  OverrideArtifacts get artifactOverrides => null;
 
   @override
   final String name = 'name';
@@ -840,50 +865,4 @@ class FakeIOSDevice extends Fake implements IOSDevice {
 
   @override
   final PlatformType platformType = PlatformType.ios;
-}
-
-class FakeMDnsClient extends Fake implements MDnsClient {
-  FakeMDnsClient(this.ptrRecords, this.srvResponse, {
-    this.txtResponse = const <String, List<TxtResourceRecord>>{},
-    this.osErrorOnStart = false,
-  });
-
-  final List<PtrResourceRecord> ptrRecords;
-  final Map<String, List<SrvResourceRecord>> srvResponse;
-  final Map<String, List<TxtResourceRecord>> txtResponse;
-  final bool osErrorOnStart;
-
-  @override
-  Future<void> start({
-    InternetAddress? listenAddress,
-    NetworkInterfacesFactory? interfacesFactory,
-    int mDnsPort = 5353,
-    InternetAddress? mDnsAddress,
-  }) async {
-    if (osErrorOnStart) {
-      throw const OSError('Operation not supported on socket', 102);
-    }
-  }
-
-  @override
-  Stream<T> lookup<T extends ResourceRecord>(
-    ResourceRecordQuery query, {
-    Duration timeout = const Duration(seconds: 5),
-  }) {
-    if (T == PtrResourceRecord && query.fullyQualifiedName == MDnsObservatoryDiscovery.dartObservatoryName) {
-      return Stream<PtrResourceRecord>.fromIterable(ptrRecords) as Stream<T>;
-    }
-    if (T == SrvResourceRecord) {
-      final String key = query.fullyQualifiedName;
-      return Stream<SrvResourceRecord>.fromIterable(srvResponse[key] ?? <SrvResourceRecord>[]) as Stream<T>;
-    }
-    if (T == TxtResourceRecord) {
-      final String key = query.fullyQualifiedName;
-      return Stream<TxtResourceRecord>.fromIterable(txtResponse[key] ?? <TxtResourceRecord>[]) as Stream<T>;
-    }
-    throw UnsupportedError('Unsupported query type $T');
-  }
-
-  @override
-  void stop() {}
 }

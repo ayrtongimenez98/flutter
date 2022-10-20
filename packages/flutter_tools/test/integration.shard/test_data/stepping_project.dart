@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'project.dart';
 
 class SteppingProject extends Project {
@@ -21,7 +23,7 @@ class SteppingProject extends Project {
 
   import 'package:flutter/material.dart';
 
-  void main() => runApp(MyApp());
+  void main() => runApp(new MyApp());
 
   class MyApp extends StatefulWidget {
     @override
@@ -37,17 +39,17 @@ class SteppingProject extends Project {
 
     Future<void> doAsyncStuff() async {
       print("test"); // BREAKPOINT
-      await Future.value(true); // STEP 1 // STEP 2
-      await Future.microtask(() => true); // STEP 3 // STEP 4
-      await Future.delayed(const Duration(milliseconds: 1)); // STEP 5 // STEP 6
+      await new Future.value(true); // STEP 1 // STEP 2
+      await new Future.microtask(() => true); // STEP 3 // STEP 4
+      await new Future.delayed(const Duration(milliseconds: 1)); // STEP 5 // STEP 6
       print("done!"); // STEP 7
     } // STEP 8
 
     @override
     Widget build(BuildContext context) {
-      return MaterialApp(
+      return new MaterialApp(
         title: 'Flutter Demo',
-        home: Container(),
+        home: new Container(),
       );
     }
   }
@@ -77,7 +79,7 @@ class WebSteppingProject extends Project {
 
   import 'package:flutter/material.dart';
 
-  void main() => runApp(MyApp());
+  void main() => runApp(new MyApp());
 
   class MyApp extends StatefulWidget {
     @override
@@ -93,17 +95,17 @@ class WebSteppingProject extends Project {
 
     Future<void> doAsyncStuff() async {
       print("test"); // BREAKPOINT
-      await Future.value(true); // STEP 1
-      await Future.microtask(() => true); // STEP 2
-      await Future.delayed(const Duration(milliseconds: 1));  // STEP 3
+      await new Future.value(true); // STEP 1
+      await new Future.microtask(() => true); // STEP 2
+      await new Future.delayed(const Duration(milliseconds: 1));  // STEP 3
       print("done!"); // STEP 4
     } // STEP 5
 
     @override
     Widget build(BuildContext context) {
-      return MaterialApp(
+      return new MaterialApp(
         title: 'Flutter Demo',
-        home: Container(),
+        home: new Container(),
       );
     }
   }

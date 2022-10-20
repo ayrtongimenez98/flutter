@@ -18,8 +18,8 @@ export 'package:flutter/services.dart' show SmartQuotesType, SmartDashesType;
 ///
 /// A [Form] ancestor is not required. The [Form] simply makes it easier to
 /// save, reset, or validate multiple fields at once. To use without a [Form],
-/// pass a `GlobalKey<FormFieldState>` (see [GlobalKey]) to the constructor and use
-/// [GlobalKey.currentState] to save or reset the form field.
+/// pass a [GlobalKey] to the constructor and use [GlobalKey.currentState] to
+/// save or reset the form field.
 ///
 /// When a [controller] is specified, its [TextEditingController.text]
 /// defines the [initialValue]. If this [FormField] is part of a scrolling
@@ -31,11 +31,9 @@ export 'package:flutter/services.dart' show SmartQuotesType, SmartDashesType;
 /// If a [controller] is not specified, [initialValue] can be used to give
 /// the automatically generated controller an initial value.
 ///
-/// {@macro flutter.material.textfield.wantKeepAlive}
-///
 /// Remember to call [TextEditingController.dispose] of the [TextEditingController]
-/// when it is no longer needed. This will ensure any resources used by the object
-/// are discarded.
+/// when it is no longer needed. This will ensure we discard any resources used
+/// by the object.
 ///
 /// By default, `decoration` will apply the [ThemeData.inputDecorationTheme] for
 /// the current context to the [InputDecoration], see
@@ -69,11 +67,52 @@ export 'package:flutter/services.dart' show SmartQuotesType, SmartDashesType;
 /// ```
 /// {@end-tool}
 ///
-/// {@tool dartpad}
+/// {@tool dartpad --template=stateful_widget_material}
 /// This example shows how to move the focus to the next field when the user
 /// presses the SPACE key.
 ///
-/// ** See code in examples/api/lib/material/text_form_field/text_form_field.1.dart **
+/// ```dart imports
+/// import 'package:flutter/services.dart';
+/// ```
+///
+/// ```dart
+/// @override
+/// Widget build(BuildContext context) {
+///   return Material(
+///     child: Center(
+///       child: Shortcuts(
+///         shortcuts: const <ShortcutActivator, Intent>{
+///           // Pressing space in the field will now move to the next field.
+///           SingleActivator(LogicalKeyboardKey.space): NextFocusIntent(),
+///         },
+///         child: FocusTraversalGroup(
+///           child: Form(
+///             autovalidateMode: AutovalidateMode.always,
+///             onChanged: () {
+///               Form.of(primaryFocus!.context!)!.save();
+///             },
+///             child: Wrap(
+///               children: List<Widget>.generate(5, (int index) {
+///                 return Padding(
+///                   padding: const EdgeInsets.all(8.0),
+///                   child: ConstrainedBox(
+///                     constraints: BoxConstraints.tight(const Size(200, 50)),
+///                     child: TextFormField(
+///                       onSaved: (String? value) {
+///                         print('Value for field $index saved as "$value"');
+///                       },
+///                     ),
+///                   ),
+///                 );
+///               }),
+///             ),
+///           ),
+///         ),
+///       ),
+///     ),
+///   );
+/// }
+/// ```
 /// {@end-tool}
 ///
 /// See also:
@@ -93,9 +132,9 @@ class TextFormField extends FormField<String> {
   /// to [initialValue] or the empty string.
   ///
   /// For documentation about the various parameters, see the [TextField] class
-  /// and [TextField.new], the constructor.
+  /// and [new TextField], the constructor.
   TextFormField({
-    super.key,
+    Key? key,
     this.controller,
     String? initialValue,
     FocusNode? focusNode,
@@ -118,6 +157,18 @@ class TextFormField extends FormField<String> {
     SmartDashesType? smartDashesType,
     SmartQuotesType? smartQuotesType,
     bool enableSuggestions = true,
+    @Deprecated(
+      'Use autovalidateMode parameter which provide more specific '
+      'behaviour related to auto validation. '
+      'This feature was deprecated after v1.19.0.',
+    )
+    bool autovalidate = false,
+    @Deprecated(
+      'Use maxLengthEnforcement parameter which provides more specific '
+      'behavior related to the maxLength limit. '
+      'This feature was deprecated after v1.25.0-5.0.pre.',
+    )
+    bool maxLengthEnforced = true,
     MaxLengthEnforcement? maxLengthEnforcement,
     int? maxLines = 1,
     int? minLines,
@@ -127,8 +178,8 @@ class TextFormField extends FormField<String> {
     GestureTapCallback? onTap,
     VoidCallback? onEditingComplete,
     ValueChanged<String>? onFieldSubmitted,
-    super.onSaved,
-    super.validator,
+    FormFieldSetter<String>? onSaved,
+    FormFieldValidator<String>? validator,
     List<TextInputFormatter>? inputFormatters,
     bool? enabled,
     double cursorWidth = 2.0,
@@ -137,16 +188,15 @@ class TextFormField extends FormField<String> {
     Color? cursorColor,
     Brightness? keyboardAppearance,
     EdgeInsets scrollPadding = const EdgeInsets.all(20.0),
-    bool? enableInteractiveSelection,
+    bool enableInteractiveSelection = true,
     TextSelectionControls? selectionControls,
     InputCounterWidgetBuilder? buildCounter,
     ScrollPhysics? scrollPhysics,
     Iterable<String>? autofillHints,
     AutovalidateMode? autovalidateMode,
     ScrollController? scrollController,
-    super.restorationId,
+    String? restorationId,
     bool enableIMEPersonalizedLearning = true,
-    MouseCursor? mouseCursor,
   }) : assert(initialValue == null || controller == null),
        assert(textAlign != null),
        assert(autofocus != null),
@@ -155,6 +205,17 @@ class TextFormField extends FormField<String> {
        assert(obscureText != null),
        assert(autocorrect != null),
        assert(enableSuggestions != null),
+       assert(autovalidate != null),
+       assert(
+         autovalidate == false ||
+         autovalidate == true && autovalidateMode == null,
+         'autovalidate and autovalidateMode should not be used together.',
+       ),
+       assert(maxLengthEnforced != null),
+       assert(
+         maxLengthEnforced || maxLengthEnforcement == null,
+         'maxLengthEnforced is deprecated, use only maxLengthEnforcement',
+       ),
        assert(scrollPadding != null),
        assert(maxLines == null || maxLines > 0),
        assert(minLines == null || minLines > 0),
@@ -169,11 +230,18 @@ class TextFormField extends FormField<String> {
        ),
        assert(!obscureText || maxLines == 1, 'Obscured fields cannot be multiline.'),
        assert(maxLength == null || maxLength == TextField.noMaxLength || maxLength > 0),
+       assert(enableInteractiveSelection != null),
        assert(enableIMEPersonalizedLearning != null),
        super(
+         key: key,
+         restorationId: restorationId,
          initialValue: controller != null ? controller.text : (initialValue ?? ''),
+         onSaved: onSaved,
+         validator: validator,
          enabled: enabled ?? decoration?.enabled ?? true,
-         autovalidateMode: autovalidateMode ?? AutovalidateMode.disabled,
+         autovalidateMode: autovalidate
+             ? AutovalidateMode.always
+             : (autovalidateMode ?? AutovalidateMode.disabled),
          builder: (FormFieldState<String> field) {
            final _TextFormFieldState state = field as _TextFormFieldState;
            final InputDecoration effectiveDecoration = (decoration ?? const InputDecoration())
@@ -209,6 +277,7 @@ class TextFormField extends FormField<String> {
                smartDashesType: smartDashesType ?? (obscureText ? SmartDashesType.disabled : SmartDashesType.enabled),
                smartQuotesType: smartQuotesType ?? (obscureText ? SmartQuotesType.disabled : SmartQuotesType.enabled),
                enableSuggestions: enableSuggestions,
+               maxLengthEnforced: maxLengthEnforced,
                maxLengthEnforcement: maxLengthEnforcement,
                maxLines: maxLines,
                minLines: minLines,
@@ -227,13 +296,12 @@ class TextFormField extends FormField<String> {
                scrollPadding: scrollPadding,
                scrollPhysics: scrollPhysics,
                keyboardAppearance: keyboardAppearance,
-               enableInteractiveSelection: enableInteractiveSelection ?? (!obscureText || !readOnly),
+               enableInteractiveSelection: enableInteractiveSelection,
                selectionControls: selectionControls,
                buildCounter: buildCounter,
                autofillHints: autofillHints,
                scrollController: scrollController,
                enableIMEPersonalizedLearning: enableIMEPersonalizedLearning,
-               mouseCursor: mouseCursor,
              ),
            );
          },
@@ -252,9 +320,10 @@ class TextFormField extends FormField<String> {
 class _TextFormFieldState extends FormFieldState<String> {
   RestorableTextEditingController? _controller;
 
-  TextEditingController get _effectiveController => _textFormField.controller ?? _controller!.value;
+  TextEditingController get _effectiveController => widget.controller ?? _controller!.value;
 
-  TextFormField get _textFormField => super.widget as TextFormField;
+  @override
+  TextFormField get widget => super.widget as TextFormField;
 
   @override
   void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
@@ -285,26 +354,26 @@ class _TextFormFieldState extends FormFieldState<String> {
   @override
   void initState() {
     super.initState();
-    if (_textFormField.controller == null) {
+    if (widget.controller == null) {
       _createLocalController(widget.initialValue != null ? TextEditingValue(text: widget.initialValue!) : null);
     } else {
-      _textFormField.controller!.addListener(_handleControllerChanged);
+      widget.controller!.addListener(_handleControllerChanged);
     }
   }
 
   @override
   void didUpdateWidget(TextFormField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_textFormField.controller != oldWidget.controller) {
+    if (widget.controller != oldWidget.controller) {
       oldWidget.controller?.removeListener(_handleControllerChanged);
-      _textFormField.controller?.addListener(_handleControllerChanged);
+      widget.controller?.addListener(_handleControllerChanged);
 
-      if (oldWidget.controller != null && _textFormField.controller == null) {
+      if (oldWidget.controller != null && widget.controller == null) {
         _createLocalController(oldWidget.controller!.value);
       }
 
-      if (_textFormField.controller != null) {
-        setValue(_textFormField.controller!.text);
+      if (widget.controller != null) {
+        setValue(widget.controller!.text);
         if (oldWidget.controller == null) {
           unregisterFromRestoration(_controller!);
           _controller!.dispose();
@@ -316,7 +385,7 @@ class _TextFormFieldState extends FormFieldState<String> {
 
   @override
   void dispose() {
-    _textFormField.controller?.removeListener(_handleControllerChanged);
+    widget.controller?.removeListener(_handleControllerChanged);
     _controller?.dispose();
     super.dispose();
   }
@@ -325,9 +394,8 @@ class _TextFormFieldState extends FormFieldState<String> {
   void didChange(String? value) {
     super.didChange(value);
 
-    if (_effectiveController.text != value) {
+    if (_effectiveController.text != value)
       _effectiveController.text = value ?? '';
-    }
   }
 
   @override
@@ -346,8 +414,7 @@ class _TextFormFieldState extends FormFieldState<String> {
     // notifications for changes originating from within this class -- for
     // example, the reset() method. In such cases, the FormField value will
     // already have been set.
-    if (_effectiveController.text != value) {
+    if (_effectiveController.text != value)
       didChange(_effectiveController.text);
-    }
   }
 }

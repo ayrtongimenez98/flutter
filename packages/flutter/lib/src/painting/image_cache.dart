@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:developer';
+import 'dart:ui' show hashValues;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
@@ -68,7 +69,7 @@ const int _kDefaultSizeBytes = 100 << 20; // 100 MiB
 /// }
 ///
 /// class MyApp extends StatelessWidget {
-///   const MyApp({super.key});
+///   const MyApp({Key? key}) : super(key: key);
 ///
 ///   @override
 ///   Widget build(BuildContext context) {
@@ -101,9 +102,8 @@ class ImageCache {
   set maximumSize(int value) {
     assert(value != null);
     assert(value >= 0);
-    if (value == maximumSize) {
+    if (value == maximumSize)
       return;
-    }
     TimelineTask? timelineTask;
     if (!kReleaseMode) {
       timelineTask = TimelineTask()..start(
@@ -141,9 +141,8 @@ class ImageCache {
   set maximumSizeBytes(int value) {
     assert(value != null);
     assert(value >= 0);
-    if (value == _maximumSizeBytes) {
+    if (value == _maximumSizeBytes)
       return;
-    }
     TimelineTask? timelineTask;
     if (!kReleaseMode) {
       timelineTask = TimelineTask()..start(
@@ -195,9 +194,6 @@ class ImageCache {
       image.dispose();
     }
     _cache.clear();
-    for (final _PendingImage pendingImage in _pendingImages.values) {
-      pendingImage.removeListener();
-    }
     _pendingImages.clear();
     _currentSizeBytes = 0;
   }
@@ -402,20 +398,20 @@ class ImageCache {
     if (!kReleaseMode) {
       listenerTask = TimelineTask(parent: timelineTask)..start('listener');
     }
-    // A multi-frame provider may call the listener more than once. We need do make
-    // sure that some cleanup works won't run multiple times, such as finishing the
-    // tracing task or removing the listeners
+    // If we're doing tracing, we need to make sure that we don't try to finish
+    // the trace entry multiple times if we get re-entrant calls from a multi-
+    // frame provider here.
     bool listenedOnce = false;
 
     // We shouldn't use the _pendingImages map if the cache is disabled, but we
     // will have to listen to the image at least once so we don't leak it in
     // the live image tracking.
-    final bool trackPendingImage = maximumSize > 0 && maximumSizeBytes > 0;
-    late _PendingImage pendingImage;
+    // If the cache is disabled, this variable will be set.
+    _PendingImage? untrackedPendingImage;
     void listener(ImageInfo? info, bool syncCall) {
       int? sizeBytes;
       if (info != null) {
-        sizeBytes = info.sizeBytes;
+        sizeBytes = info.image.height * info.image.width * 4;
         info.dispose();
       }
       final _CachedImage image = _CachedImage(
@@ -426,14 +422,14 @@ class ImageCache {
       _trackLiveImage(key, result, sizeBytes);
 
       // Only touch if the cache was enabled when resolve was initially called.
-      if (trackPendingImage) {
+      if (untrackedPendingImage == null) {
         _touch(key, image, listenerTask);
       } else {
         image.dispose();
       }
 
-      _pendingImages.remove(key);
-      if (!listenedOnce) {
+      final _PendingImage? pendingImage = untrackedPendingImage ?? _pendingImages.remove(key);
+      if (pendingImage != null) {
         pendingImage.removeListener();
       }
       if (!kReleaseMode && !listenedOnce) {
@@ -450,9 +446,10 @@ class ImageCache {
     }
 
     final ImageStreamListener streamListener = ImageStreamListener(listener);
-    pendingImage = _PendingImage(result, streamListener);
-    if (trackPendingImage) {
-      _pendingImages[key] = pendingImage;
+    if (maximumSize > 0 && maximumSizeBytes > 0) {
+      _pendingImages[key] = _PendingImage(result, streamListener);
+    } else {
+      untrackedPendingImage = _PendingImage(result, streamListener);
     }
     // Listener is removed in [_PendingImage.removeListener].
     result.addListener(streamListener);
@@ -599,7 +596,7 @@ class ImageCacheStatus {
   }
 
   @override
-  int get hashCode => Object.hash(pending, keepAlive, live);
+  int get hashCode => hashValues(pending, keepAlive, live);
 
   @override
   String toString() => '${objectRuntimeType(this, 'ImageCacheStatus')}(pending: $pending, live: $live, keepAlive: $keepAlive)';
@@ -625,7 +622,7 @@ abstract class _CachedImageBase {
     assert(handle != null);
     // Give any interested parties a chance to listen to the stream before we
     // potentially dispose it.
-    SchedulerBinding.instance.addPostFrameCallback((Duration timeStamp) {
+    SchedulerBinding.instance!.addPostFrameCallback((Duration timeStamp) {
       assert(handle != null);
       handle?.dispose();
       handle = null;
@@ -634,7 +631,8 @@ abstract class _CachedImageBase {
 }
 
 class _CachedImage extends _CachedImageBase {
-  _CachedImage(super.completer, {super.sizeBytes});
+  _CachedImage(ImageStreamCompleter completer, {int? sizeBytes})
+      : super(completer, sizeBytes: sizeBytes);
 }
 
 class _LiveImage extends _CachedImageBase {

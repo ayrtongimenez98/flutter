@@ -43,7 +43,7 @@ names. They correspond to methods from the `MaterialLocalizations` or
 
 ```dart
 Widget build(BuildContext context) {
-  return TextButton(
+  return FlatButton(
     child: Text(
       MaterialLocalizations.of(context).cancelButtonLabel,
     ),
@@ -56,7 +56,10 @@ translation of "CANCEL" which is defined for the `cancelButtonLabel`
 resource ID.
 
 Each of the language-specific .arb files contains an entry for
-`cancelButtonLabel`.
+`cancelButtonLabel`. They're all represented by the `Map` in the
+generated `localizations.dart` file. The Map is used by the
+MaterialLocalizations class.
+
 
 ### material_en.arb and cupertino_en.arb Define all of the resource IDs
 
@@ -140,7 +143,7 @@ The value of `timeOfDayFormat` defines how a time picker displayed by
 [showTimePicker()](https://api.flutter.dev/flutter/material/showTimePicker.html)
 formats and lays out its time controls. The value of `timeOfDayFormat`
 must be a string that matches one of the formats defined by
-<https://api.flutter.dev/flutter/material/TimeOfDayFormat.html>.
+<https://api.flutter.dev/flutter/material/TimeOfDayFormat-class.html>.
 It is converted to an enum value because the `material_en.arb` file
 has this value labeled as `"x-flutter-type": "icuShortTimePattern"`.
 
@@ -152,31 +155,35 @@ section in the Material spec. The Material theme uses the
 [Typography.geometryThemeFor](https://api.flutter.dev/flutter/material/Typography/geometryThemeFor.html).
 
 
-### 'generated_*_localizations.dart': all of the localizations
+### 'generated_*_localizations.dart': all of the localizations as a Map
 
-All of the localizations are combined in a single file per library
-using the gen_localizations script.
+If you look at the comment at the top of the `generated_material_localizations.dart`
+and `generated_cupertino_localizations.dart` files, you'll
+see that it was manually generated using a `dev/tools/localizations`
+app called `gen_localizations`.
 
-You can see what that script would generate by running:
+You can see what that script would generate by running this command:
+
 ```dart
-dart dev/tools/localization/bin/gen_localizations.dart
+dart dev/tools/localizations/bin/gen_localizations.dart packages/flutter_localizations/lib/src/l10n material
 ```
 
-Actually update the generated files with:
-```dart
-dart dev/tools/localization/bin/gen_localizations.dart --overwrite
-```
+The gen_localizations app just combines the contents of all of the
+.arb files into a single `Map` per library that has entries for each .arb
+file's locale. The `MaterialLocalizations` and `CupertinoLocalizations`
+class implementations use these Maps to implement the methods that lookup localized resource values.
 
-The gen_localizations script just combines the contents of all of the
-.arb files, each into a class which extends `Global*Localizations`.
-The `MaterialLocalizations` and `CupertinoLocalizations`
-class implementations use these to lookup localized resource values.
-
-The gen_localizations script must be run by hand after .arb files have
-been updated. The script optionally takes parameters
-1. The path to this directory,
-2. The file name prefix (the file name less the locale
+The gen_localizations app must be run by hand after .arb files have
+been updated. The app's first parameter is the path to this directory,
+the second is the file name prefix (the file name less the locale
 suffix) for the .arb files in this directory.
+
+To in-place update the generated localizations file using the default
+values, you can just run:
+
+```dart
+dart dev/tools/localizations/bin/gen_localizations.dart --overwrite
+```
 
 
 ### Special handling for the Kannada (kn) translations

@@ -101,6 +101,8 @@
   "IntlYen": ["yen"],
   "KanjiMode": ["Kanji"],
   "Katakana": ["Katakana"],
+  "KbdIllumDown": ["KbdBrightnessDown"],
+  "KbdIllumUp": ["KbdBrightnessUp"],
   "LaunchAudioBrowser": ["Music"],
   "LaunchCalendar": ["Calendar"],
   "LaunchDocuments": ["Document"],

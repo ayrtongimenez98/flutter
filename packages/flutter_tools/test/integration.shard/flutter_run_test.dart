@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:file/file.dart';
 import 'package:flutter_tools/src/base/io.dart';
 import 'package:process/process.dart';
@@ -12,18 +14,18 @@ import 'test_driver.dart';
 import 'test_utils.dart';
 
 void main() {
-  late Directory tempDir;
-  final BasicProject project = BasicProject();
-  late FlutterRunTestDriver flutter;
+  Directory tempDir;
+  final BasicProject _project = BasicProject();
+  FlutterRunTestDriver _flutter;
 
   setUp(() async {
     tempDir = createResolvedTempDirectorySync('run_test.');
-    await project.setUpIn(tempDir);
-    flutter = FlutterRunTestDriver(tempDir);
+    await _project.setUpIn(tempDir);
+    _flutter = FlutterRunTestDriver(tempDir);
   });
 
   tearDown(() async {
-    await flutter.stop();
+    await _flutter.stop();
     tryToDelete(tempDir);
   });
 
@@ -34,38 +36,38 @@ void main() {
     // some of the checks for devices.
     final String flutterBin = fileSystem.path.join(getFlutterRoot(), 'bin', 'flutter');
 
-    const ProcessManager processManager = LocalProcessManager();
-    final ProcessResult proc = await processManager.run(
+    const ProcessManager _processManager = LocalProcessManager();
+    final ProcessResult _proc = await _processManager.run(
       <String>[flutterBin, 'run', '-d', 'invalid-device-id'],
       workingDirectory: tempDir.path,
     );
 
-    expect(proc.stdout, isNot(contains('flutter has exited unexpectedly')));
-    expect(proc.stderr, isNot(contains('flutter has exited unexpectedly')));
-    if (!proc.stderr.toString().contains('Unable to locate a development')
-        && !proc.stdout.toString().contains('No supported devices found with name or id matching')) {
+    expect(_proc.stdout, isNot(contains('flutter has exited unexpectedly')));
+    expect(_proc.stderr, isNot(contains('flutter has exited unexpectedly')));
+    if (!_proc.stderr.toString().contains('Unable to locate a development')
+        && !_proc.stdout.toString().contains('No devices found with name or id matching')) {
       fail("'flutter run -d invalid-device-id' did not produce the expected error");
     }
   });
 
   testWithoutContext('sets activeDevToolsServerAddress extension', () async {
-    await flutter.run(
+    await _flutter.run(
       startPaused: true,
       withDebugger: true,
       additionalCommandArgs: <String>['--devtools-server-address', 'http://127.0.0.1:9110'],
     );
-    await flutter.resume();
+    await _flutter.resume();
     await pollForServiceExtensionValue<String>(
-      testDriver: flutter,
+      testDriver: _flutter,
       extension: 'ext.flutter.activeDevToolsServerAddress',
       continuePollingValue: '',
       matches: equals('http://127.0.0.1:9110'),
     );
     await pollForServiceExtensionValue<String>(
-      testDriver: flutter,
+      testDriver: _flutter,
       extension: 'ext.flutter.connectedVmServiceUri',
       continuePollingValue: '',
       matches: isNotEmpty,
     );
-  });
+  }, timeout: const Timeout.factor(4));
 }

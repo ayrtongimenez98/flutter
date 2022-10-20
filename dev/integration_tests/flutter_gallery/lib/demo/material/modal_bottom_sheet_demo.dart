@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import '../../gallery/demo.dart';
 
 class ModalBottomSheetDemo extends StatelessWidget {
-  const ModalBottomSheetDemo({super.key});
+  const ModalBottomSheetDemo({Key? key}) : super(key: key);
 
   static const String routeName = '/material/modal-bottom-sheet';
 

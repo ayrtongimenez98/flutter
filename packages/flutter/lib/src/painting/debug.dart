@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+
 import 'dart:io';
-import 'dart:ui' show Size, Picture, Image;
+import 'dart:ui' show Size, hashValues, Picture, Image;
 
 import 'package:flutter/foundation.dart';
 
@@ -53,20 +54,20 @@ class ImageSizeInfo {
   /// This class is used by the framework when it paints an image to a canvas
   /// to report to `dart:developer`'s [postEvent], as well as to the
   /// [debugOnPaintImage] callback if it is set.
-  const ImageSizeInfo({this.source, required this.displaySize, required this.imageSize});
+  const ImageSizeInfo({this.source, this.displaySize, required this.imageSize});
 
   /// A unique identifier for this image, for example its asset path or network
   /// URL.
   final String? source;
 
   /// The size of the area the image will be rendered in.
-  final Size displaySize;
+  final Size? displaySize;
 
   /// The size the image has been decoded to.
   final Size imageSize;
 
   /// The number of bytes needed to render the image without scaling it.
-  int get displaySizeInBytes => _sizeToBytes(displaySize);
+  int get displaySizeInBytes => _sizeToBytes(displaySize!);
 
   /// The number of bytes used by the image in memory.
   int get decodedSizeInBytes => _sizeToBytes(imageSize);
@@ -81,10 +82,11 @@ class ImageSizeInfo {
   Map<String, Object?> toJson() {
     return <String, Object?>{
       'source': source,
-      'displaySize': <String, Object?>{
-        'width': displaySize.width,
-        'height': displaySize.height,
-      },
+      if (displaySize != null)
+        'displaySize': <String, Object?>{
+          'width': displaySize!.width,
+          'height': displaySize!.height,
+        },
       'imageSize': <String, Object?>{
         'width': imageSize.width,
         'height': imageSize.height,
@@ -106,7 +108,7 @@ class ImageSizeInfo {
   }
 
   @override
-  int get hashCode => Object.hash(source, displaySize, imageSize);
+  int get hashCode => hashValues(source, displaySize, imageSize);
 
   @override
   String toString() => 'ImageSizeInfo($source, imageSize: $imageSize, displaySize: $displaySize)';

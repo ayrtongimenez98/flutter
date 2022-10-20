@@ -4,10 +4,10 @@
 
 import 'package:flutter/material.dart';
 
-import 'colors.dart';
+import 'package:flutter_gallery/demo/shrine/colors.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({Key? key}) : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -123,7 +123,7 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class PrimaryColorOverride extends StatelessWidget {
-  const PrimaryColorOverride({super.key, this.color, this.child});
+  const PrimaryColorOverride({Key? key, this.color, this.child}) : super(key: key);
 
   final Color? color;
   final Widget? child;

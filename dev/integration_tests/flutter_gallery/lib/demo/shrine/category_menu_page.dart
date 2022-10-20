@@ -3,17 +3,16 @@
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gallery/demo/shrine/colors.dart';
+import 'package:flutter_gallery/demo/shrine/model/app_state_model.dart';
+import 'package:flutter_gallery/demo/shrine/model/product.dart';
 import 'package:scoped_model/scoped_model.dart';
-
-import 'colors.dart';
-import 'model/app_state_model.dart';
-import 'model/product.dart';
 
 class CategoryMenuPage extends StatelessWidget {
   const CategoryMenuPage({
-    super.key,
+    Key? key,
     this.onCategoryTap,
-  });
+  }) : super(key: key);
 
   final VoidCallback? onCategoryTap;
 

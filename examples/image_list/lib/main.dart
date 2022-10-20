@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -97,7 +98,7 @@ Future<void> main() async {
   final HttpServer httpServer =
       await HttpServer.bindSecure('localhost', 0, serverContext);
   final int port = httpServer.port;
-  debugPrint('Listening on port $port.');
+  print('Listening on port $port.');
 
   // Initializes bindings before using any platform channels.
   WidgetsFlutterBinding.ensureInitialized();
@@ -123,7 +124,7 @@ const int IMAGES = 50;
 
 @immutable
 class MyApp extends StatelessWidget {
-  const MyApp(this.port, {super.key});
+  const MyApp(this.port, {Key? key}) : super(key: key);
 
   final int port;
 
@@ -140,7 +141,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title, required this.port});
+  const MyHomePage({Key? key, required this.title, required this.port}) : super(key: key);
   final String title;
   final int port;
 
@@ -192,7 +193,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     ).toList();
     final DateTime started = DateTime.now();
     Future.wait(futures).then((_) {
-      debugPrint(
+      print(
         '===image_list=== all loaded in ${DateTime.now().difference(started).inMilliseconds}ms.',
       );
     });

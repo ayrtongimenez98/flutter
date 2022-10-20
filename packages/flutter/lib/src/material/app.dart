@@ -50,17 +50,12 @@ enum ThemeMode {
   dark,
 }
 
-/// An application that uses Material Design.
+/// An application that uses material design.
 ///
 /// A convenience widget that wraps a number of widgets that are commonly
-/// required for Material Design applications. It builds upon a [WidgetsApp] by
+/// required for material design applications. It builds upon a [WidgetsApp] by
 /// adding material-design specific functionality, such as [AnimatedTheme] and
 /// [GridPaper].
-///
-/// [MaterialApp] configures its [WidgetsApp.textStyle] with an ugly red/yellow
-/// text style that's intended to warn the developer that their app hasn't defined
-/// a default text style. Typically the app's [Scaffold] builds a [Material] widget
-/// whose default [Material.textStyle] defines the text style for the entire scaffold.
 ///
 /// The [MaterialApp] configures the top-level [Navigator] to search for routes
 /// in the following order:
@@ -81,14 +76,6 @@ enum ThemeMode {
 ///
 /// This widget also configures the observer of the top-level [Navigator] (if
 /// any) to perform [Hero] animations.
-///
-/// {@template flutter.material.MaterialApp.defaultSelectionStyle}
-/// The [MaterialApp] automatically creates a [DefaultSelectionStyle]. It uses
-/// the colors in the [ThemeData.textSelectionTheme] if they are not null;
-/// otherwise, the [MaterialApp] sets [DefaultSelectionStyle.selectionColor] to
-/// [ColorScheme.primary] with 0.4 opacity and
-/// [DefaultSelectionStyle.cursorColor] to [ColorScheme.primary].
-/// {@endtemplate}
 ///
 /// If [home], [routes], [onGenerateRoute], and [onUnknownRoute] are all null,
 /// and [builder] is not null, then no [Navigator] is created.
@@ -158,28 +145,6 @@ enum ThemeMode {
 /// ```
 /// {@end-tool}
 ///
-/// ## Troubleshooting
-///
-/// ### Why is my app's text red with yellow underlines?
-///
-/// [Text] widgets that lack a [Material] ancestor will be rendered with an ugly
-/// red/yellow text style.
-///
-/// ![](https://flutter.github.io/assets-for-api-docs/assets/material/material_app_unspecified_textstyle.png)
-///
-/// The typical fix is to give the widget a [Scaffold] ancestor. The [Scaffold] creates
-/// a [Material] widget that defines its default text style.
-///
-/// ```dart
-/// MaterialApp(
-///   title: 'Material App',
-///   home: Scaffold(
-///     body: Center(
-///       child: Text('Hello World'),
-///     ),
-///   ),
-/// )
-/// ```
 /// See also:
 ///
 ///  * [Scaffold], which provides standard app elements like an [AppBar] and a [Drawer].
@@ -201,7 +166,7 @@ class MaterialApp extends StatefulWidget {
   ///
   /// The boolean arguments, [routes], and [navigatorObservers], must not be null.
   const MaterialApp({
-    super.key,
+    Key? key,
     this.navigatorKey,
     this.scaffoldMessengerKey,
     this.home,
@@ -249,18 +214,15 @@ class MaterialApp extends StatefulWidget {
        routeInformationParser = null,
        routerDelegate = null,
        backButtonDispatcher = null,
-       routerConfig = null;
+       super(key: key);
 
   /// Creates a [MaterialApp] that uses the [Router] instead of a [Navigator].
-  ///
-  /// {@macro flutter.widgets.WidgetsApp.router}
   const MaterialApp.router({
-    super.key,
+    Key? key,
     this.scaffoldMessengerKey,
     this.routeInformationProvider,
-    this.routeInformationParser,
-    this.routerDelegate,
-    this.routerConfig,
+    required RouteInformationParser<Object> this.routeInformationParser,
+    required RouterDelegate<Object> this.routerDelegate,
     this.backButtonDispatcher,
     this.builder,
     this.title = '',
@@ -287,7 +249,8 @@ class MaterialApp extends StatefulWidget {
     this.restorationScopeId,
     this.scrollBehavior,
     this.useInheritedMediaQuery = false,
-  }) : assert(routerDelegate != null || routerConfig != null),
+  }) : assert(routeInformationParser != null),
+       assert(routerDelegate != null),
        assert(title != null),
        assert(debugShowMaterialGrid != null),
        assert(showPerformanceOverlay != null),
@@ -302,7 +265,8 @@ class MaterialApp extends StatefulWidget {
        onGenerateInitialRoutes = null,
        onUnknownRoute = null,
        routes = null,
-       initialRoute = null;
+       initialRoute = null,
+       super(key: key);
 
   /// {@macro flutter.widgets.widgetsApp.navigatorKey}
   final GlobalKey<NavigatorState>? navigatorKey;
@@ -355,9 +319,6 @@ class MaterialApp extends StatefulWidget {
 
   /// {@macro flutter.widgets.widgetsApp.backButtonDispatcher}
   final BackButtonDispatcher? backButtonDispatcher;
-
-  /// {@macro flutter.widgets.widgetsApp.routerConfig}
-  final RouterConfig<Object>? routerConfig;
 
   /// {@macro flutter.widgets.widgetsApp.builder}
   ///
@@ -599,7 +560,7 @@ class MaterialApp extends StatefulWidget {
   ///
   /// See also:
   ///
-  ///  * <https://flutter.dev/debugging/#performance-overlay>
+  ///  * <https://flutter.dev/debugging/#performanceoverlay>
   final bool showPerformanceOverlay;
 
   /// Turns on checkerboarding of raster cache images.
@@ -735,18 +696,6 @@ class MaterialApp extends StatefulWidget {
 /// When using the desktop platform, if the [Scrollable] widget scrolls in the
 /// [Axis.vertical], a [Scrollbar] is applied.
 ///
-/// If the scroll direction is [Axis.horizontal] scroll views are less
-/// discoverable, so consider adding a Scrollbar in these cases, either directly
-/// or through the [buildScrollbar] method.
-///
-/// [MaterialScrollBehavior.androidOverscrollIndicator] specifies the
-/// overscroll indicator that is used on [TargetPlatform.android]. When null,
-/// [ThemeData.androidOverscrollIndicator] is used. If also null, the default
-/// overscroll indicator is the [GlowingOverscrollIndicator]. These properties
-/// are deprecated. In order to use the [StretchingOverscrollIndicator], use
-/// the [ThemeData.useMaterial3] flag, or override
-/// [ScrollBehavior.buildOverscrollIndicator].
-///
 /// See also:
 ///
 ///  * [ScrollBehavior], the default scrolling behavior extended by this class.
@@ -754,20 +703,7 @@ class MaterialScrollBehavior extends ScrollBehavior {
   /// Creates a MaterialScrollBehavior that decorates [Scrollable]s with
   /// [GlowingOverscrollIndicator]s and [Scrollbar]s based on the current
   /// platform and provided [ScrollableDetails].
-  ///
-  /// [MaterialScrollBehavior.androidOverscrollIndicator] specifies the
-  /// overscroll indicator that is used on [TargetPlatform.android]. When null,
-  /// [ThemeData.androidOverscrollIndicator] is used. If also null, the default
-  /// overscroll indicator is the [GlowingOverscrollIndicator].
-  const MaterialScrollBehavior({
-    @Deprecated(
-      'Use ThemeData.useMaterial3 or override ScrollBehavior.buildOverscrollIndicator. '
-      'This feature was deprecated after v2.13.0-0.0.pre.'
-    )
-    super.androidOverscrollIndicator,
-  }) : _androidOverscrollIndicator = androidOverscrollIndicator;
-
-  final AndroidOverscrollIndicator? _androidOverscrollIndicator;
+  const MaterialScrollBehavior();
 
   @override
   TargetPlatform getPlatform(BuildContext context) => Theme.of(context).platform;
@@ -800,14 +736,6 @@ class MaterialScrollBehavior extends ScrollBehavior {
   Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) {
     // When modifying this function, consider modifying the implementation in
     // the base class as well.
-    late final AndroidOverscrollIndicator indicator;
-    if (Theme.of(context).useMaterial3) {
-      indicator = AndroidOverscrollIndicator.stretch;
-    } else {
-      indicator = _androidOverscrollIndicator
-        ?? Theme.of(context).androidOverscrollIndicator
-        ?? androidOverscrollIndicator;
-    }
     switch (getPlatform(context)) {
       case TargetPlatform.iOS:
       case TargetPlatform.linux:
@@ -815,17 +743,6 @@ class MaterialScrollBehavior extends ScrollBehavior {
       case TargetPlatform.windows:
         return child;
       case TargetPlatform.android:
-        switch (indicator) {
-          case AndroidOverscrollIndicator.stretch:
-            return StretchingOverscrollIndicator(
-              axisDirection: details.direction,
-              clipBehavior: details.clipBehavior ?? Clip.hardEdge,
-              child: child,
-            );
-          case AndroidOverscrollIndicator.glow:
-            continue glow;
-        }
-      glow:
       case TargetPlatform.fuchsia:
         return GlowingOverscrollIndicator(
           axisDirection: details.direction,
@@ -839,7 +756,7 @@ class MaterialScrollBehavior extends ScrollBehavior {
 class _MaterialAppState extends State<MaterialApp> {
   late HeroController _heroController;
 
-  bool get _usesRouter => widget.routerDelegate != null || widget.routerConfig != null;
+  bool get _usesRouter => widget.routerDelegate != null;
 
   @override
   void initState() {
@@ -852,13 +769,11 @@ class _MaterialAppState extends State<MaterialApp> {
   // of a particular LocalizationsDelegate.type is loaded so the
   // localizationsDelegate parameter can be used to override
   // _MaterialLocalizationsDelegate.
-  Iterable<LocalizationsDelegate<dynamic>> get _localizationsDelegates {
-    return <LocalizationsDelegate<dynamic>>[
-      if (widget.localizationsDelegates != null)
-        ...widget.localizationsDelegates!,
-      DefaultMaterialLocalizations.delegate,
-      DefaultCupertinoLocalizations.delegate,
-    ];
+  Iterable<LocalizationsDelegate<dynamic>> get _localizationsDelegates sync* {
+    if (widget.localizationsDelegates != null)
+      yield* widget.localizationsDelegates!;
+    yield DefaultMaterialLocalizations.delegate;
+    yield DefaultCupertinoLocalizations.delegate;
   }
 
   Widget _inspectorSelectButtonBuilder(BuildContext context, VoidCallback onPressed) {
@@ -886,35 +801,29 @@ class _MaterialAppState extends State<MaterialApp> {
       theme = widget.highContrastTheme;
     }
     theme ??= widget.theme ?? ThemeData.light();
-    final Color effectiveSelectionColor = theme.textSelectionTheme.selectionColor ?? theme.colorScheme.primary.withOpacity(0.40);
-    final Color effectiveCursorColor = theme.textSelectionTheme.cursorColor ?? theme.colorScheme.primary;
 
     return ScaffoldMessenger(
       key: widget.scaffoldMessengerKey,
-      child: DefaultSelectionStyle(
-        selectionColor: effectiveSelectionColor,
-        cursorColor: effectiveCursorColor,
-        child: AnimatedTheme(
-          data: theme,
-          child: widget.builder != null
-            ? Builder(
-                builder: (BuildContext context) {
-                  // Why are we surrounding a builder with a builder?
-                  //
-                  // The widget.builder may contain code that invokes
-                  // Theme.of(), which should return the theme we selected
-                  // above in AnimatedTheme. However, if we invoke
-                  // widget.builder() directly as the child of AnimatedTheme
-                  // then there is no Context separating them, and the
-                  // widget.builder() will not find the theme. Therefore, we
-                  // surround widget.builder with yet another builder so that
-                  // a context separates them and Theme.of() correctly
-                  // resolves to the theme we passed to AnimatedTheme.
-                  return widget.builder!(context, child);
-                },
-              )
-            : child ?? const SizedBox.shrink(),
-        ),
+      child: AnimatedTheme(
+        data: theme,
+        child: widget.builder != null
+          ? Builder(
+              builder: (BuildContext context) {
+                // Why are we surrounding a builder with a builder?
+                //
+                // The widget.builder may contain code that invokes
+                // Theme.of(), which should return the theme we selected
+                // above in AnimatedTheme. However, if we invoke
+                // widget.builder() directly as the child of AnimatedTheme
+                // then there is no Context separating them, and the
+                // widget.builder() will not find the theme. Therefore, we
+                // surround widget.builder with yet another builder so that
+                // a context separates them and Theme.of() correctly
+                // resolves to the theme we passed to AnimatedTheme.
+                return widget.builder!(context, child);
+              },
+            )
+          : child ?? const SizedBox.shrink(),
       ),
     );
   }
@@ -932,9 +841,8 @@ class _MaterialAppState extends State<MaterialApp> {
       return WidgetsApp.router(
         key: GlobalObjectKey(this),
         routeInformationProvider: widget.routeInformationProvider,
-        routeInformationParser: widget.routeInformationParser,
-        routerDelegate: widget.routerDelegate,
-        routerConfig: widget.routerConfig,
+        routeInformationParser: widget.routeInformationParser!,
+        routerDelegate: widget.routerDelegate!,
         backButtonDispatcher: widget.backButtonDispatcher,
         builder: _materialBuilder,
         title: widget.title,
@@ -1001,9 +909,8 @@ class _MaterialAppState extends State<MaterialApp> {
     result = Focus(
       canRequestFocus: false,
       onKey: (FocusNode node, RawKeyEvent event) {
-        if (event is! RawKeyDownEvent || event.logicalKey != LogicalKeyboardKey.escape) {
+        if (event is! RawKeyDownEvent || event.logicalKey != LogicalKeyboardKey.escape)
           return KeyEventResult.ignored;
-        }
         return Tooltip.dismissAllToolTips() ? KeyEventResult.handled : KeyEventResult.ignored;
       },
       child: result,
@@ -1013,6 +920,7 @@ class _MaterialAppState extends State<MaterialApp> {
         result = GridPaper(
           color: const Color(0xE0F9BBE0),
           interval: 8.0,
+          divisions: 2,
           subdivisions: 1,
           child: result,
         );

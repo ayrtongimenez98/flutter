@@ -40,8 +40,8 @@ abstract class RenderSliverFixedExtentBoxAdaptor extends RenderSliverMultiBoxAda
   ///
   /// The [childManager] argument must not be null.
   RenderSliverFixedExtentBoxAdaptor({
-    required super.childManager,
-  });
+    required RenderSliverBoxChildManager childManager,
+  }) : super(childManager: childManager);
 
   /// The main-axis extent of each item.
   double get itemExtent;
@@ -68,7 +68,7 @@ abstract class RenderSliverFixedExtentBoxAdaptor extends RenderSliverMultiBoxAda
     if (itemExtent > 0.0) {
       final double actual = scrollOffset / itemExtent;
       final int round = actual.round();
-      if ((actual * itemExtent - round * itemExtent).abs() < precisionErrorTolerance) {
+      if ((actual - round).abs() < precisionErrorTolerance) {
         return round;
       }
       return actual.floor();
@@ -88,7 +88,7 @@ abstract class RenderSliverFixedExtentBoxAdaptor extends RenderSliverMultiBoxAda
     if (itemExtent > 0.0) {
       final double actual = scrollOffset / itemExtent - 1;
       final int round = actual.round();
-      if ((actual * itemExtent - round * itemExtent).abs() < precisionErrorTolerance) {
+      if (_isWithinPrecisionErrorTolerance(actual, round)) {
         return math.max(0, round);
       }
       return math.max(0, actual.ceil());
@@ -310,9 +310,8 @@ abstract class RenderSliverFixedExtentBoxAdaptor extends RenderSliverMultiBoxAda
 
     // We may have started the layout while scrolled to the end, which would not
     // expose a new child.
-    if (estimatedMaxScrollOffset == trailingScrollOffset) {
+    if (estimatedMaxScrollOffset == trailingScrollOffset)
       childManager.setDidUnderflow(true);
-    }
     childManager.didFinishLayout();
   }
 }
@@ -343,19 +342,23 @@ class RenderSliverFixedExtentList extends RenderSliverFixedExtentBoxAdaptor {
   ///
   /// The [childManager] argument must not be null.
   RenderSliverFixedExtentList({
-    required super.childManager,
+    required RenderSliverBoxChildManager childManager,
     required double itemExtent,
-  }) : _itemExtent = itemExtent;
+  }) : _itemExtent = itemExtent,
+       super(childManager: childManager);
 
   @override
   double get itemExtent => _itemExtent;
   double _itemExtent;
   set itemExtent(double value) {
     assert(value != null);
-    if (_itemExtent == value) {
+    if (_itemExtent == value)
       return;
-    }
     _itemExtent = value;
     markNeedsLayout();
   }
+}
+
+bool _isWithinPrecisionErrorTolerance(double actual, int round) {
+  return (actual - round).abs() < precisionErrorTolerance;
 }

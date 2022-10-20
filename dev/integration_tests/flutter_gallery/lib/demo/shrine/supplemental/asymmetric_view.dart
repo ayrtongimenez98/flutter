@@ -4,11 +4,11 @@
 
 import 'package:flutter/material.dart';
 
-import '../model/product.dart';
-import 'product_columns.dart';
+import 'package:flutter_gallery/demo/shrine/model/product.dart';
+import 'package:flutter_gallery/demo/shrine/supplemental/product_columns.dart';
 
 class AsymmetricView extends StatelessWidget {
-  const AsymmetricView({super.key, this.products});
+  const AsymmetricView({Key? key, this.products}) : super(key: key);
 
   final List<Product>? products;
 

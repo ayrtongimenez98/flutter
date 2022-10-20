@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 
 class TextStyleItem extends StatelessWidget {
   const TextStyleItem({
-    super.key,
+    Key? key,
     required this.name,
     required this.style,
     required this.text,
-  });
+  }) : super(key: key);
 
   final String name;
   final TextStyle style;
@@ -39,7 +39,7 @@ class TextStyleItem extends StatelessWidget {
 }
 
 class TypographyDemo extends StatelessWidget {
-  const TypographyDemo({super.key});
+  const TypographyDemo({Key? key}) : super(key: key);
 
   static const String routeName = '/typography';
 
@@ -66,12 +66,7 @@ class TypographyDemo extends StatelessWidget {
       body: SafeArea(
         top: false,
         bottom: false,
-        child: Scrollbar(
-          child: ListView(
-            primary: true,
-            children: styleItems,
-          ),
-        ),
+        child: Scrollbar(child: ListView(children: styleItems)),
       ),
     );
   }

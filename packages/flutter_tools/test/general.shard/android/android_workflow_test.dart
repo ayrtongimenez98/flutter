@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:file/memory.dart';
 import 'package:flutter_tools/src/android/android_sdk.dart';
-import 'package:flutter_tools/src/android/android_studio.dart';
 import 'package:flutter_tools/src/android/android_workflow.dart';
 import 'package:flutter_tools/src/base/file_system.dart';
 import 'package:flutter_tools/src/base/logger.dart';
@@ -16,15 +17,15 @@ import 'package:flutter_tools/src/doctor_validator.dart';
 import 'package:test/fake.dart';
 
 import '../../src/common.dart';
-import '../../src/fake_process_manager.dart';
+import '../../src/context.dart';
 import '../../src/fakes.dart';
 
 void main() {
-  late FakeAndroidSdk sdk;
-  late Logger logger;
-  late MemoryFileSystem fileSystem;
-  late FakeProcessManager processManager;
-  late FakeStdio stdio;
+  FakeAndroidSdk sdk;
+  Logger logger;
+  MemoryFileSystem fileSystem;
+  FakeProcessManager processManager;
+  FakeStdio stdio;
 
   setUp(() {
     sdk = FakeAndroidSdk();
@@ -38,7 +39,7 @@ void main() {
   testWithoutContext('AndroidWorkflow handles a null AndroidSDK', () {
     final AndroidWorkflow androidWorkflow = AndroidWorkflow(
       featureFlags: TestFeatureFlags(),
-      androidSdk: null, // ignore: avoid_redundant_argument_values
+      androidSdk: null,
       operatingSystemUtils: FakeOperatingSystemUtils(),
     );
 
@@ -134,7 +135,7 @@ void main() {
       stdio: stdio,
       logger: BufferLogger.test(),
       userMessages: UserMessages(),
-      androidStudio: FakeAndroidStudio(),
+      androidStudio: null,
       operatingSystemUtils: FakeOperatingSystemUtils(),
     );
     final LicensesAccepted licenseStatus = await licenseValidator.licensesAccepted;
@@ -153,7 +154,7 @@ void main() {
       stdio: stdio,
       logger: BufferLogger.test(),
       userMessages: UserMessages(),
-      androidStudio: FakeAndroidStudio(),
+      androidStudio: null,
       operatingSystemUtils: FakeOperatingSystemUtils(),
     );
     final LicensesAccepted licenseStatus = await licenseValidator.licensesAccepted;
@@ -177,7 +178,7 @@ void main() {
       stdio: stdio,
       logger: BufferLogger.test(),
       userMessages: UserMessages(),
-      androidStudio: FakeAndroidStudio(),
+      androidStudio: null,
       operatingSystemUtils: FakeOperatingSystemUtils(),
     );
     final LicensesAccepted result = await licenseValidator.licensesAccepted;
@@ -206,7 +207,7 @@ All SDK package licenses accepted.
       stdio: stdio,
       logger: BufferLogger.test(),
       userMessages: UserMessages(),
-      androidStudio: FakeAndroidStudio(),
+      androidStudio: null,
       operatingSystemUtils: FakeOperatingSystemUtils(),
     );
     final LicensesAccepted result = await licenseValidator.licensesAccepted;
@@ -236,7 +237,7 @@ Review licenses that have not been accepted (y/N)?
       stdio: stdio,
       logger: BufferLogger.test(),
       userMessages: UserMessages(),
-      androidStudio: FakeAndroidStudio(),
+      androidStudio: null,
       operatingSystemUtils: FakeOperatingSystemUtils(),
     );
     final LicensesAccepted result = await licenseValidator.licensesAccepted;
@@ -266,7 +267,7 @@ Review licenses that have not been accepted (y/N)?
       stdio: stdio,
       logger: BufferLogger.test(),
       userMessages: UserMessages(),
-      androidStudio: FakeAndroidStudio(),
+      androidStudio: null,
       operatingSystemUtils: FakeOperatingSystemUtils(),
     );
     final LicensesAccepted result = await licenseValidator.licensesAccepted;
@@ -281,7 +282,7 @@ Review licenses that have not been accepted (y/N)?
       command: <String>[
         '/foo/bar/sdkmanager',
         '--licenses',
-      ],
+      ], stdout: '',
     ));
 
     final AndroidLicenseValidator licenseValidator = AndroidLicenseValidator(
@@ -292,7 +293,7 @@ Review licenses that have not been accepted (y/N)?
       stdio: stdio,
       logger: BufferLogger.test(),
       userMessages: UserMessages(),
-      androidStudio: FakeAndroidStudio(),
+      androidStudio: null,
       operatingSystemUtils: FakeOperatingSystemUtils(),
     );
 
@@ -311,7 +312,7 @@ Review licenses that have not been accepted (y/N)?
       stdio: stdio,
       logger: BufferLogger.test(),
       userMessages: UserMessages(),
-      androidStudio: FakeAndroidStudio(),
+      androidStudio: null,
       operatingSystemUtils: FakeOperatingSystemUtils(),
     );
 
@@ -330,7 +331,7 @@ Review licenses that have not been accepted (y/N)?
       stdio: stdio,
       logger: BufferLogger.test(),
       userMessages: UserMessages(),
-      androidStudio: FakeAndroidStudio(),
+      androidStudio: null,
       operatingSystemUtils: FakeOperatingSystemUtils(),
     );
 
@@ -344,7 +345,7 @@ Review licenses that have not been accepted (y/N)?
       ..cmdlineToolsAvailable = true
       ..directory = fileSystem.directory('/foo/bar');
     final ValidationResult validationResult = await AndroidValidator(
-      androidStudio: FakeAndroidStudio(),
+      androidStudio: null,
       androidSdk: sdk,
       fileSystem: fileSystem,
       logger: logger,
@@ -385,13 +386,14 @@ Review licenses that have not been accepted (y/N)?
       ..latestVersion = sdkVersion;
 
     final String errorMessage = UserMessages().androidSdkBuildToolsOutdated(
+      sdk.sdkManagerPath,
       kAndroidSdkMinVersion,
       kAndroidSdkBuildToolsMinVersion.toString(),
       FakePlatform(),
     );
 
     final AndroidValidator androidValidator = AndroidValidator(
-      androidStudio: null, // ignore: avoid_redundant_argument_values
+      androidStudio: null,
       androidSdk: sdk,
       fileSystem: fileSystem,
       logger: logger,
@@ -439,7 +441,7 @@ Review licenses that have not been accepted (y/N)?
       ..directory = fileSystem.directory('/foo/bar');
 
     final AndroidValidator androidValidator = AndroidValidator(
-      androidStudio: null, // ignore: avoid_redundant_argument_values
+      androidStudio: null,
       androidSdk: sdk,
       fileSystem: fileSystem,
       logger: logger,
@@ -488,7 +490,7 @@ Review licenses that have not been accepted (y/N)?
 
     final ValidationResult validationResult = await AndroidValidator(
       androidSdk: sdk,
-      androidStudio: null, // ignore: avoid_redundant_argument_values
+      androidStudio: null,
       fileSystem: fileSystem,
       logger: logger,
       platform: FakePlatform()..environment = <String, String>{'HOME': '/home/me', 'JAVA_HOME': 'home/java'},
@@ -510,8 +512,8 @@ Review licenses that have not been accepted (y/N)?
 
   testWithoutContext('Mentions `flutter config --android-sdk if user has no AndroidSdk`', () async {
     final ValidationResult validationResult = await AndroidValidator(
-      androidSdk: null, // ignore: avoid_redundant_argument_values
-      androidStudio: null, // ignore: avoid_redundant_argument_values
+      androidSdk: null,
+      androidStudio: null,
       fileSystem: fileSystem,
       logger: logger,
       platform: FakePlatform()..environment = <String, String>{'HOME': '/home/me', 'JAVA_HOME': 'home/java'},
@@ -530,31 +532,31 @@ Review licenses that have not been accepted (y/N)?
 
 class FakeAndroidSdk extends Fake implements AndroidSdk {
   @override
-  String? sdkManagerPath;
+  String sdkManagerPath;
 
   @override
-  String? sdkManagerVersion;
+  String sdkManagerVersion;
 
   @override
-  String? adbPath;
+  String adbPath;
 
   @override
-  bool licensesAvailable = false;
+  bool licensesAvailable;
 
   @override
-  bool platformToolsAvailable = false;
+  bool platformToolsAvailable;
 
   @override
-  bool cmdlineToolsAvailable = false;
+  bool cmdlineToolsAvailable;
 
   @override
-  Directory directory = MemoryFileSystem.test().directory('/foo/bar');
+  Directory directory;
 
   @override
-  AndroidSdkVersion? latestVersion;
+  AndroidSdkVersion latestVersion;
 
   @override
-  String? emulatorPath;
+  String emulatorPath;
 
   @override
   List<String> validateSdkWellFormed() => <String>[];
@@ -565,10 +567,10 @@ class FakeAndroidSdk extends Fake implements AndroidSdk {
 
 class FakeAndroidSdkVersion extends Fake implements AndroidSdkVersion {
   @override
-  int sdkLevel = 0;
+  int sdkLevel;
 
   @override
-  Version buildToolsVersion = Version(0, 0, 0);
+  Version buildToolsVersion;
 
   @override
   String get buildToolsVersionName => '';
@@ -589,9 +591,4 @@ class CustomFakeOperatingSystemUtils extends Fake implements OperatingSystemUtil
 
   @override
   HostPlatform get hostPlatform => _hostPlatform;
-}
-
-class FakeAndroidStudio extends Fake implements AndroidStudio {
-  @override
-  String get javaPath => 'java';
 }

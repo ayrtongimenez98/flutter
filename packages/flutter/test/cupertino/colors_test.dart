@@ -10,9 +10,9 @@ import '../rendering/mock_canvas.dart';
 
 class DependentWidget extends StatelessWidget {
   const DependentWidget({
-    super.key,
+    Key? key,
     required this.color,
-  });
+  }) : super(key: key);
 
   final Color color;
 
@@ -218,7 +218,7 @@ void main() {
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const MediaQuery(
-          data: MediaQueryData(),
+          data: MediaQueryData(platformBrightness: Brightness.light),
           child: DependentWidget(color: vibrancyDependentColor1),
         ),
       );
@@ -262,7 +262,7 @@ void main() {
     (WidgetTester tester) async {
       await tester.pumpWidget(
         const MediaQuery(
-          data: MediaQueryData(),
+          data: MediaQueryData(highContrast: false),
           child: DependentWidget(color: contrastDependentColor1),
         ),
       );
@@ -328,7 +328,7 @@ void main() {
 
     await tester.pumpWidget(
       const MediaQuery(
-        data: MediaQueryData(),
+        data: MediaQueryData(platformBrightness: Brightness.light, highContrast: false),
         child: CupertinoUserInterfaceLevel(
           data: CupertinoUserInterfaceLevelData.base,
           child: DependentWidget(color: dynamicRainbowColor1),
@@ -339,7 +339,7 @@ void main() {
 
     await tester.pumpWidget(
       const MediaQuery(
-        data: MediaQueryData(platformBrightness: Brightness.dark),
+        data: MediaQueryData(platformBrightness: Brightness.dark, highContrast: false),
         child: CupertinoUserInterfaceLevel(
           data: CupertinoUserInterfaceLevelData.base,
           child: DependentWidget(color: dynamicRainbowColor1),
@@ -350,7 +350,7 @@ void main() {
 
     await tester.pumpWidget(
       const MediaQuery(
-        data: MediaQueryData(highContrast: true),
+        data: MediaQueryData(platformBrightness: Brightness.light, highContrast: true),
         child: CupertinoUserInterfaceLevel(
           data: CupertinoUserInterfaceLevelData.base,
           child: DependentWidget(color: dynamicRainbowColor1),
@@ -372,7 +372,7 @@ void main() {
 
     await tester.pumpWidget(
       const MediaQuery(
-        data: MediaQueryData(platformBrightness: Brightness.dark),
+        data: MediaQueryData(platformBrightness: Brightness.dark, highContrast: false),
         child: CupertinoUserInterfaceLevel(
           data: CupertinoUserInterfaceLevelData.elevated,
           child: DependentWidget(color: dynamicRainbowColor1),
@@ -383,7 +383,7 @@ void main() {
 
     await tester.pumpWidget(
       const MediaQuery(
-        data: MediaQueryData(highContrast: true),
+        data: MediaQueryData(platformBrightness: Brightness.light, highContrast: true),
         child: CupertinoUserInterfaceLevel(
           data: CupertinoUserInterfaceLevelData.elevated,
           child: DependentWidget(color: dynamicRainbowColor1),
@@ -405,7 +405,7 @@ void main() {
 
     await tester.pumpWidget(
       const MediaQuery(
-        data: MediaQueryData(),
+        data: MediaQueryData(platformBrightness: Brightness.light, highContrast: false),
         child: CupertinoUserInterfaceLevel(
           data: CupertinoUserInterfaceLevelData.elevated,
           child: DependentWidget(color: dynamicRainbowColor1),
@@ -457,7 +457,7 @@ void main() {
       CupertinoApp(
         theme: const CupertinoThemeData(primaryColor: dynamicColor),
         home: MediaQuery(
-          data: const MediaQueryData(),
+          data: const MediaQueryData(platformBrightness: Brightness.light, highContrast: false),
           child: CupertinoUserInterfaceLevel(
             data: CupertinoUserInterfaceLevelData.base,
             child: Builder(
@@ -512,7 +512,7 @@ void main() {
             ),
           ),
           home: MediaQuery(
-            data: const MediaQueryData(),
+            data: const MediaQueryData(platformBrightness: Brightness.light, highContrast: false),
             child: CupertinoUserInterfaceLevel(
               data: CupertinoUserInterfaceLevelData.base,
               child: Builder(
@@ -585,7 +585,7 @@ void main() {
 }
 
 class _NullElement extends Element {
-  _NullElement() : super(const _NullWidget());
+  _NullElement() : super(_NullWidget());
 
   static _NullElement instance = _NullElement();
 
@@ -597,8 +597,6 @@ class _NullElement extends Element {
 }
 
 class _NullWidget extends Widget {
-  const _NullWidget();
-
   @override
   Element createElement() => throw UnimplementedError();
 }

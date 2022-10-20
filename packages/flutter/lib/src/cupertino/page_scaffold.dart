@@ -18,12 +18,36 @@ import 'theme.dart';
 /// encloses the [ScrollView]. The [ScrollView.primary] flag is used to connect
 /// a [ScrollView] to the enclosing [PrimaryScrollController].
 ///
-/// {@tool dartpad}
+/// {@tool dartpad --template=stateful_widget_cupertino}
 /// This example shows a [CupertinoPageScaffold] with a [ListView] as a [child].
 /// The [CupertinoButton] is connected to a callback that increments a counter.
 /// The [backgroundColor] can be changed.
 ///
-/// ** See code in examples/api/lib/cupertino/page_scaffold/cupertino_page_scaffold.0.dart **
+/// ```dart
+/// int _count = 0;
+///
+/// @override
+/// Widget build(BuildContext context) {
+///   return CupertinoPageScaffold(
+///     // Uncomment to change the background color
+///     // backgroundColor: CupertinoColors.systemPink,
+///     navigationBar: const CupertinoNavigationBar(
+///       middle: const Text('Sample Code'),
+///     ),
+///     child: ListView(
+///       children: <Widget>[
+///         CupertinoButton(
+///           onPressed: () => setState(() => _count++),
+///           child: const Icon(CupertinoIcons.add),
+///         ),
+///         Center(
+///           child: Text('You have pressed the button $_count times.'),
+///         ),
+///       ],
+///     ),
+///   );
+/// }
+/// ```
 /// {@end-tool}
 ///
 /// See also:
@@ -34,13 +58,14 @@ import 'theme.dart';
 class CupertinoPageScaffold extends StatefulWidget {
   /// Creates a layout for pages with a navigation bar at the top.
   const CupertinoPageScaffold({
-    super.key,
+    Key? key,
     this.navigationBar,
     this.backgroundColor,
     this.resizeToAvoidBottomInset = true,
     required this.child,
   }) : assert(child != null),
-       assert(resizeToAvoidBottomInset != null);
+       assert(resizeToAvoidBottomInset != null),
+       super(key: key);
 
   /// The [navigationBar], typically a [CupertinoNavigationBar], is drawn at the
   /// top of the screen.
@@ -90,10 +115,10 @@ class CupertinoPageScaffold extends StatefulWidget {
 class _CupertinoPageScaffoldState extends State<CupertinoPageScaffold> {
 
   void _handleStatusBarTap() {
-    final ScrollController? primaryScrollController = PrimaryScrollController.of(context);
+    final ScrollController? _primaryScrollController = PrimaryScrollController.of(context);
     // Only act on the scroll controller if it has any attached scroll positions.
-    if (primaryScrollController != null && primaryScrollController.hasClients) {
-      primaryScrollController.animateTo(
+    if (_primaryScrollController != null && _primaryScrollController.hasClients) {
+      _primaryScrollController.animateTo(
         0.0,
         // Eyeballed from iOS.
         duration: const Duration(milliseconds: 500),

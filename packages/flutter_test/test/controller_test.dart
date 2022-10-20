@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:ui';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -92,7 +94,7 @@ void main() {
       expect(semantics.label, 'hello');
       expect(semantics.hasAction(SemanticsAction.tap), true);
       expect(semantics.hasFlag(SemanticsFlag.isButton), true);
-    });
+    }, semanticsEnabled: true);
 
     testWidgets('Returns merged SemanticsData', (WidgetTester tester) async {
       final SemanticsHandle semanticsHandle = tester.ensureSemantics();
@@ -414,13 +416,12 @@ void main() {
 
       const String b = '$kSecondaryMouseButton';
       for(int i = 0; i < logs.length; i++) {
-        if (i == 0) {
+        if (i == 0)
           expect(logs[i], 'down $b');
-        } else if (i != logs.length - 1) {
+        else if (i != logs.length - 1)
           expect(logs[i], 'move $b');
-        } else {
+        else
           expect(logs[i], 'up 0');
-        }
       }
     },
   );
@@ -471,13 +472,12 @@ void main() {
 
       const String b = '$kSecondaryMouseButton';
       for(int i = 0; i < logs.length; i++) {
-        if (i == 0) {
+        if (i == 0)
           expect(logs[i], 'down $b');
-        } else if (i != logs.length - 1) {
+        else if (i != logs.length - 1)
           expect(logs[i], 'move $b');
-        } else {
+        else
           expect(logs[i], 'up 0');
-        }
       }
     },
   );
@@ -503,13 +503,12 @@ void main() {
 
       const String b = '$kSecondaryMouseButton';
       for(int i = 0; i < logs.length; i++) {
-        if (i == 0) {
+        if (i == 0)
           expect(logs[i], 'down $b');
-        } else if (i != logs.length - 1) {
+        else if (i != logs.length - 1)
           expect(logs[i], 'move $b');
-        } else {
+        else
           expect(logs[i], 'up 0');
-        }
       }
     },
   );
@@ -536,13 +535,12 @@ void main() {
 
       const String b = '$kSecondaryMouseButton';
       for(int i = 0; i < logs.length; i++) {
-        if (i == 0) {
+        if (i == 0)
           expect(logs[i], 'down $b');
-        } else if (i != logs.length - 1) {
+        else if (i != logs.length - 1)
           expect(logs[i], 'move $b');
-        } else {
+        else
           expect(logs[i], 'up 0');
-        }
       }
     },
   );
@@ -601,13 +599,12 @@ void main() {
 
       const String b = '$kSecondaryMouseButton';
       for(int i = 0; i < logs.length; i++) {
-        if (i == 0) {
+        if (i == 0)
           expect(logs[i], 'down $b');
-        } else if (i != logs.length - 1) {
+        else if (i != logs.length - 1)
           expect(logs[i], 'move $b');
-        } else {
+        else
           expect(logs[i], 'up 0');
-        }
       }
     },
   );
@@ -666,12 +663,12 @@ void main() {
       );
 
       // Make sure widget isn't on screen
-      expect(find.text('Item 15'), findsNothing);
+      expect(find.text('Item 15', skipOffstage: true), findsNothing);
 
       await tester.ensureVisible(find.text('Item 15', skipOffstage: false));
       await tester.pumpAndSettle();
 
-      expect(find.text('Item 15'), findsOneWidget);
+      expect(find.text('Item 15', skipOffstage: true), findsOneWidget);
     },
   );
 
@@ -701,7 +698,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Now the widget is on screen.
-        expect(find.text('Item 45'), findsOneWidget);
+        expect(find.text('Item 45', skipOffstage: true), findsOneWidget);
       },
     );
 
@@ -732,7 +729,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Now the widget is on screen.
-        expect(find.text('Item 45'), findsOneWidget);
+        expect(find.text('Item 45', skipOffstage: true), findsOneWidget);
       },
     );
 
@@ -802,7 +799,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Now the widget is on screen.
-      expect(find.text('Item b-45'), findsOneWidget);
+      expect(find.text('Item b-45', skipOffstage: true), findsOneWidget);
     });
   });
 }

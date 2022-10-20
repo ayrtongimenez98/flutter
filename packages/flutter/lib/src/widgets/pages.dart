@@ -4,15 +4,16 @@
 
 import 'basic.dart';
 import 'framework.dart';
+import 'navigator.dart';
 import 'routes.dart';
 
 /// A modal route that replaces the entire screen.
 abstract class PageRoute<T> extends ModalRoute<T> {
   /// Creates a modal route that replaces the entire screen.
   PageRoute({
-    super.settings,
+    RouteSettings? settings,
     this.fullscreenDialog = false,
-  });
+  }) : super(settings: settings);
 
   /// {@template flutter.widgets.PageRoute.fullscreenDialog}
   /// Whether this page route is a full-screen dialog.
@@ -51,7 +52,7 @@ class PageRouteBuilder<T> extends PageRoute<T> {
   /// The [pageBuilder], [transitionsBuilder], [opaque], [barrierDismissible],
   /// [maintainState], and [fullscreenDialog] arguments must not be null.
   PageRouteBuilder({
-    super.settings,
+    RouteSettings? settings,
     required this.pageBuilder,
     this.transitionsBuilder = _defaultTransitionsBuilder,
     this.transitionDuration = const Duration(milliseconds: 300),
@@ -61,13 +62,14 @@ class PageRouteBuilder<T> extends PageRoute<T> {
     this.barrierColor,
     this.barrierLabel,
     this.maintainState = true,
-    super.fullscreenDialog,
+    bool fullscreenDialog = false,
   }) : assert(pageBuilder != null),
        assert(transitionsBuilder != null),
        assert(opaque != null),
        assert(barrierDismissible != null),
        assert(maintainState != null),
-       assert(fullscreenDialog != null);
+       assert(fullscreenDialog != null),
+       super(settings: settings, fullscreenDialog: fullscreenDialog);
 
   /// {@template flutter.widgets.pageRouteBuilder.pageBuilder}
   /// Used build the route's primary contents.

@@ -78,7 +78,7 @@ void test13() { }
 void test14() { }
 
 @Deprecated(
-  'Version number test (special beta should pass). '
+  'Version number test (should fail). '
   'This feature was deprecated after v3.1.0.'
 )
 void test15() { }

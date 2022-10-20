@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'dart:async';
 
 import 'package:file/file.dart';
@@ -15,15 +17,15 @@ import 'test_driver.dart';
 import 'test_utils.dart';
 
 void main() {
-  late Directory tempDir;
-  final ProjectWithEarlyError project = ProjectWithEarlyError();
-  const String exceptionStart = '══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞══════════════════';
-  late FlutterRunTestDriver flutter;
+  Directory tempDir;
+  final ProjectWithEarlyError _project = ProjectWithEarlyError();
+  const String _exceptionStart = '══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞══════════════════';
+  FlutterRunTestDriver _flutter;
 
   setUp(() async {
     tempDir = createResolvedTempDirectorySync('run_test.');
-    await project.setUpIn(tempDir);
-    flutter = FlutterRunTestDriver(tempDir);
+    await _project.setUpIn(tempDir);
+    _flutter = FlutterRunTestDriver(tempDir);
   });
 
   tearDown(() async {
@@ -54,14 +56,14 @@ void main() {
 
       if (line.startsWith('An Observatory debugger')) {
         final RegExp exp = RegExp(r'http://127.0.0.1:(\d+)/');
-        final RegExpMatch match = exp.firstMatch(line)!;
-        final String port = match.group(1)!;
+        final RegExpMatch match = exp.firstMatch(line);
+        final String port = match.group(1);
         if (port != null) {
           final VmService vmService =
               await vmServiceConnectUri('ws://localhost:$port/ws');
           final VM vm = await vmService.getVM();
-          for (final IsolateRef isolate in vm.isolates!) {
-            await vmService.resume(isolate.id!);
+          for (final IsolateRef isolate in vm.isolates) {
+            await vmService.resume(isolate.id);
           }
         }
       }
@@ -73,23 +75,23 @@ void main() {
 
     await process.exitCode;
 
-    expect(stdout.toString(), contains(exceptionStart));
+    expect(stdout.toString(), contains(_exceptionStart));
   });
 
   testWithoutContext('flutter run in machine mode does not print an error', () async {
     final StringBuffer stdout = StringBuffer();
 
-    await flutter.run(
+    await _flutter.run(
       startPaused: true,
       withDebugger: true,
       structuredErrors: true,
     );
-    await flutter.resume();
+    await _flutter.resume();
 
     final Completer<void> completer = Completer<void>();
 
     await Future<void>(() async {
-      flutter.stdout.listen((String line) {
+      _flutter.stdout.listen((String line) {
         stdout.writeln(line);
       });
       await completer.future;
@@ -97,8 +99,8 @@ void main() {
       // We don't expect to see any output but want to write to stdout anyway.
       completer.complete();
     });
-    await flutter.stop();
+    await _flutter.stop();
 
-    expect(stdout.toString(), isNot(contains(exceptionStart)));
+    expect(stdout.toString(), isNot(contains(_exceptionStart)));
   });
 }

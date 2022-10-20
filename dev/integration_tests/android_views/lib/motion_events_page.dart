@@ -44,7 +44,7 @@ class FutureDataHandler {
 FutureDataHandler driverDataHandler = FutureDataHandler();
 
 class MotionEventsBody extends StatefulWidget {
-  const MotionEventsBody({super.key});
+  const MotionEventsBody({Key? key}) : super(key: key);
 
   @override
   State createState() => MotionEventsBodyState();
@@ -171,10 +171,9 @@ class MotionEventsBodyState extends State<MotionEventsBody> {
   }
 
   Future<void> saveRecordedEvents(ByteData data, BuildContext context) async {
-    if (await channel.invokeMethod<bool>('getStoragePermission') ?? false) {
-      if (mounted) {
-        showMessage(context, 'External storage permissions are required to save events');
-      }
+    if (await channel.invokeMethod<bool>('getStoragePermission') == true) {
+      showMessage(
+          context, 'External storage permissions are required to save events');
       return;
     }
     try {
@@ -182,15 +181,9 @@ class MotionEventsBodyState extends State<MotionEventsBody> {
       // This test only runs on Android so we can assume path separator is '/'.
       final File file = File('${outDir?.path}/$kEventsFileName');
       await file.writeAsBytes(data.buffer.asUint8List(0, data.lengthInBytes), flush: true);
-      if (!mounted) {
-        return;
-      }
       showMessage(context, 'Saved original events to ${file.path}');
     } catch (e) {
-      if (!mounted) {
-        return;
-      }
-      showMessage(context, 'Failed saving $e');
+      showMessage(context, 'Failed saving ${e.toString()}');
     }
   }
 
@@ -234,7 +227,7 @@ class MotionEventsBodyState extends State<MotionEventsBody> {
         setState(() {});
         break;
     }
-    return Future<dynamic>.value();
+    return Future<dynamic>.value(null);
   }
 
   Future<dynamic> onViewMethodChannelCall(MethodCall call) {
@@ -247,7 +240,7 @@ class MotionEventsBodyState extends State<MotionEventsBody> {
         setState(() {});
         break;
     }
-    return Future<dynamic>.value();
+    return Future<dynamic>.value(null);
   }
 
   Widget buildEventTile(BuildContext context, int index) {
@@ -260,7 +253,7 @@ class MotionEventsBodyState extends State<MotionEventsBody> {
 }
 
 class TouchEventDiff extends StatelessWidget {
-  const TouchEventDiff(this.originalEvent, this.synthesizedEvent, {super.key});
+  const TouchEventDiff(this.originalEvent, this.synthesizedEvent, {Key? key}) : super(key: key);
 
   final Map<String, dynamic> originalEvent;
   final Map<String, dynamic> synthesizedEvent;
@@ -310,6 +303,6 @@ class TouchEventDiff extends StatelessWidget {
     for (int i = 0; i < coords.length; i++) {
       buffer.write('p$i x: ${coords[i]['x']} y: ${coords[i]['y']}, pressure: ${coords[i]['pressure']} ');
     }
-    print(buffer);
+    print(buffer.toString());
   }
 }

@@ -69,10 +69,10 @@ class _StockSymbolView extends StatelessWidget {
 
 class StockSymbolPage extends StatelessWidget {
   const StockSymbolPage({
-    super.key,
+    Key? key,
     required this.symbol,
     required this.stocks,
-  });
+  }) : super(key: key);
 
   final String symbol;
   final StockData stocks;
@@ -121,9 +121,9 @@ class StockSymbolPage extends StatelessWidget {
 
 class StockSymbolBottomSheet extends StatelessWidget {
   const StockSymbolBottomSheet({
-    super.key,
+    Key? key,
     required this.stock,
-  });
+  }) : super(key: key);
 
   final Stock stock;
 

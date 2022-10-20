@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class PlatformChannel extends StatefulWidget {
-  const PlatformChannel({super.key});
+  const PlatformChannel({Key? key}) : super(key: key);
 
   @override
   State<PlatformChannel> createState() => _PlatformChannelState();
@@ -28,12 +28,8 @@ class _PlatformChannelState extends State<PlatformChannel> {
     try {
       final int? result = await methodChannel.invokeMethod('getBatteryLevel');
       batteryLevel = 'Battery level: $result%.';
-    } on PlatformException catch (e) {
-      if (e.code == 'NO_BATTERY') {
-        batteryLevel = 'No battery.';
-      } else {
-        batteryLevel = 'Failed to get battery level.';
-      }
+    } on PlatformException {
+      batteryLevel = 'Failed to get battery level.';
     }
     setState(() {
       _batteryLevel = batteryLevel;

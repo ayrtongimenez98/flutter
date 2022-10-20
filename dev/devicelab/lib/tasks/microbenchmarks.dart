@@ -5,13 +5,12 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter_devicelab/framework/devices.dart';
+import 'package:flutter_devicelab/framework/framework.dart';
+import 'package:flutter_devicelab/framework/task_result.dart';
+import 'package:flutter_devicelab/framework/utils.dart';
+import 'package:flutter_devicelab/microbenchmarks.dart';
 import 'package:path/path.dart' as path;
-
-import '../framework/devices.dart';
-import '../framework/framework.dart';
-import '../framework/task_result.dart';
-import '../framework/utils.dart';
-import '../microbenchmarks.dart';
 
 /// Creates a device lab task that runs benchmarks in
 /// `dev/benchmarks/microbenchmarks` reports results to the dashboard.
@@ -19,10 +18,9 @@ TaskFunction createMicrobenchmarkTask() {
   return () async {
     final Device device = await devices.workingDevice;
     await device.unlock();
-    await device.clearLogs();
 
-    Future<Map<String, double>> runMicrobench(String benchmarkPath) async {
-      Future<Map<String, double>> run() async {
+    Future<Map<String, double>> _runMicrobench(String benchmarkPath) async {
+      Future<Map<String, double>> _run() async {
         print('Running $benchmarkPath');
         final Directory appDir = dir(
             path.join(flutterDirectory.path, 'dev/benchmarks/microbenchmarks'));
@@ -45,28 +43,21 @@ TaskFunction createMicrobenchmarkTask() {
         return readJsonResults(flutterProcess);
       }
 
-      return run();
+      return _run();
     }
 
     final Map<String, double> allResults = <String, double>{
-      ...await runMicrobench('lib/stocks/layout_bench.dart'),
-      ...await runMicrobench('lib/stocks/build_bench.dart'),
-      ...await runMicrobench('lib/geometry/matrix_utils_transform_bench.dart'),
-      ...await runMicrobench('lib/geometry/rrect_contains_bench.dart'),
-      ...await runMicrobench('lib/gestures/velocity_tracker_bench.dart'),
-      ...await runMicrobench('lib/gestures/gesture_detector_bench.dart'),
-      ...await runMicrobench('lib/stocks/animation_bench.dart'),
-      ...await runMicrobench('lib/language/compute_bench.dart'),
-      ...await runMicrobench('lib/language/sync_star_bench.dart'),
-      ...await runMicrobench('lib/language/sync_star_semantics_bench.dart'),
-      ...await runMicrobench('lib/foundation/all_elements_bench.dart'),
-      ...await runMicrobench('lib/foundation/clamp.dart'),
-      ...await runMicrobench('lib/foundation/change_notifier_bench.dart'),
-      ...await runMicrobench('lib/foundation/platform_asset_bundle.dart'),
-      ...await runMicrobench('lib/foundation/standard_method_codec_bench.dart'),
-      ...await runMicrobench('lib/foundation/standard_message_codec_bench.dart'),
-      ...await runMicrobench('lib/foundation/timeline_bench.dart'),
-      ...await runMicrobench('lib/ui/image_bench.dart'),
+      ...await _runMicrobench('lib/stocks/layout_bench.dart'),
+      ...await _runMicrobench('lib/stocks/build_bench.dart'),
+      ...await _runMicrobench('lib/geometry/matrix_utils_transform_bench.dart'),
+      ...await _runMicrobench('lib/geometry/rrect_contains_bench.dart'),
+      ...await _runMicrobench('lib/gestures/velocity_tracker_bench.dart'),
+      ...await _runMicrobench('lib/gestures/gesture_detector_bench.dart'),
+      ...await _runMicrobench('lib/stocks/animation_bench.dart'),
+      ...await _runMicrobench('lib/language/sync_star_bench.dart'),
+      ...await _runMicrobench('lib/language/sync_star_semantics_bench.dart'),
+      ...await _runMicrobench('lib/foundation/all_elements_bench.dart'),
+      ...await _runMicrobench('lib/foundation/change_notifier_bench.dart'),
     };
 
     return TaskResult.success(allResults,

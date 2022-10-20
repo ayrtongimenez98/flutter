@@ -89,7 +89,6 @@ void main() {
     ..layout(const ui.ParagraphConstraints(width: 180.0));
 
   // Finally, we register our beginFrame callback and kick off the first frame.
-  ui.PlatformDispatcher.instance
-      ..onBeginFrame = beginFrame
-      ..scheduleFrame();
+  ui.window.onBeginFrame = beginFrame;
+  ui.window.scheduleFrame();
 }

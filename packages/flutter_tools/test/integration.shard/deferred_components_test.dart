@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:archive/archive.dart';
 import 'package:file/file.dart';
 import 'package:file_testing/file_testing.dart';
@@ -12,18 +14,17 @@ import 'test_data/deferred_components_project.dart';
 import 'test_driver.dart';
 import 'test_utils.dart';
 
-
 void main() {
-  late Directory tempDir;
-  late FlutterRunTestDriver flutter;
+  Directory tempDir;
+  FlutterRunTestDriver _flutter;
 
   setUp(() async {
     tempDir = createResolvedTempDirectorySync('run_test.');
-    flutter = FlutterRunTestDriver(tempDir);
+    _flutter = FlutterRunTestDriver(tempDir);
   });
 
   tearDown(() async {
-    await flutter.stop();
+    await _flutter.stop();
     tryToDelete(tempDir);
   });
 
@@ -36,12 +37,9 @@ void main() {
       ...getLocalEngineArguments(),
       'build',
       'appbundle',
-      '--target-platform=android-arm64',
+      '--target-platform=android-arm64'
     ], workingDirectory: tempDir.path);
 
-    printOnFailure('stdout:\n${result.stdout}');
-    printOnFailure('stderr:\n${result.stderr}');
-    expect(result.exitCode, 0);
     expect(result.stdout.toString(), contains('app-release.aab'));
     expect(result.stdout.toString(), contains('Deferred components prebuild validation passed.'));
     expect(result.stdout.toString(), contains('Deferred components gen_snapshot validation passed.'));
@@ -62,7 +60,9 @@ void main() {
 
     expect(archive.findFile('component1/assets/flutter_assets/test_assets/asset2.txt') != null, true);
     expect(archive.findFile('base/assets/flutter_assets/test_assets/asset1.txt') != null, true);
-  });
+
+    expect(result.exitCode, 0);
+  }, timeout: const Timeout(Duration(minutes: 5)));
 
   testWithoutContext('simple build appbundle all targets succeeds', () async {
     final DeferredComponentsProject project = DeferredComponentsProject(BasicDeferredComponentsConfig());
@@ -75,8 +75,6 @@ void main() {
       'appbundle',
     ], workingDirectory: tempDir.path);
 
-    printOnFailure('stdout:\n${result.stdout}');
-    printOnFailure('stderr:\n${result.stderr}');
     expect(result.stdout.toString(), contains('app-release.aab'));
     expect(result.stdout.toString(), contains('Deferred components prebuild validation passed.'));
     expect(result.stdout.toString(), contains('Deferred components gen_snapshot validation passed.'));
@@ -107,7 +105,7 @@ void main() {
     expect(archive.findFile('base/assets/flutter_assets/test_assets/asset1.txt') != null, true);
 
     expect(result.exitCode, 0);
-  });
+  }, timeout: const Timeout(Duration(minutes: 5)));
 
   testWithoutContext('simple build appbundle no-deferred-components succeeds', () async {
     final DeferredComponentsProject project = DeferredComponentsProject(BasicDeferredComponentsConfig());
@@ -118,11 +116,9 @@ void main() {
       ...getLocalEngineArguments(),
       'build',
       'appbundle',
-      '--no-deferred-components',
+      '--no-deferred-components'
     ], workingDirectory: tempDir.path);
 
-    printOnFailure('stdout:\n${result.stdout}');
-    printOnFailure('stderr:\n${result.stderr}');
     expect(result.stdout.toString().contains('app-release.aab'), true);
     expect(result.stdout.toString().contains('Deferred components prebuild validation passed.'), false);
     expect(result.stdout.toString().contains('Deferred components gen_snapshot validation passed.'), false);
@@ -155,7 +151,7 @@ void main() {
     expect(archive.findFile('base/assets/flutter_assets/test_assets/asset1.txt') != null, true);
 
     expect(result.exitCode, 0);
-  });
+  }, timeout: const Timeout(Duration(minutes: 5)));
 
   testWithoutContext('simple build appbundle mismatched golden no-validate-deferred-components succeeds', () async {
     final DeferredComponentsProject project = DeferredComponentsProject(MismatchedGoldenDeferredComponentsConfig());
@@ -169,8 +165,6 @@ void main() {
       '--no-validate-deferred-components',
     ], workingDirectory: tempDir.path);
 
-    printOnFailure('stdout:\n${result.stdout}');
-    printOnFailure('stderr:\n${result.stderr}');
     expect(result.stdout.toString().contains('app-release.aab'), true);
     expect(result.stdout.toString().contains('Deferred components prebuild validation passed.'), false);
     expect(result.stdout.toString().contains('Deferred components gen_snapshot validation passed.'), false);
@@ -204,7 +198,7 @@ void main() {
     expect(archive.findFile('base/assets/flutter_assets/test_assets/asset1.txt') != null, true);
 
     expect(result.exitCode, 0);
-  });
+  }, timeout: const Timeout(Duration(minutes: 5)));
 
   testWithoutContext('simple build appbundle missing android dynamic feature module fails', () async {
     final DeferredComponentsProject project = DeferredComponentsProject(NoAndroidDynamicFeatureModuleDeferredComponentsConfig());

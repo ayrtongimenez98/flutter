@@ -15,9 +15,10 @@ enum DismissDialogAction {
 }
 
 class DateTimeItem extends StatelessWidget {
-  DateTimeItem({ super.key, required DateTime dateTime, required this.onChanged })
+  DateTimeItem({ Key? key, required DateTime dateTime, required this.onChanged })
     : date = DateTime(dateTime.year, dateTime.month, dateTime.day),
-      time = TimeOfDay(hour: dateTime.hour, minute: dateTime.minute);
+      time = TimeOfDay(hour: dateTime.hour, minute: dateTime.minute),
+      super(key: key);
 
   final DateTime date;
   final TimeOfDay time;
@@ -92,7 +93,7 @@ class DateTimeItem extends StatelessWidget {
 }
 
 class FullScreenDialogDemo extends StatefulWidget {
-  const FullScreenDialogDemo({super.key});
+  const FullScreenDialogDemo({Key? key}) : super(key: key);
 
   @override
   FullScreenDialogDemoState createState() => FullScreenDialogDemoState();
@@ -162,7 +163,6 @@ class FullScreenDialogDemoState extends State<FullScreenDialogDemo> {
         onWillPop: _onWillPop,
         child: Scrollbar(
           child: ListView(
-            primary: true,
             padding: const EdgeInsets.all(16.0),
             children: <Widget>[
               Container(

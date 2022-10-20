@@ -30,7 +30,7 @@ import 'widgets_localizations.dart';
 /// app supports with [MaterialApp.supportedLocales]:
 ///
 /// ```dart
-/// MaterialApp(
+/// new MaterialApp(
 ///   localizationsDelegates: GlobalMaterialLocalizations.delegates,
 ///   supportedLocales: [
 ///     const Locale('en', 'US'), // American English
@@ -246,8 +246,8 @@ abstract class GlobalMaterialLocalizations implements MaterialLocalizations {
   String get dateRangeStartDateSemanticLabelRaw;
 
   @override
-  String dateRangeStartDateSemanticLabel(String formattedDate) {
-    return dateRangeStartDateSemanticLabelRaw.replaceFirst(r'$fullDate', formattedDate);
+  String dateRangeStartDateSemanticLabel(String fullDate) {
+    return dateRangeStartDateSemanticLabelRaw.replaceFirst(r'$fullDate', fullDate);
   }
 
   /// The raw version of [dateRangeEndDateSemanticLabel], with `$fullDate` verbatim
@@ -256,8 +256,8 @@ abstract class GlobalMaterialLocalizations implements MaterialLocalizations {
   String get dateRangeEndDateSemanticLabelRaw;
 
   @override
-  String dateRangeEndDateSemanticLabel(String formattedDate) {
-    return dateRangeEndDateSemanticLabelRaw.replaceFirst(r'$fullDate', formattedDate);
+  String dateRangeEndDateSemanticLabel(String fullDate) {
+    return dateRangeEndDateSemanticLabelRaw.replaceFirst(r'$fullDate', fullDate);
   }
 
   /// The raw version of [aboutListTileTitle], with `$applicationName` verbatim
@@ -436,9 +436,8 @@ abstract class GlobalMaterialLocalizations implements MaterialLocalizations {
   @override
   TimeOfDayFormat timeOfDayFormat({ bool alwaysUse24HourFormat = false }) {
     assert(alwaysUse24HourFormat != null);
-    if (alwaysUse24HourFormat) {
+    if (alwaysUse24HourFormat)
       return _get24HourVersionOf(timeOfDayFormatRaw);
-    }
     return timeOfDayFormatRaw;
   }
 
@@ -647,9 +646,9 @@ abstract class GlobalMaterialLocalizations implements MaterialLocalizations {
   String get remainingTextFieldCharacterCountOther;
 
   @override
-  String remainingTextFieldCharacterCount(int remaining) {
+  String remainingTextFieldCharacterCount(int remainingCount) {
     return intl.Intl.pluralLogic(
-      remaining,
+      remainingCount,
       zero: remainingTextFieldCharacterCountZero,
       one: remainingTextFieldCharacterCountOne,
       two: remainingTextFieldCharacterCountTwo,
@@ -657,7 +656,7 @@ abstract class GlobalMaterialLocalizations implements MaterialLocalizations {
       few: remainingTextFieldCharacterCountFew,
       other: remainingTextFieldCharacterCountOther,
       locale: _localeName,
-    ).replaceFirst(r'$remainingCount', formatDecimal(remaining));
+    ).replaceFirst(r'$remainingCount', formatDecimal(remainingCount));
   }
 
   @override
@@ -682,7 +681,7 @@ abstract class GlobalMaterialLocalizations implements MaterialLocalizations {
   /// app supports with [MaterialApp.supportedLocales]:
   ///
   /// ```dart
-  /// MaterialApp(
+  /// new MaterialApp(
   ///   localizationsDelegates: GlobalMaterialLocalizations.delegates,
   ///   supportedLocales: [
   ///     const Locale('en', 'US'), // English

@@ -13,8 +13,8 @@ void main() {
     final Widget invalidButton = ElevatedButton(
       onPressed: () {},
       style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.orange,
-        backgroundColor: Colors.orangeAccent,
+        primary: Colors.orangeAccent, // background fill color
+        onPrimary: Colors.orange, // text foreground color
       ),
       child: const Text('Button'),
     );
@@ -31,8 +31,8 @@ void main() {
     final Widget invalidButton = ElevatedButton(
       onPressed: () {},
       style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.orange,
-        backgroundColor: Colors.orangeAccent,
+        primary: Colors.orangeAccent, // background fill color
+        onPrimary: Colors.orange, // text foreground color
       ),
       child: const Text('Button'),
     );

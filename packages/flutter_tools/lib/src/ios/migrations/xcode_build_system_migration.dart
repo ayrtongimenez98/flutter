@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import '../../base/file_system.dart';
+import '../../base/logger.dart';
 import '../../base/project_migrator.dart';
 import '../../xcode_project.dart';
 
@@ -12,8 +13,9 @@ import '../../xcode_project.dart';
 class XcodeBuildSystemMigration extends ProjectMigrator {
   XcodeBuildSystemMigration(
     IosProject project,
-    super.logger,
-  ) : _xcodeWorkspaceSharedSettings = project.xcodeWorkspaceSharedSettings;
+    Logger logger,
+  ) : _xcodeWorkspaceSharedSettings = project.xcodeWorkspaceSharedSettings,
+      super(logger);
 
   final File _xcodeWorkspaceSharedSettings;
 

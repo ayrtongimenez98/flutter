@@ -7,7 +7,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class ExampleDragTarget extends StatefulWidget {
-  const ExampleDragTarget({super.key});
+  const ExampleDragTarget({Key? key}) : super(key: key);
 
   @override
   ExampleDragTargetState createState() => ExampleDragTargetState();
@@ -44,7 +44,7 @@ class ExampleDragTargetState extends State<ExampleDragTarget> {
 }
 
 class Dot extends StatefulWidget {
-  const Dot({ super.key, this.color, this.size, this.child, this.tappable = false });
+  const Dot({ Key? key, this.color, this.size, this.child, this.tappable = false }) : super(key: key);
 
   final Color? color;
   final double? size;
@@ -77,12 +77,12 @@ class DotState extends State<Dot> {
 
 class ExampleDragSource extends StatelessWidget {
   const ExampleDragSource({
-    super.key,
+    Key? key,
     this.color,
     this.heavy = false,
     this.under = true,
     this.child,
-  });
+  }) : super(key: key);
 
   final Color? color;
   final bool heavy;
@@ -132,18 +132,18 @@ class ExampleDragSource extends StatelessWidget {
     if (heavy) {
       return LongPressDraggable<Color>(
         data: color,
+        child: contents,
         feedback: feedback,
         feedbackOffset: feedbackOffset,
         dragAnchorStrategy: dragAnchorStrategy,
-        child: contents,
       );
     } else {
       return Draggable<Color>(
         data: color,
+        child: contents,
         feedback: feedback,
         feedbackOffset: feedbackOffset,
         dragAnchorStrategy: dragAnchorStrategy,
-        child: contents,
       );
     }
   }
@@ -176,7 +176,7 @@ class DashOutlineCirclePainter extends CustomPainter {
 }
 
 class MovableBall extends StatelessWidget {
-  const MovableBall(this.position, this.ballPosition, this.callback, {super.key});
+  const MovableBall(this.position, this.ballPosition, this.callback, {Key? key}) : super(key: key);
 
   final int position;
   final int ballPosition;
@@ -208,10 +208,10 @@ class MovableBall extends StatelessWidget {
     if (position == ballPosition) {
       return Draggable<bool>(
         data: true,
+        child: ball,
         childWhenDragging: dashedBall,
         feedback: ball,
         maxSimultaneousDrags: 1,
-        child: ball,
       );
     } else {
       return DragTarget<bool>(
@@ -225,7 +225,7 @@ class MovableBall extends StatelessWidget {
 }
 
 class DragAndDropApp extends StatefulWidget {
-  const DragAndDropApp({super.key});
+  const DragAndDropApp({Key? key}) : super(key: key);
 
   @override
   DragAndDropAppState createState() => DragAndDropAppState();
@@ -248,10 +248,13 @@ class DragAndDropAppState extends State<DragAndDropApp> {
         children: <Widget>[
           Expanded(
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
                 ExampleDragSource(
                   color: Colors.yellow.shade300,
+                  under: true,
+                  heavy: false,
                   child: const Text('under'),
                 ),
                 ExampleDragSource(
@@ -263,6 +266,7 @@ class DragAndDropAppState extends State<DragAndDropApp> {
                 ExampleDragSource(
                   color: Colors.indigo.shade300,
                   under: false,
+                  heavy: false,
                   child: const Text('above'),
                 ),
               ],

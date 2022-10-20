@@ -25,7 +25,7 @@ import 'theme.dart';
 ///
 /// See also:
 ///
-///  * [showDatePicker], which shows a dialog that contains a Material Design
+///  * [showDatePicker], which shows a dialog that contains a material design
 ///    date picker which includes support for text entry of dates.
 ///  * [MaterialLocalizations.parseCompactDate], which is used to parse the text
 ///    input into a [DateTime].
@@ -45,7 +45,7 @@ class InputDatePickerFormField extends StatefulWidget {
   /// [firstDate], [lastDate], and [autofocus] must be non-null.
   ///
   InputDatePickerFormField({
-    super.key,
+    Key? key,
     DateTime? initialDate,
     required DateTime firstDate,
     required DateTime lastDate,
@@ -56,14 +56,14 @@ class InputDatePickerFormField extends StatefulWidget {
     this.errorInvalidText,
     this.fieldHintText,
     this.fieldLabelText,
-    this.keyboardType,
     this.autofocus = false,
   }) : assert(firstDate != null),
        assert(lastDate != null),
        assert(autofocus != null),
        initialDate = initialDate != null ? DateUtils.dateOnly(initialDate) : null,
        firstDate = DateUtils.dateOnly(firstDate),
-       lastDate = DateUtils.dateOnly(lastDate) {
+       lastDate = DateUtils.dateOnly(lastDate),
+       super(key: key) {
     assert(
       !this.lastDate.isBefore(this.firstDate),
       'lastDate ${this.lastDate} must be on or after firstDate ${this.firstDate}.',
@@ -125,11 +125,6 @@ class InputDatePickerFormField extends StatefulWidget {
   /// string. For example, 'Month, Day, Year' for en_US.
   final String? fieldLabelText;
 
-  /// The keyboard type of the [TextField].
-  ///
-  /// If this is null, it will default to [TextInputType.datetime]
-  final TextInputType? keyboardType;
-
   /// {@macro flutter.widgets.editableText.autofocus}
   final bool autofocus;
 
@@ -166,7 +161,7 @@ class _InputDatePickerFormFieldState extends State<InputDatePickerFormField> {
     super.didUpdateWidget(oldWidget);
     if (widget.initialDate != oldWidget.initialDate) {
       // Can't update the form field in the middle of a build, so do it next frame
-      WidgetsBinding.instance.addPostFrameCallback((Duration timeStamp) {
+      WidgetsBinding.instance!.addPostFrameCallback((Duration timeStamp) {
         setState(() {
           _selectedDate = widget.initialDate;
           _updateValueForSelectedDate();
@@ -247,7 +242,7 @@ class _InputDatePickerFormFieldState extends State<InputDatePickerFormField> {
         labelText: widget.fieldLabelText ?? localizations.dateInputLabel,
       ),
       validator: _validateDate,
-      keyboardType: widget.keyboardType ?? TextInputType.datetime,
+      keyboardType: TextInputType.datetime,
       onSaved: _handleSaved,
       onFieldSubmitted: _handleSubmitted,
       autofocus: widget.autofocus,

@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import '../base/common.dart';
 import '../cache.dart';
-import '../globals.dart' as globals;
+import '../globals_null_migrated.dart' as globals;
 import '../runner/flutter_command.dart';
 import '../version.dart';
 
@@ -14,6 +16,7 @@ class ChannelCommand extends FlutterCommand {
       'all',
       abbr: 'a',
       help: 'Include all the available branches (including local branches) when listing channels.',
+      defaultsTo: false,
       hide: !verboseHelp,
     );
   }
@@ -25,33 +28,29 @@ class ChannelCommand extends FlutterCommand {
   final String description = 'List or switch Flutter channels.';
 
   @override
-  final String category = FlutterCommandCategory.sdk;
-
-  @override
-  String get invocation => '${runner?.executableName} $name [<channel-name>]';
+  String get invocation => '${runner.executableName} $name [<channel-name>]';
 
   @override
   Future<Set<DevelopmentArtifact>> get requiredArtifacts async => const <DevelopmentArtifact>{};
 
   @override
   Future<FlutterCommandResult> runCommand() async {
-    final List<String> rest = argResults?.rest ?? <String>[];
-    switch (rest.length) {
+    switch (argResults.rest.length) {
       case 0:
         await _listChannels(
-          showAll: boolArgDeprecated('all'),
-          verbose: globalResults?['verbose'] == true,
+          showAll: boolArg('all'),
+          verbose: globalResults['verbose'] as bool,
         );
         return FlutterCommandResult.success();
       case 1:
-        await _switchChannel(rest[0]);
+        await _switchChannel(argResults.rest[0]);
         return FlutterCommandResult.success();
       default:
         throw ToolExit('Too many arguments.\n$usage');
     }
   }
 
-  Future<void> _listChannels({ required bool showAll, required bool verbose }) async {
+  Future<void> _listChannels({ bool showAll, bool verbose }) async {
     // Beware: currentBranch could contain PII. See getBranchName().
     final String currentChannel = globals.flutterVersion.channel;
     final String currentBranch = globals.flutterVersion.getBranchName();
@@ -79,10 +78,6 @@ class ChannelCommand extends FlutterCommand {
 
     for (final String line in rawOutput) {
       final List<String> split = line.split('/');
-      if (split.length != 2) {
-        // We don't know how to parse this line, skip it.
-        continue;
-      }
       final String branch = split[1];
       if (split.length > 1) {
         final int index = officialChannels.indexOf(branch);
@@ -127,24 +122,12 @@ class ChannelCommand extends FlutterCommand {
 
   Future<void> _switchChannel(String branchName) async {
     globals.printStatus("Switching to flutter channel '$branchName'...");
-    if (kObsoleteBranches.containsKey(branchName)) {
-      final String alternative = kObsoleteBranches[branchName]!;
-      globals.printStatus("This channel is obsolete. Consider switching to the '$alternative' channel instead.");
-    } else if (!kOfficialChannels.contains(branchName)) {
+    if (!kOfficialChannels.contains(branchName)) {
       globals.printStatus('This is not an official channel. For a list of available channels, try "flutter channel".');
     }
     await _checkout(branchName);
     globals.printStatus("Successfully switched to flutter channel '$branchName'.");
     globals.printStatus("To ensure that you're on the latest build from this channel, run 'flutter upgrade'");
-  }
-
-  static Future<void> upgradeChannel(FlutterVersion currentVersion) async {
-    final String channel = currentVersion.channel;
-    if (kObsoleteBranches.containsKey(channel)) {
-      final String alternative = kObsoleteBranches[channel]!;
-      globals.printStatus("Transitioning from '$channel' to '$alternative'...");
-      return _checkout(alternative);
-    }
   }
 
   static Future<void> _checkout(String branchName) async {

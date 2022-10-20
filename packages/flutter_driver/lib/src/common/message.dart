@@ -17,9 +17,8 @@ abstract class Command {
 
   static Duration? _parseTimeout(Map<String, String> json) {
     final String? timeout = json['timeout'];
-    if (timeout == null) {
+    if (timeout == null)
       return null;
-    }
     return Duration(milliseconds: int.parse(timeout));
   }
 
@@ -53,9 +52,8 @@ abstract class Command {
     final Map<String, String> result = <String, String>{
       'command': kind,
     };
-    if (timeout != null) {
+    if (timeout != null)
       result['timeout'] = '${timeout!.inMilliseconds}';
-    }
     return result;
   }
 }

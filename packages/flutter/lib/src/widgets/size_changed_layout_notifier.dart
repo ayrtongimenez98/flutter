@@ -28,10 +28,7 @@ import 'notification_listener.dart';
 ///
 ///  * [SizeChangedLayoutNotifier], which sends this notification.
 ///  * [LayoutChangedNotification], of which this is a subclass.
-class SizeChangedLayoutNotification extends LayoutChangedNotification {
-  /// Create a new [SizeChangedLayoutNotification].
-  const SizeChangedLayoutNotification();
-}
+class SizeChangedLayoutNotification extends LayoutChangedNotification { }
 
 /// A widget that automatically dispatches a [SizeChangedLayoutNotification]
 /// when the layout dimensions of its child change.
@@ -56,15 +53,15 @@ class SizeChangedLayoutNotifier extends SingleChildRenderObjectWidget {
   /// Creates a [SizeChangedLayoutNotifier] that dispatches layout changed
   /// notifications when [child] changes layout size.
   const SizeChangedLayoutNotifier({
-    super.key,
-    super.child,
-  });
+    Key? key,
+    Widget? child,
+  }) : super(key: key, child: child);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
     return _RenderSizeChangedWithCallback(
       onLayoutChangedCallback: () {
-        const SizeChangedLayoutNotification().dispatch(context);
+        SizeChangedLayoutNotification().dispatch(context);
       },
     );
   }
@@ -91,9 +88,8 @@ class _RenderSizeChangedWithCallback extends RenderProxyBox {
     super.performLayout();
     // Don't send the initial notification, or this will be SizeObserver all
     // over again!
-    if (_oldSize != null && size != _oldSize) {
+    if (_oldSize != null && size != _oldSize)
       onLayoutChangedCallback();
-    }
     _oldSize = size;
   }
 }

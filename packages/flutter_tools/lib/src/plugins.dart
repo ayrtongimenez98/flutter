@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
 import 'base/common.dart';
@@ -16,7 +15,6 @@ class Plugin {
     required this.platforms,
     required this.defaultPackagePlatforms,
     required this.pluginDartClassPlatforms,
-    this.flutterConstraint,
     required this.dependencies,
     required this.isDirectDependency,
     this.implementsPackage,
@@ -49,23 +47,17 @@ class Plugin {
   ///            package: io.flutter.plugins.sample
   ///            pluginClass: SamplePlugin
   ///          ios:
-  ///            # A plugin implemented through method channels.
   ///            pluginClass: SamplePlugin
   ///          linux:
-  ///            # A plugin implemented purely in Dart code.
-  ///            dartPluginClass: SamplePlugin
+  ///            pluginClass: SamplePlugin
   ///          macos:
-  ///            # A plugin implemented with `dart:ffi`.
-  ///            ffiPlugin: true
+  ///            pluginClass: SamplePlugin
   ///          windows:
-  ///            # A plugin using platform-specific Dart and method channels.
-  ///            dartPluginClass: SamplePlugin
   ///            pluginClass: SamplePlugin
   factory Plugin.fromYaml(
     String name,
     String path,
     YamlMap? pluginYaml,
-    VersionConstraint? flutterConstraint,
     List<String> dependencies, {
     required FileSystem fileSystem,
     Set<String>? appDependencies,
@@ -79,7 +71,6 @@ class Plugin {
         name,
         path,
         pluginYaml,
-        flutterConstraint,
         dependencies,
         fileSystem,
         appDependencies != null && appDependencies.contains(name),
@@ -89,7 +80,6 @@ class Plugin {
       name,
       path,
       pluginYaml,
-      flutterConstraint,
       dependencies,
       fileSystem,
       appDependencies != null && appDependencies.contains(name),
@@ -100,7 +90,6 @@ class Plugin {
     String name,
     String path,
     YamlMap pluginYaml,
-    VersionConstraint? flutterConstraint,
     List<String> dependencies,
     FileSystem fileSystem,
     bool isDirectDependency,
@@ -147,36 +136,44 @@ class Plugin {
           WindowsPlugin.fromYaml(name, platformsYaml[WindowsPlugin.kConfigKey] as YamlMap);
     }
 
-    // TODO(stuartmorgan): Consider merging web into this common handling; the
-    // fact that its implementation of Dart-only plugins and default packages
-    // are separate is legacy.
-    final List<String> sharedHandlingPlatforms = <String>[
-      AndroidPlugin.kConfigKey,
-      IOSPlugin.kConfigKey,
-      LinuxPlugin.kConfigKey,
-      MacOSPlugin.kConfigKey,
-      WindowsPlugin.kConfigKey,
-    ];
-    final Map<String, String> defaultPackages = <String, String>{};
-    final Map<String, String> dartPluginClasses = <String, String>{};
-    for (final String platform in sharedHandlingPlatforms) {
-        final String? defaultPackage = _getDefaultPackageForPlatform(platformsYaml, platform);
-        if (defaultPackage != null) {
-          defaultPackages[platform] = defaultPackage;
-        }
-        final String? dartClass = _getPluginDartClassForPlatform(platformsYaml, platform);
-        if (dartClass != null) {
-          dartPluginClasses[platform] = dartClass;
-        }
-    }
+    final String? defaultPackageForLinux =
+        _getDefaultPackageForPlatform(platformsYaml, LinuxPlugin.kConfigKey);
+
+    final String? defaultPackageForMacOS =
+        _getDefaultPackageForPlatform(platformsYaml, MacOSPlugin.kConfigKey);
+
+    final String? defaultPackageForWindows =
+        _getDefaultPackageForPlatform(platformsYaml, WindowsPlugin.kConfigKey);
+
+    final String? defaultPluginDartClassForLinux =
+        _getPluginDartClassForPlatform(platformsYaml, LinuxPlugin.kConfigKey);
+
+    final String? defaultPluginDartClassForMacOS =
+        _getPluginDartClassForPlatform(platformsYaml, MacOSPlugin.kConfigKey);
+
+    final String? defaultPluginDartClassForWindows =
+        _getPluginDartClassForPlatform(platformsYaml, WindowsPlugin.kConfigKey);
 
     return Plugin(
       name: name,
       path: path,
       platforms: platforms,
-      defaultPackagePlatforms: defaultPackages,
-      pluginDartClassPlatforms: dartPluginClasses,
-      flutterConstraint: flutterConstraint,
+      defaultPackagePlatforms: <String, String>{
+        if (defaultPackageForLinux != null)
+          LinuxPlugin.kConfigKey : defaultPackageForLinux,
+        if (defaultPackageForMacOS != null)
+          MacOSPlugin.kConfigKey : defaultPackageForMacOS,
+        if (defaultPackageForWindows != null)
+          WindowsPlugin.kConfigKey : defaultPackageForWindows,
+      },
+      pluginDartClassPlatforms: <String, String>{
+        if (defaultPluginDartClassForLinux != null)
+          LinuxPlugin.kConfigKey : defaultPluginDartClassForLinux,
+        if (defaultPluginDartClassForMacOS != null)
+          MacOSPlugin.kConfigKey : defaultPluginDartClassForMacOS,
+        if (defaultPluginDartClassForWindows != null)
+          WindowsPlugin.kConfigKey : defaultPluginDartClassForWindows,
+      },
       dependencies: dependencies,
       isDirectDependency: isDirectDependency,
       implementsPackage: pluginYaml['implements'] != null ? pluginYaml['implements'] as String : '',
@@ -187,7 +184,6 @@ class Plugin {
     String name,
     String path,
     dynamic pluginYaml,
-    VersionConstraint? flutterConstraint,
     List<String> dependencies,
     FileSystem fileSystem,
     bool isDirectDependency,
@@ -220,7 +216,6 @@ class Plugin {
       platforms: platforms,
       defaultPackagePlatforms: <String, String>{},
       pluginDartClassPlatforms: <String, String>{},
-      flutterConstraint: flutterConstraint,
       dependencies: dependencies,
       isDirectDependency: isDirectDependency,
     );
@@ -384,9 +379,6 @@ class Plugin {
   /// The name of the interface package that this plugin implements.
   /// If [null], this plugin doesn't implement an interface.
   final String? implementsPackage;
-
-  /// The required version of Flutter, if specified.
-  final VersionConstraint? flutterConstraint;
 
   /// The name of the packages this plugin depends on.
   final List<String> dependencies;

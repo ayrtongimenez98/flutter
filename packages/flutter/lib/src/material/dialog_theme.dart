@@ -15,13 +15,16 @@ import 'theme.dart';
 /// `DialogTheme.of(context)`. Instances of [DialogTheme] can be customized with
 /// [DialogTheme.copyWith].
 ///
-/// [titleTextStyle] and [contentTextStyle] are used in [AlertDialog]s and [SimpleDialog]s.
+/// When Shape is `null`, the dialog defaults to a [RoundedRectangleBorder] with
+/// a border radius of 2.0 on all corners.
+///
+/// [titleTextStyle] and [contentTextStyle] are used in [AlertDialog]s.
+/// If null, they default to [TextTheme.headline6] and [TextTheme.subtitle1],
+/// respectively.
 ///
 /// See also:
 ///
-///  * [Dialog], a dialog that can be customized using this [DialogTheme].
-///  * [AlertDialog], a dialog that can be customized using this [DialogTheme].
-///  * [SimpleDialog], a dialog that can be customized using this [DialogTheme].
+///  * [Dialog], a material dialog that can be customized using this [DialogTheme].
 ///  * [ThemeData], which describes the overall theme information for the
 ///    application.
 @immutable
@@ -31,38 +34,33 @@ class DialogTheme with Diagnosticable {
     this.backgroundColor,
     this.elevation,
     this.shape,
-    this.alignment,
-    this.iconColor,
     this.titleTextStyle,
     this.contentTextStyle,
-    this.actionsPadding,
   });
 
-  /// Overrides the default value for [Dialog.backgroundColor].
+  /// Default value for [Dialog.backgroundColor].
+  ///
+  /// If null, [ThemeData.dialogBackgroundColor] is used, if that's null,
+  /// defaults to [Colors.white].
   final Color? backgroundColor;
 
-  /// Overrides the default value for [Dialog.elevation].
+  /// Default value for [Dialog.elevation].
+  ///
+  /// If null, the [Dialog] elevation defaults to `24.0`.
   final double? elevation;
 
-  /// Overrides the default value for [Dialog.shape].
+  /// Default value for [Dialog.shape].
   final ShapeBorder? shape;
 
-  /// Overrides the default value for [Dialog.alignment].
-  final AlignmentGeometry? alignment;
-
-  /// Overrides the default value for [DefaultTextStyle] for [SimpleDialog.title] and
-  /// [AlertDialog.title].
+  /// Used to configure the [DefaultTextStyle] for the [AlertDialog.title] widget.
+  ///
+  /// If null, defaults to [TextTheme.headline6] of [ThemeData.textTheme].
   final TextStyle? titleTextStyle;
 
-  /// Overrides the default value for [DefaultTextStyle] for [SimpleDialog.children] and
-  /// [AlertDialog.content].
+  /// Used to configure the [DefaultTextStyle] for the [AlertDialog.content] widget.
+  ///
+  /// If null, defaults to [TextTheme.subtitle1] of [ThemeData.textTheme].
   final TextStyle? contentTextStyle;
-
-  /// Overrides the default value for [AlertDialog.actionsPadding].
-  final EdgeInsetsGeometry? actionsPadding;
-
-  /// Used to configure the [IconTheme] for the [AlertDialog.icon] widget.
-  final Color? iconColor;
 
   /// Creates a copy of this object but with the given fields replaced with the
   /// new values.
@@ -70,21 +68,15 @@ class DialogTheme with Diagnosticable {
     Color? backgroundColor,
     double? elevation,
     ShapeBorder? shape,
-    AlignmentGeometry? alignment,
-    Color? iconColor,
     TextStyle? titleTextStyle,
     TextStyle? contentTextStyle,
-    EdgeInsetsGeometry? actionsPadding,
   }) {
     return DialogTheme(
       backgroundColor: backgroundColor ?? this.backgroundColor,
       elevation: elevation ?? this.elevation,
       shape: shape ?? this.shape,
-      alignment: alignment ?? this.alignment,
-      iconColor: iconColor ?? this.iconColor,
       titleTextStyle: titleTextStyle ?? this.titleTextStyle,
       contentTextStyle: contentTextStyle ?? this.contentTextStyle,
-      actionsPadding: actionsPadding ?? this.actionsPadding,
     );
   }
 
@@ -104,11 +96,8 @@ class DialogTheme with Diagnosticable {
       backgroundColor: Color.lerp(a?.backgroundColor, b?.backgroundColor, t),
       elevation: lerpDouble(a?.elevation, b?.elevation, t),
       shape: ShapeBorder.lerp(a?.shape, b?.shape, t),
-      alignment: AlignmentGeometry.lerp(a?.alignment, b?.alignment, t),
-      iconColor: Color.lerp(a?.iconColor, b?.iconColor, t),
       titleTextStyle: TextStyle.lerp(a?.titleTextStyle, b?.titleTextStyle, t),
       contentTextStyle: TextStyle.lerp(a?.contentTextStyle, b?.contentTextStyle, t),
-      actionsPadding: EdgeInsetsGeometry.lerp(a?.actionsPadding, b?.actionsPadding, t),
     );
   }
 
@@ -117,33 +106,25 @@ class DialogTheme with Diagnosticable {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) {
+    if (identical(this, other))
       return true;
-    }
-    if (other.runtimeType != runtimeType) {
+    if (other.runtimeType != runtimeType)
       return false;
-    }
     return other is DialogTheme
         && other.backgroundColor == backgroundColor
         && other.elevation == elevation
         && other.shape == shape
-        && other.alignment == alignment
-        && other.iconColor == iconColor
         && other.titleTextStyle == titleTextStyle
-        && other.contentTextStyle == contentTextStyle
-        && other.actionsPadding == actionsPadding;
+        && other.contentTextStyle == contentTextStyle;
   }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(ColorProperty('backgroundColor', backgroundColor));
-    properties.add(DoubleProperty('elevation', elevation));
     properties.add(DiagnosticsProperty<ShapeBorder>('shape', shape, defaultValue: null));
-    properties.add(DiagnosticsProperty<AlignmentGeometry>('alignment', alignment, defaultValue: null));
-    properties.add(ColorProperty('iconColor', iconColor));
+    properties.add(DoubleProperty('elevation', elevation));
     properties.add(DiagnosticsProperty<TextStyle>('titleTextStyle', titleTextStyle, defaultValue: null));
     properties.add(DiagnosticsProperty<TextStyle>('contentTextStyle', contentTextStyle, defaultValue: null));
-    properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('actionsPadding', actionsPadding, defaultValue: null));
   }
 }

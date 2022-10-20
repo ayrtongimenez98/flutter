@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:html' as html;
+import 'dart:js_util' as js_util;
 import 'dart:math';
 import 'dart:ui' as ui;
 
@@ -50,24 +52,55 @@ enum _TestMode {
   /// Uses the HTML rendering backend with the canvas 2D text layout.
   useCanvasTextLayout,
 
+  /// Uses the HTML rendering backend with the DOM text layout.
+  useDomTextLayout,
+
   /// Uses CanvasKit for everything.
   useCanvasKit,
+}
+
+/// Sends a platform message to the web engine to enable/disable the usage of
+/// the canvas-based text measurement implementation.
+void _setTestMode(_TestMode? mode) {
+  bool? useCanvasText; // null means do not force DOM or canvas, works for CanvasKit
+  switch (mode) {
+    case _TestMode.useDomTextLayout:
+      useCanvasText = false;
+      break;
+    case _TestMode.useCanvasTextLayout:
+      useCanvasText = true;
+      break;
+    default:
+      // Keep as null.
+  }
+  js_util.callMethod(
+    html.window,
+    '_flutter_internal_update_experiment',
+    <dynamic>['useCanvasText', useCanvasText],
+  );
 }
 
 /// Repeatedly lays out a paragraph.
 ///
 /// Creates a different paragraph each time in order to avoid hitting the cache.
 class BenchTextLayout extends RawRecorder {
+  BenchTextLayout.dom()
+      : _mode = _TestMode.useDomTextLayout, super(name: domBenchmarkName);
+
   BenchTextLayout.canvas()
-      : super(name: canvasBenchmarkName);
+      : _mode = _TestMode.useCanvasTextLayout, super(name: canvasBenchmarkName);
 
   BenchTextLayout.canvasKit()
-      : super(name: canvasKitBenchmarkName);
+      : _mode = _TestMode.useCanvasKit, super(name: canvasKitBenchmarkName);
 
+  static const String domBenchmarkName = 'text_dom_layout';
   static const String canvasBenchmarkName = 'text_canvas_layout';
   static const String canvasKitBenchmarkName = 'text_canvaskit_layout';
 
   final ParagraphGenerator generator = ParagraphGenerator();
+
+  /// Whether to use the new canvas-based text measurement implementation.
+  final _TestMode _mode;
 
   static const String singleLineText = '*** ** ****';
   static const String multiLineText = '*** ****** **** *** ******** * *** '
@@ -77,6 +110,8 @@ class BenchTextLayout extends RawRecorder {
 
   @override
   void body(Profile profile) {
+    _setTestMode(_mode);
+
     recordParagraphOperations(
       profile: profile,
       paragraph: generator.generate(singleLineText),
@@ -108,6 +143,8 @@ class BenchTextLayout extends RawRecorder {
       keyPrefix: 'ellipsis',
       maxWidth: 200.0,
     );
+
+    _setTestMode(null);
   }
 
   void recordParagraphOperations({
@@ -143,17 +180,25 @@ class BenchTextLayout extends RawRecorder {
 /// use the same paragraph instance because the layout method will shortcircuit
 /// in that case.
 class BenchTextCachedLayout extends RawRecorder {
+  BenchTextCachedLayout.dom()
+      : _mode = _TestMode.useDomTextLayout, super(name: domBenchmarkName);
+
   BenchTextCachedLayout.canvas()
-      : super(name: canvasBenchmarkName);
+      : _mode = _TestMode.useCanvasTextLayout, super(name: canvasBenchmarkName);
 
   BenchTextCachedLayout.canvasKit()
-      : super(name: canvasKitBenchmarkName);
+      : _mode = _TestMode.useCanvasKit, super(name: canvasKitBenchmarkName);
 
+  static const String domBenchmarkName = 'text_dom_cached_layout';
   static const String canvasBenchmarkName = 'text_canvas_cached_layout';
   static const String canvasKitBenchmarkName = 'text_canvas_kit_cached_layout';
 
+  /// Whether to use the new canvas-based text measurement implementation.
+  final _TestMode _mode;
+
   @override
   void body(Profile profile) {
+    _setTestMode(_mode);
     final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle(fontFamily: 'sans-serif'))
         ..pushStyle(ui.TextStyle(fontSize: 12.0))
         ..addText(
@@ -164,6 +209,7 @@ class BenchTextCachedLayout extends RawRecorder {
     profile.record('layout', () {
       paragraph.layout(const ui.ParagraphConstraints(width: double.infinity));
     }, reported: true);
+    _setTestMode(null);
   }
 }
 
@@ -181,7 +227,8 @@ int _counter = 0;
 class BenchBuildColorsGrid extends WidgetBuildRecorder {
   BenchBuildColorsGrid.canvas()
       : _mode = _TestMode.useCanvasTextLayout, super(name: canvasBenchmarkName);
-
+  BenchBuildColorsGrid.dom()
+      : _mode = _TestMode.useDomTextLayout, super(name: domBenchmarkName);
   BenchBuildColorsGrid.canvasKit()
       : _mode = _TestMode.useCanvasKit, super(name: canvasKitBenchmarkName);
 
@@ -190,9 +237,12 @@ class BenchBuildColorsGrid extends WidgetBuildRecorder {
   /// When tracing is enabled, DOM layout takes longer to complete. This has a
   /// significant effect on the benchmark since we do a lot of text layout
   /// operations that trigger synchronous DOM layout.
+  ///
+  /// Tracing has a negative effect only in [_TestMode.useDomTextLayout] mode.
   @override
   bool get isTracingEnabled => false;
 
+  static const String domBenchmarkName = 'text_dom_color_grid';
   static const String canvasBenchmarkName = 'text_canvas_color_grid';
   static const String canvasKitBenchmarkName = 'text_canvas_kit_color_grid';
 
@@ -203,6 +253,7 @@ class BenchBuildColorsGrid extends WidgetBuildRecorder {
 
   @override
   Future<void> setUpAll() async {
+    _setTestMode(_mode);
     registerEngineBenchmarkValueListener('text_layout', (num value) {
       _textLayoutMicros += value;
     });
@@ -210,6 +261,7 @@ class BenchBuildColorsGrid extends WidgetBuildRecorder {
 
   @override
   Future<void> tearDownAll() async {
+    _setTestMode(null);
     stopListeningToEngineBenchmarkValues('text_layout');
   }
 
@@ -336,13 +388,14 @@ final List<Palette> allPalettes = <Palette>[
 
 class ColorItem extends StatelessWidget {
   const ColorItem({
-    super.key,
+    Key? key,
     required this.index,
     required this.color,
     this.prefix = '',
   })  : assert(index != null),
         assert(color != null),
-        assert(prefix != null);
+        assert(prefix != null),
+        super(key: key);
 
   final int index;
   final Color color;
@@ -364,6 +417,7 @@ class ColorItem extends StatelessWidget {
           bottom: false,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Text('$_counter:$prefix$index'),
               Text(colorString()),
@@ -377,9 +431,9 @@ class ColorItem extends StatelessWidget {
 
 class PaletteTabView extends StatelessWidget {
   const PaletteTabView({
-    super.key,
+    Key? key,
     required this.colors,
-  });
+  }) : super(key: key);
 
   final Palette colors;
 
@@ -393,7 +447,7 @@ class PaletteTabView extends StatelessWidget {
     600,
     700,
     800,
-    900,
+    900
   ];
   static const List<int> accentKeys = <int>[100, 200, 400, 700];
 
@@ -430,7 +484,7 @@ class PaletteTabView extends StatelessWidget {
 }
 
 class ColorsDemo extends StatelessWidget {
-  const ColorsDemo({super.key});
+  const ColorsDemo({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

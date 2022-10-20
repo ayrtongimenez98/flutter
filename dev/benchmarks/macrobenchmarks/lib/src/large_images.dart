@@ -7,11 +7,11 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 class LargeImagesPage extends StatelessWidget {
-  const LargeImagesPage({super.key});
+  const LargeImagesPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final ImageCache imageCache = PaintingBinding.instance.imageCache;
+    final ImageCache imageCache = PaintingBinding.instance!.imageCache!;
     imageCache.maximumSize = 30;
     imageCache.maximumSizeBytes = 50 << 20;
     return GridView.builder(

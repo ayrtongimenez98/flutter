@@ -88,6 +88,7 @@ class ScrollController extends ChangeNotifier {
   ///
   /// This should not be mutated directly. [ScrollPosition] objects can be added
   /// and removed using [attach] and [detach].
+  @protected
   Iterable<ScrollPosition> get positions => _positions;
   final List<ScrollPosition> _positions = <ScrollPosition>[];
 
@@ -168,9 +169,8 @@ class ScrollController extends ChangeNotifier {
   /// value was out of range.
   void jumpTo(double value) {
     assert(_positions.isNotEmpty, 'ScrollController not attached to any scroll views.');
-    for (final ScrollPosition position in List<ScrollPosition>.of(_positions)) {
+    for (final ScrollPosition position in List<ScrollPosition>.from(_positions))
       position.jumpTo(value);
-    }
   }
 
   /// Register the given position with this controller.
@@ -195,9 +195,8 @@ class ScrollController extends ChangeNotifier {
 
   @override
   void dispose() {
-    for (final ScrollPosition position in _positions) {
+    for (final ScrollPosition position in _positions)
       position.removeListener(notifyListeners);
-    }
     super.dispose();
   }
 
@@ -260,12 +259,10 @@ class ScrollController extends ChangeNotifier {
   /// method, as in `super.debugFillDescription(description)`.
   @mustCallSuper
   void debugFillDescription(List<String> description) {
-    if (debugLabel != null) {
+    if (debugLabel != null)
       description.add(debugLabel!);
-    }
-    if (initialScrollOffset != 0.0) {
+    if (initialScrollOffset != 0.0)
       description.add('initialScrollOffset: ${initialScrollOffset.toStringAsFixed(1)}, ');
-    }
     if (_positions.isEmpty) {
       description.add('no clients');
     } else if (_positions.length == 1) {
@@ -321,10 +318,14 @@ class TrackingScrollController extends ScrollController {
   /// Creates a scroll controller that continually updates its
   /// [initialScrollOffset] to match the last scroll notification it received.
   TrackingScrollController({
-    super.initialScrollOffset,
-    super.keepScrollOffset,
-    super.debugLabel,
-  });
+    double initialScrollOffset = 0.0,
+    bool keepScrollOffset = true,
+    String? debugLabel,
+  }) : super(
+         initialScrollOffset: initialScrollOffset,
+         keepScrollOffset: keepScrollOffset,
+         debugLabel: debugLabel,
+       );
 
   final Map<ScrollPosition, VoidCallback> _positionToListener = <ScrollPosition, VoidCallback>{};
   ScrollPosition? _lastUpdated;
@@ -361,12 +362,10 @@ class TrackingScrollController extends ScrollController {
     assert(_positionToListener.containsKey(position));
     position.removeListener(_positionToListener[position]!);
     _positionToListener.remove(position);
-    if (_lastUpdated == position) {
+    if (_lastUpdated == position)
       _lastUpdated = null;
-    }
-    if (_positionToListener.isEmpty) {
+    if (_positionToListener.isEmpty)
       _lastUpdatedOffset = null;
-    }
   }
 
   @override

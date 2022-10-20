@@ -2,16 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:ui' show Color, Rect, Size;
+import 'dart:ui' show Color, Size, Rect;
 
 import 'package:flutter/foundation.dart';
 
+import 'animation.dart';
 import 'animations.dart';
-
-export 'dart:ui' show Color, Rect, Size;
-
-export 'animation.dart' show Animation;
-export 'curves.dart' show Curve;
+import 'curves.dart';
 
 // Examples can assume:
 // late Animation<Offset> _animation;
@@ -323,12 +320,10 @@ class Tween<T extends Object?> extends Animatable<T> {
   /// subclass.
   @override
   T transform(double t) {
-    if (t == 0.0) {
+    if (t == 0.0)
       return begin as T;
-    }
-    if (t == 1.0) {
+    if (t == 1.0)
       return end as T;
-    }
     return lerp(t);
   }
 
@@ -373,7 +368,7 @@ class ColorTween extends Tween<Color?> {
   /// or [end] if you want the effect of fading in or out of transparent.
   /// Instead prefer null. [Colors.transparent] refers to black transparent and
   /// thus will fade out of or into black which is likely unwanted.
-  ColorTween({ super.begin, super.end });
+  ColorTween({ Color? begin, Color? end }) : super(begin: begin, end: end);
 
   /// Returns the value this variable has at the given animation clock value.
   @override
@@ -393,7 +388,7 @@ class SizeTween extends Tween<Size?> {
   ///
   /// The [begin] and [end] properties may be null; the null value
   /// is treated as an empty size.
-  SizeTween({ super.begin, super.end });
+  SizeTween({ Size? begin, Size? end }) : super(begin: begin, end: end);
 
   /// Returns the value this variable has at the given animation clock value.
   @override
@@ -414,7 +409,7 @@ class RectTween extends Tween<Rect?> {
   ///
   /// The [begin] and [end] properties may be null; the null value
   /// is treated as an empty rect at the top left corner.
-  RectTween({ super.begin, super.end });
+  RectTween({ Rect? begin, Rect? end }) : super(begin: begin, end: end);
 
   /// Returns the value this variable has at the given animation clock value.
   @override
@@ -441,7 +436,7 @@ class IntTween extends Tween<int> {
   /// The [begin] and [end] properties must be non-null before the tween is
   /// first used, but the arguments can be null if the values are going to be
   /// filled in later.
-  IntTween({ super.begin, super.end });
+  IntTween({ int? begin, int? end }) : super(begin: begin, end: end);
 
   // The inherited lerp() function doesn't work with ints because it multiplies
   // the begin and end types by a double, and int * double returns a double.
@@ -469,7 +464,7 @@ class StepTween extends Tween<int> {
   /// The [begin] and [end] properties must be non-null before the tween is
   /// first used, but the arguments can be null if the values are going to be
   /// filled in later.
-  StepTween({ super.begin, super.end });
+  StepTween({ int? begin, int? end }) : super(begin: begin, end: end);
 
   // The inherited lerp() function doesn't work with ints because it multiplies
   // the begin and end types by a double, and int * double returns a double.

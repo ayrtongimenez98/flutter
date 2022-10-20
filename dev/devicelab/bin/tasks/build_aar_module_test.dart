@@ -67,8 +67,7 @@ Future<void> main() async {
           '  plugin_with_android:$platformLineSep'
           '    path: ../plugin_with_android$platformLineSep'
           '  plugin_without_android:$platformLineSep'
-          '    path: ../plugin_without_android$platformLineSep'
-          '  webcrypto: 0.5.2$platformLineSep', // Plugin that uses NDK.
+          '    path: ../plugin_without_android$platformLineSep',
       );
       modulePubspec.writeAsStringSync(content, flush: true);
 
@@ -98,7 +97,7 @@ Future<void> main() async {
         'repo',
       );
 
-      section('Check release Maven artifacts (old format)');
+      section('Check release Maven artifacts');
 
       checkFileExists(path.join(
         repoPath,
@@ -111,7 +110,7 @@ Future<void> main() async {
         'flutter_release-1.0.aar',
       ));
 
-      final String releasePomOld = path.join(
+      final String releasePom = path.join(
         repoPath,
         'io',
         'flutter',
@@ -122,7 +121,7 @@ Future<void> main() async {
         'flutter_release-1.0.pom',
       );
 
-      checkFileExists(releasePomOld);
+      checkFileExists(releasePom);
 
       checkFileExists(path.join(
         repoPath,
@@ -146,54 +145,6 @@ Future<void> main() async {
         'plugin_with_android_release-1.0.pom',
       ));
 
-      section('Check release Maven artifacts (new format)');
-
-      checkFileExists(path.join(
-        repoPath,
-        'io',
-        'flutter',
-        'devicelab',
-        'hello',
-        'flutter',
-        '1.0',
-        'flutter-1.0-release.aar',
-      ));
-
-      final String releasePomNew = path.join(
-        repoPath,
-        'io',
-        'flutter',
-        'devicelab',
-        'hello',
-        'flutter',
-        '1.0',
-        'flutter-1.0.pom',
-      );
-
-      checkFileExists(releasePomNew);
-
-      checkFileExists(path.join(
-        repoPath,
-        'io',
-        'flutter',
-        'devicelab',
-        'plugin_with_android',
-        'plugin_with_android',
-        '1.0',
-        'plugin_with_android-1.0-release.aar',
-      ));
-
-      checkFileExists(path.join(
-        repoPath,
-        'io',
-        'flutter',
-        'devicelab',
-        'plugin_with_android',
-        'plugin_with_android',
-        '1.0',
-        'plugin_with_android-1.0.pom',
-      ));
-
       section('Check AOT blobs in release POM');
 
       checkFileContains(<String>[
@@ -201,17 +152,8 @@ Future<void> main() async {
         'armeabi_v7a_release',
         'arm64_v8a_release',
         'x86_64_release',
-        'plugin_with_android',
-        '<relocation>', //make sure the old pom contains the <relocation> tag
-      ], releasePomOld);
-
-      checkFileContains(<String>[
-        'flutter_embedding_release',
-        'armeabi_v7a_release',
-        'arm64_v8a_release',
-        'x86_64_release',
-        'plugin_with_android',
-      ], releasePomNew);
+        'plugin_with_android_release',
+      ], releasePom);
 
       section('Check assets in release AAR');
 
@@ -237,29 +179,7 @@ Future<void> main() async {
         )
       );
 
-      checkCollectionContains<String>(
-          <String>[
-            ...flutterAssets,
-            // AOT snapshots
-            'jni/arm64-v8a/libapp.so',
-            'jni/armeabi-v7a/libapp.so',
-            'jni/x86_64/libapp.so',
-          ],
-          await getFilesInAar(
-              path.join(
-                repoPath,
-                'io',
-                'flutter',
-                'devicelab',
-                'hello',
-                'flutter',
-                '1.0',
-                'flutter-1.0-release.aar',
-              )
-          )
-      );
-
-      section('Check debug Maven artifacts (old format)');
+      section('Check debug Maven artifacts');
 
       checkFileExists(path.join(
         repoPath,
@@ -272,7 +192,7 @@ Future<void> main() async {
         'flutter_debug-1.0.aar',
       ));
 
-      final String debugPomOld = path.join(
+      final String debugPom = path.join(
         repoPath,
         'io',
         'flutter',
@@ -283,7 +203,7 @@ Future<void> main() async {
         'flutter_debug-1.0.pom',
       );
 
-      checkFileExists(debugPomOld);
+      checkFileExists(debugPom);
 
       checkFileExists(path.join(
         repoPath,
@@ -307,54 +227,6 @@ Future<void> main() async {
         'plugin_with_android_debug-1.0.pom',
       ));
 
-      section('Check debug Maven artifacts (new format)');
-
-      checkFileExists(path.join(
-        repoPath,
-        'io',
-        'flutter',
-        'devicelab',
-        'hello',
-        'flutter',
-        '1.0',
-        'flutter-1.0-debug.aar',
-      ));
-
-      final String debugPomNew = path.join(
-        repoPath,
-        'io',
-        'flutter',
-        'devicelab',
-        'hello',
-        'flutter',
-        '1.0',
-        'flutter-1.0.pom',
-      );
-
-      checkFileExists(debugPomNew);
-
-      checkFileExists(path.join(
-        repoPath,
-        'io',
-        'flutter',
-        'devicelab',
-        'plugin_with_android',
-        'plugin_with_android',
-        '1.0',
-        'plugin_with_android-1.0-debug.aar',
-      ));
-
-      checkFileExists(path.join(
-        repoPath,
-        'io',
-        'flutter',
-        'devicelab',
-        'plugin_with_android',
-        'plugin_with_android',
-        '1.0',
-        'plugin_with_android-1.0.pom',
-      ));
-
       section('Check AOT blobs in debug POM');
 
       checkFileContains(<String>[
@@ -363,18 +235,8 @@ Future<void> main() async {
         'x86_64_debug',
         'armeabi_v7a_debug',
         'arm64_v8a_debug',
-        'plugin_with_android',
-        '<relocation>', //make sure the old pom contains the <relocation> tag
-      ], debugPomOld);
-
-      checkFileContains(<String>[
-        'flutter_embedding_debug',
-        'x86_debug',
-        'x86_64_debug',
-        'armeabi_v7a_debug',
-        'arm64_v8a_debug',
-        'plugin_with_android',
-      ], debugPomNew);
+        'plugin_with_android_debug',
+      ], debugPom);
 
       section('Check assets in debug AAR');
 
@@ -389,26 +251,10 @@ Future<void> main() async {
         'flutter_debug-1.0.aar',
       ));
 
-      final Iterable<String> debugAarNew = await getFilesInAar(path.join(
-        repoPath,
-        'io',
-        'flutter',
-        'devicelab',
-        'hello',
-        'flutter',
-        '1.0',
-        'flutter-1.0-debug.aar',
-      ));
-
       checkCollectionContains<String>(<String>[
         ...flutterAssets,
         ...debugAssets,
       ], debugAar);
-
-      checkCollectionContains<String>(<String>[
-        ...flutterAssets,
-        ...debugAssets,
-      ], debugAarNew);
 
       return TaskResult.success(null);
     } on TaskResult catch (taskResult) {
@@ -416,7 +262,7 @@ Future<void> main() async {
     } catch (e) {
       return TaskResult.failure(e.toString());
     } finally {
-      rmTree(tempDir);
+      // rmTree(tempDir);
     }
   });
 }

@@ -184,10 +184,6 @@ Map<String, List<String?>> parseMapOfListOfNullableString(String jsonString) {
   });
 }
 
-Map<String, bool> parseMapOfBool(String jsonString) {
-  return (json.decode(jsonString) as Map<String, dynamic>).cast<String, bool>();
-}
-
 /// Reverse the map of { fromValue -> list of toValue } to { toValue -> fromValue } and return.
 Map<String, String> reverseMapOfListOfString(Map<String, List<String>> inMap, void Function(String fromValue, String newToValue) onDuplicate) {
   final Map<String, String> result = <String, String>{};
@@ -233,24 +229,12 @@ void addNameValue(List<String> names, List<int> values, String name, int value) 
   }
 }
 
-enum DeduplicateBehavior {
-  // Warn the duplicate entry.
-  kWarn,
-
-  // Skip the latter duplicate entry.
-  kSkip,
-
-  // Keep all duplicate entries.
-  kKeep,
-}
-
 /// The information for a line used by [OutputLines].
 class OutputLine<T extends Comparable<Object>> {
-  OutputLine(this.key, String value)
-    : values = <String>[value];
+  const OutputLine(this.key, this.value);
 
   final T key;
-  final List<String> values;
+  final String value;
 }
 
 /// A utility class to build join a number of lines in a sorted order.
@@ -259,43 +243,41 @@ class OutputLine<T extends Comparable<Object>> {
 /// get the joined string of these lines joined sorting them in the order of the
 /// index.
 class OutputLines<T extends Comparable<Object>> {
-  OutputLines(this.mapName, {this.behavior = DeduplicateBehavior.kWarn});
+  OutputLines(this.mapName, {this.checkDuplicate = true});
 
-  /// What to do if there are entries with the same key.
-  final DeduplicateBehavior behavior;
+  /// If true, then lines with duplicate keys will be warned and discarded.
+  ///
+  /// Default to true.
+  final bool checkDuplicate;
 
   /// The name for this map.
   ///
   /// Used in warning messages.
   final String mapName;
 
-  final Map<T, OutputLine<T>> lines = <T, OutputLine<T>>{};
+  final Set<T> keys = <T>{};
+  final List<OutputLine<T>> lines = <OutputLine<T>>[];
 
-  void add(T key, String line) {
-    final OutputLine<T>? existing = lines[key];
-    if (existing != null) {
-      switch (behavior) {
-        case DeduplicateBehavior.kWarn:
-          print('Warn: Request to add $key to map "$mapName" as:\n    $line\n  but it already exists as:\n    ${existing.values[0]}');
-          return;
-        case DeduplicateBehavior.kSkip:
-          return;
-        case DeduplicateBehavior.kKeep:
-          existing.values.add(line);
-          return;
+  void add(T code, String line) {
+    if (checkDuplicate) {
+      if (keys.contains(code)) {
+        final OutputLine<T> existing = lines.firstWhere((OutputLine<T> line) => line.key == code);
+        print('Warn: $mapName is requested to add line $code as:\n    $line\n  but it already exists as:\n    ${existing.value}');
+        return;
       }
+      keys.add(code);
     }
-    lines[key] = OutputLine<T>(key, line);
+    lines.add(OutputLine<T>(code, line));
   }
 
   String join() {
-    return lines.values.map((OutputLine<T> line) => line.values.join('\n')).join('\n');
+    return lines.map((OutputLine<T> line) => line.value).join('\n');
   }
 
   String sortedJoin() {
-    return (lines.values.toList()
+    return (lines.sublist(0)
       ..sort((OutputLine<T> a, OutputLine<T> b) => a.key.compareTo(b.key)))
-      .map((OutputLine<T> line) => line.values.join('\n'))
+      .map((OutputLine<T> line) => line.value)
       .join('\n');
   }
 }

@@ -76,9 +76,8 @@ bool debugAssertAllGesturesVarsUnset(String reason) {
     if (debugPrintHitTestResults ||
         debugPrintGestureArenaDiagnostics ||
         debugPrintRecognizerCallbacksTrace ||
-        debugPrintResamplingMargin) {
+        debugPrintResamplingMargin)
       throw FlutterError(reason);
-    }
     return true;
   }());
   return true;

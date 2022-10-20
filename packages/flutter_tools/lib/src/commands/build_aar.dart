@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+import 'package:meta/meta.dart';
+
 import '../android/android_builder.dart';
 import '../android/gradle_utils.dart';
 import '../base/common.dart';
@@ -10,14 +13,14 @@ import '../base/file_system.dart';
 import '../base/os.dart';
 import '../build_info.dart';
 import '../cache.dart';
-import '../globals.dart' as globals;
+import '../globals_null_migrated.dart' as globals;
 import '../project.dart';
 import '../reporting/reporting.dart';
 import '../runner/flutter_command.dart' show FlutterCommandResult;
 import 'build.dart';
 
 class BuildAarCommand extends BuildSubCommand {
-  BuildAarCommand({ required bool verboseHelp }) : super(verboseHelp: verboseHelp) {
+  BuildAarCommand({ @required bool verboseHelp }) {
     argParser
       ..addFlag(
         'debug',
@@ -41,7 +44,6 @@ class BuildAarCommand extends BuildSubCommand {
     addSplitDebugInfoOption();
     addDartObfuscationOption();
     usesDartDefineOption();
-    usesExtraDartFlagOptions(verboseHelp: verboseHelp);
     usesTrackWidgetCreation(verboseHelp: false);
     addNullSafetyModeOptions(hide: !verboseHelp);
     addEnableExperimentation(hide: !verboseHelp);
@@ -49,6 +51,7 @@ class BuildAarCommand extends BuildSubCommand {
     argParser
       ..addMultiOption(
         'target-platform',
+        splitCommas: true,
         defaultsTo: <String>['android-arm', 'android-arm64', 'android-x64'],
         allowed: <String>['android-arm', 'android-arm64', 'android-x86', 'android-x64'],
         help: 'The target platform for which the project is compiled.',
@@ -112,16 +115,15 @@ class BuildAarCommand extends BuildSubCommand {
     final Iterable<AndroidArch> targetArchitectures =
         stringsArg('target-platform').map<AndroidArch>(getAndroidArchForName);
 
-    final String? buildNumberArg = stringArgDeprecated('build-number');
     final String buildNumber = argParser.options.containsKey('build-number')
-      && buildNumberArg != null
-      && buildNumberArg.isNotEmpty
-      ? buildNumberArg
+      && stringArg('build-number') != null
+      && stringArg('build-number').isNotEmpty
+      ? stringArg('build-number')
       : '1.0';
 
     final File targetFile = globals.fs.file(globals.fs.path.join('lib', 'main.dart'));
     for (final String buildMode in const <String>['debug', 'profile', 'release']) {
-      if (boolArgDeprecated(buildMode)) {
+      if (boolArg(buildMode)) {
         androidBuildInfo.add(
           AndroidBuildInfo(
             await getBuildInfo(
@@ -138,11 +140,11 @@ class BuildAarCommand extends BuildSubCommand {
     }
 
     displayNullSafetyMode(androidBuildInfo.first.buildInfo);
-    await androidBuilder?.buildAar(
+    await androidBuilder.buildAar(
       project: _getProject(),
       target: targetFile.path,
       androidBuildInfo: androidBuildInfo,
-      outputDirectoryPath: stringArgDeprecated('output-dir'),
+      outputDirectoryPath: stringArg('output-dir'),
       buildNumber: buildNumber,
     );
     return FlutterCommandResult.success();
@@ -151,10 +153,9 @@ class BuildAarCommand extends BuildSubCommand {
   /// Returns the [FlutterProject] which is determined from the remaining command-line
   /// argument if any or the current working directory.
   FlutterProject _getProject() {
-    final List<String> remainingArguments = argResults!.rest;
-    if (remainingArguments.isEmpty) {
+    if (argResults.rest.isEmpty) {
       return FlutterProject.current();
     }
-    return FlutterProject.fromDirectory(globals.fs.directory(findProjectRoot(globals.fs, remainingArguments.first)));
+    return FlutterProject.fromDirectory(globals.fs.directory(findProjectRoot(globals.fs, argResults.rest.first)));
   }
 }

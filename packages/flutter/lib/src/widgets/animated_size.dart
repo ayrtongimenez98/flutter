@@ -11,11 +11,38 @@ import 'ticker_provider.dart';
 /// Animated widget that automatically transitions its size over a given
 /// duration whenever the given child's size changes.
 ///
-/// {@tool dartpad}
+/// {@tool dartpad --template=stateful_widget_scaffold_center_freeform_state}
 /// This example makes a [Container] react to being touched, causing the child
 /// of the [AnimatedSize] widget, here a [FlutterLogo], to animate.
 ///
-/// ** See code in examples/api/lib/widgets/animated_size/animated_size.0.dart **
+/// ```dart
+/// class _MyStatefulWidgetState extends State<MyStatefulWidget> {
+///   double _size = 50.0;
+///   bool _large = false;
+///
+///   void _updateSize() {
+///     setState(() {
+///       _size = _large ? 250.0 : 100.0;
+///       _large = !_large;
+///     });
+///   }
+///
+///   @override
+///   Widget build(BuildContext context) {
+///     return GestureDetector(
+///       onTap: () => _updateSize(),
+///       child: Container(
+///         color: Colors.amberAccent,
+///         child: AnimatedSize(
+///           curve: Curves.easeIn,
+///           duration: const Duration(seconds: 1),
+///           child: FlutterLogo(size: _size),
+///         ),
+///       ),
+///     );
+///   }
+/// }
+/// ```
 /// {@end-tool}
 ///
 /// See also:
@@ -26,7 +53,7 @@ class AnimatedSize extends StatefulWidget {
   ///
   /// The [curve] and [duration] arguments must not be null.
   const AnimatedSize({
-    super.key,
+    Key? key,
     this.child,
     this.alignment = Alignment.center,
     this.curve = Curves.linear,
@@ -38,7 +65,8 @@ class AnimatedSize extends StatefulWidget {
     )
     TickerProvider? vsync,
     this.clipBehavior = Clip.hardEdge,
-  }) : assert(clipBehavior != null);
+  }) : assert(clipBehavior != null),
+       super(key: key);
 
   /// The widget below this widget in the tree.
   ///
@@ -107,14 +135,16 @@ class _AnimatedSizeState
 
 class _AnimatedSize extends SingleChildRenderObjectWidget {
   const _AnimatedSize({
-    super.child,
+    Key? key,
+    Widget? child,
     this.alignment = Alignment.center,
     this.curve = Curves.linear,
     required this.duration,
     this.reverseDuration,
     required this.vsync,
     this.clipBehavior = Clip.hardEdge,
-  }) : assert(clipBehavior != null);
+  }) : assert(clipBehavior != null),
+       super(key: key, child: child);
 
   final AlignmentGeometry alignment;
   final Curve curve;

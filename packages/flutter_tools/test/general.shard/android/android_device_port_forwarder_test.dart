@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:flutter_tools/src/android/android_device.dart';
 import 'package:flutter_tools/src/base/logger.dart';
 import 'package:flutter_tools/src/device_port_forwarder.dart';
@@ -19,7 +21,7 @@ void main() {
         const FakeCommand(
           command: <String>['adb', '-s', '1', 'forward', 'tcp:0', 'tcp:123'],
           stdout: '456',
-        ),
+        )
       ]),
       logger: BufferLogger.test(),
     );
@@ -35,7 +37,8 @@ void main() {
       processManager: FakeProcessManager.list(<FakeCommand>[
         const FakeCommand(
           command: <String>['adb', '-s', '1', 'forward', 'tcp:456', 'tcp:123'],
-        ),
+          stdout: '',
+        )
       ]),
       logger: BufferLogger.test(),
     );
@@ -52,7 +55,7 @@ void main() {
         const FakeCommand(
           command: <String>['adb', '-s', '1', 'forward', 'tcp:456', 'tcp:123'],
           stdout: '456',
-        ),
+        )
       ]),
       logger: BufferLogger.test(),
     );
@@ -69,7 +72,7 @@ void main() {
         const FakeCommand(
           command: <String>['adb', '-s', '1', 'forward', 'tcp:456', 'tcp:123'],
           stdout: '123456',
-        ),
+        )
       ]),
       logger: BufferLogger.test(),
     );
@@ -86,7 +89,7 @@ void main() {
         const FakeCommand(
           command: <String>['adb', '-s', '1', 'forward', '--list'],
           exitCode: 1,
-        ),
+        )
       ]),
       logger: BufferLogger.test(),
     );
@@ -106,7 +109,7 @@ void main() {
       ),
       const FakeCommand(
         command: <String>['adb', '-s', '1', 'forward', '--remove', 'tcp:456'],
-      ),
+      )
     ]);
     final AndroidDevicePortForwarder forwarder = AndroidDevicePortForwarder(
       adbPath: 'adb',
@@ -128,7 +131,7 @@ void main() {
         command: <String>['adb', '-s', '1', 'forward', '--remove', 'tcp:456'],
         stderr: "error: listener 'tcp:456' not found",
         exitCode: 1,
-      ),
+      )
     ]);
     final AndroidDevicePortForwarder forwarder = AndroidDevicePortForwarder(
       adbPath: 'adb',
@@ -146,7 +149,7 @@ void main() {
         command: <String>['adb', '-s', '1', 'forward', '--remove', 'tcp:456'],
         stderr: 'error: everything is broken!',
         exitCode: 1,
-      ),
+      )
     ]);
     final BufferLogger logger = BufferLogger.test();
     final AndroidDevicePortForwarder forwarder = AndroidDevicePortForwarder(

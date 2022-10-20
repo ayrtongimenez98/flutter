@@ -8,8 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'rendering_tester.dart';
 
 void main() {
-  TestRenderingFlutterBinding.ensureInitialized();
-
   test('RenderViewport calculates correct constraints, RenderSliverToBoxAdapter calculates correct geometry', () {
     final List<RenderSliver> children = List<RenderSliver>.generate(30, (int index) {
       return RenderSliverToBoxAdapter(
@@ -20,6 +18,7 @@ void main() {
     // Viewport is 800x600, can show 6 children at a time.
 
     final RenderViewport root = RenderViewport(
+      axisDirection: AxisDirection.down,
       crossAxisDirection: AxisDirection.right,
       offset: ViewportOffset.zero(),
       cacheExtent: 250.0,
@@ -290,6 +289,7 @@ void main() {
     );
     RenderSliverFixedExtentList inner;
     final RenderViewport root = RenderViewport(
+      axisDirection: AxisDirection.down,
       crossAxisDirection: AxisDirection.right,
       offset: ViewportOffset.zero(),
       cacheExtent: 250.0,
@@ -389,6 +389,7 @@ void main() {
     );
     RenderSliverList inner;
     final RenderViewport root = RenderViewport(
+      axisDirection: AxisDirection.down,
       crossAxisDirection: AxisDirection.right,
       offset: ViewportOffset.zero(),
       cacheExtent: 250.0,
@@ -488,6 +489,7 @@ void main() {
     );
     RenderSliverGrid inner;
     final RenderViewport root = RenderViewport(
+      axisDirection: AxisDirection.down,
       crossAxisDirection: AxisDirection.right,
       offset: ViewportOffset.zero(),
       cacheExtent: 250.0,
@@ -595,6 +597,7 @@ void main() {
 
 
     final RenderViewport root = RenderViewport(
+      axisDirection: AxisDirection.down,
       crossAxisDirection: AxisDirection.right,
       offset: ViewportOffset.zero(),
       cacheExtent: 250.0,
@@ -937,9 +940,8 @@ class TestRenderSliverBoxChildManager extends RenderSliverBoxChildManager {
 
   @override
   void createChild(int index, { required RenderBox? after }) {
-    if (index < 0 || index >= children.length) {
+    if (index < 0 || index >= children.length)
       return;
-    }
     try {
       _currentlyUpdatingChildIndex = index;
       _renderObject!.insert(children[index], after: after);

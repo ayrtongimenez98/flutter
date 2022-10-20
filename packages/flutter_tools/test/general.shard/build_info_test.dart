@@ -80,18 +80,6 @@ void main() {
     });
   });
 
-  testWithoutContext('getDartNameForDarwinArch returns name used in Dart SDK', () {
-    expect(getDartNameForDarwinArch(DarwinArch.armv7),  'armv7');
-    expect(getDartNameForDarwinArch(DarwinArch.arm64),  'arm64');
-    expect(getDartNameForDarwinArch(DarwinArch.x86_64), 'x64');
-  });
-
-  testWithoutContext('getNameForDarwinArch returns Apple names', () {
-    expect(getNameForDarwinArch(DarwinArch.armv7),  'armv7');
-    expect(getNameForDarwinArch(DarwinArch.arm64),  'arm64');
-    expect(getNameForDarwinArch(DarwinArch.x86_64), 'x86_64');
-  });
-
   testWithoutContext('getNameForTargetPlatform on Darwin arches', () {
     expect(getNameForTargetPlatform(TargetPlatform.ios, darwinArch: DarwinArch.arm64), 'ios-arm64');
     expect(getNameForTargetPlatform(TargetPlatform.ios, darwinArch: DarwinArch.armv7), 'ios-armv7');
@@ -107,17 +95,6 @@ void main() {
     expect(() => getIOSArchForName('bogus'), throwsException);
   });
 
-  testWithoutContext('named BuildInfo has correct defaults', () {
-    expect(BuildInfo.debug.mode, BuildMode.debug);
-    expect(BuildInfo.debug.trackWidgetCreation, true);
-
-    expect(BuildInfo.profile.mode, BuildMode.profile);
-    expect(BuildInfo.profile.trackWidgetCreation, false);
-
-    expect(BuildInfo.release.mode, BuildMode.release);
-    expect(BuildInfo.release.trackWidgetCreation, false);
-  });
-
   testWithoutContext('toBuildSystemEnvironment encoding of standard values', () {
     const BuildInfo buildInfo = BuildInfo(BuildMode.debug, '',
       treeShakeIcons: true,
@@ -128,12 +105,10 @@ void main() {
       extraFrontEndOptions: <String>['--enable-experiment=non-nullable', 'bar'],
       extraGenSnapshotOptions: <String>['--enable-experiment=non-nullable', 'fizz'],
       bundleSkSLPath: 'foo/bar/baz.sksl.json',
-      packagesPath: 'foo/.dart_tool/package_config.json',
+      packagesPath: 'foo/.packages',
       codeSizeDirectory: 'foo/code-size',
       fileSystemRoots: <String>['test5', 'test6'],
       fileSystemScheme: 'scheme',
-      buildName: '122',
-      buildNumber: '22'
     );
 
     expect(buildInfo.toBuildSystemEnvironment(), <String, String>{
@@ -149,8 +124,6 @@ void main() {
       'CodeSizeDirectory': 'foo/code-size',
       'FileSystemRoots': 'test5,test6',
       'FileSystemScheme': 'scheme',
-      'BuildName': '122',
-      'BuildNumber': '22',
     });
   });
 
@@ -164,7 +137,7 @@ void main() {
       extraFrontEndOptions: <String>['--enable-experiment=non-nullable', 'bar'],
       extraGenSnapshotOptions: <String>['--enable-experiment=non-nullable', 'fizz'],
       bundleSkSLPath: 'foo/bar/baz.sksl.json',
-      packagesPath: 'foo/.dart_tool/package_config.json',
+      packagesPath: 'foo/.packages',
       codeSizeDirectory: 'foo/code-size',
       // These values are ignored by toEnvironmentConfig
       androidProjectArgs: <String>['foo=bar', 'fizz=bazz']
@@ -179,7 +152,7 @@ void main() {
       'EXTRA_FRONT_END_OPTIONS': '--enable-experiment=non-nullable,bar',
       'EXTRA_GEN_SNAPSHOT_OPTIONS': '--enable-experiment=non-nullable,fizz',
       'BUNDLE_SKSL_PATH': 'foo/bar/baz.sksl.json',
-      'PACKAGE_CONFIG': 'foo/.dart_tool/package_config.json',
+      'PACKAGE_CONFIG': 'foo/.packages',
       'CODE_SIZE_DIRECTORY': 'foo/code-size',
     });
   });
@@ -194,7 +167,7 @@ void main() {
       extraFrontEndOptions: <String>['--enable-experiment=non-nullable', 'bar'],
       extraGenSnapshotOptions: <String>['--enable-experiment=non-nullable', 'fizz'],
       bundleSkSLPath: 'foo/bar/baz.sksl.json',
-      packagesPath: 'foo/.dart_tool/package_config.json',
+      packagesPath: 'foo/.packages',
       codeSizeDirectory: 'foo/code-size',
       androidProjectArgs: <String>['foo=bar', 'fizz=bazz']
     );
@@ -210,11 +183,11 @@ void main() {
       '-Pbundle-sksl-path=foo/bar/baz.sksl.json',
       '-Pcode-size-directory=foo/code-size',
       '-Pfoo=bar',
-      '-Pfizz=bazz',
+      '-Pfizz=bazz'
     ]);
   });
 
-  testWithoutContext('encodeDartDefines encodes define values with base64 encoded components', () {
+  testWithoutContext('encodeDartDefines encodes define values with base64 encoded compnents', () {
     expect(encodeDartDefines(<String>['"hello"']), 'ImhlbGxvIg==');
     expect(encodeDartDefines(<String>['https://www.google.com']), 'aHR0cHM6Ly93d3cuZ29vZ2xlLmNvbQ==');
     expect(encodeDartDefines(<String>['2,3,4', '5']), 'MiwzLDQ=,NQ==');
@@ -224,19 +197,19 @@ void main() {
 
   testWithoutContext('decodeDartDefines decodes base64 encoded dart defines', () {
     expect(decodeDartDefines(<String, String>{
-      kDartDefines: 'ImhlbGxvIg==',
+      kDartDefines: 'ImhlbGxvIg=='
     }, kDartDefines), <String>['"hello"']);
     expect(decodeDartDefines(<String, String>{
-      kDartDefines: 'aHR0cHM6Ly93d3cuZ29vZ2xlLmNvbQ==',
+      kDartDefines: 'aHR0cHM6Ly93d3cuZ29vZ2xlLmNvbQ=='
     }, kDartDefines), <String>['https://www.google.com']);
     expect(decodeDartDefines(<String, String>{
-      kDartDefines: 'MiwzLDQ=,NQ==',
+      kDartDefines: 'MiwzLDQ=,NQ=='
     }, kDartDefines), <String>['2,3,4', '5']);
     expect(decodeDartDefines(<String, String>{
-      kDartDefines: 'dHJ1ZQ==,ZmFsc2U=,Zmxhc2U=',
+      kDartDefines: 'dHJ1ZQ==,ZmFsc2U=,Zmxhc2U='
     }, kDartDefines), <String>['true', 'false', 'flase']);
     expect(decodeDartDefines(<String, String>{
-      kDartDefines: 'MTIzMiw0NTY=,Mg==',
+      kDartDefines: 'MTIzMiw0NTY=,Mg=='
     }, kDartDefines), <String>['1232,456', '2']);
   });
 }

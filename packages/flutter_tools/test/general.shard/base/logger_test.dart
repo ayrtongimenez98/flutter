@@ -19,7 +19,7 @@ import 'package:test/fake.dart';
 import '../../src/common.dart';
 import '../../src/fakes.dart';
 
-final Platform _kNoAnsiPlatform = FakePlatform();
+final Platform _kNoAnsiPlatform = FakePlatform(stdoutSupportsAnsi: false);
 final String red = RegExp.escape(AnsiTerminal.red);
 final String bold = RegExp.escape(AnsiTerminal.bold);
 final String resetBold = RegExp.escape(AnsiTerminal.resetBold);
@@ -240,7 +240,7 @@ void main() {
 
     testWithoutContext('error', () async {
       final BufferLogger mockLogger = BufferLogger.test(
-        outputPreferences: OutputPreferences.test(),
+        outputPreferences: OutputPreferences.test(showColor: false),
       );
       final VerboseLogger verboseLogger = VerboseLogger(
         mockLogger,
@@ -281,31 +281,6 @@ void main() {
       expect(
           mockLogger.errorText,
           matches('^$red' r'\[ (?: {0,2}\+[0-9]{1,4} ms|       )\] ' '${bold}Helpless!$resetBold$resetColor' r'\n$'));
-    });
-
-    testWithoutContext('printBox', () {
-      final BufferLogger mockLogger = BufferLogger(
-        terminal: AnsiTerminal(
-          stdio:  FakeStdio(),
-          platform: FakePlatform(stdoutSupportsAnsi: true),
-        ),
-        outputPreferences: OutputPreferences.test(showColor: true),
-      );
-      final VerboseLogger verboseLogger = VerboseLogger(
-        mockLogger, stopwatchFactory: FakeStopwatchFactory(stopwatch: fakeStopWatch),
-      );
-
-      verboseLogger.printBox('This is the box message', title: 'Sample title');
-
-      expect(
-        mockLogger.statusText,
-        contains('[        ] \x1B[1m\x1B[22m\n'
-            '\x1B[1m           ┌─ Sample title ──────────┐\x1B[22m\n'
-            '\x1B[1m           │ This is the box message │\x1B[22m\n'
-            '\x1B[1m           └─────────────────────────┘\x1B[22m\n'
-            '\x1B[1m           \x1B[22m\n'
-        ),
-      );
     });
   });
 
@@ -371,6 +346,7 @@ void main() {
     int called;
     final List<Platform> testPlatforms = <Platform>[
       FakePlatform(
+        operatingSystem: 'linux',
         environment: <String, String>{},
         executableArguments: <String>[],
       ),
@@ -423,7 +399,7 @@ void main() {
         SpinnerStatus spinnerStatus;
 
         setUp(() {
-          platform = FakePlatform();
+          platform = FakePlatform(stdoutSupportsAnsi: false);
           ansiPlatform = FakePlatform(stdoutSupportsAnsi: true);
 
           terminal = AnsiTerminal(
@@ -451,7 +427,7 @@ void main() {
           FakeAsync().run((FakeAsync time) {
             final AnonymousSpinnerStatus spinner = AnonymousSpinnerStatus(
               stdio: mockStdio,
-              stopwatch: mockStopwatch,
+              stopwatch: stopwatchFactory.createStopwatch(),
               terminal: terminal,
             )..start();
             doWhileAsync(time, () => spinner.ticks < 10);
@@ -475,35 +451,6 @@ void main() {
             expect(spinner.stop, throwsAssertionError);
             expect(spinner.cancel, throwsAssertionError);
             done = true;
-          });
-          expect(done, isTrue);
-        });
-
-        testWithoutContext('AnonymousSpinnerStatus logs warning after timeout', () async {
-          mockStopwatch = FakeStopwatch();
-          const String warningMessage = 'a warning message.';
-          final bool done = FakeAsync().run<bool>((FakeAsync time) {
-            final AnonymousSpinnerStatus spinner = AnonymousSpinnerStatus(
-              stdio: mockStdio,
-              stopwatch: mockStopwatch,
-              terminal: terminal,
-              slowWarningCallback: () => warningMessage,
-              timeout: const Duration(milliseconds: 100),
-            )..start();
-            // must be greater than the spinner timer duration
-            const Duration timeLapse = Duration(milliseconds: 101);
-            mockStopwatch.elapsed += timeLapse;
-            time.elapse(timeLapse);
-
-            List<String> lines = outputStdout();
-            expect(
-              lines.join(),
-              contains(warningMessage),
-            );
-
-            spinner.stop();
-            lines = outputStdout();
-            return true;
           });
           expect(done, isTrue);
         });
@@ -723,7 +670,7 @@ void main() {
           platform: _kNoAnsiPlatform,
         ),
         stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40),
+        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40, showColor: false),
       );
       logger.printError('0123456789' * 15);
       final List<String> lines = outputStderr();
@@ -752,7 +699,7 @@ void main() {
           platform: _kNoAnsiPlatform,
         ),
         stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40),
+        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40, showColor: false),
       );
       logger.printError('0123456789' * 15, indent: 5);
       final List<String> lines = outputStderr();
@@ -775,7 +722,7 @@ void main() {
           platform: _kNoAnsiPlatform,
         ),
         stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40),
+        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40, showColor: false),
       );
       logger.printError('0123456789' * 15, hangingIndent: 5);
       final List<String> lines = outputStderr();
@@ -798,7 +745,7 @@ void main() {
           platform: _kNoAnsiPlatform,
         ),
         stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40),
+        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40, showColor: false),
       );
       logger.printError('0123456789' * 15, indent: 4, hangingIndent: 5);
       final List<String> lines = outputStderr();
@@ -821,7 +768,7 @@ void main() {
           platform: _kNoAnsiPlatform,
         ),
         stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40),
+        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40, showColor: false),
       );
       logger.printStatus('0123456789' * 15);
       final List<String> lines = outputStdout();
@@ -841,7 +788,7 @@ void main() {
           platform: _kNoAnsiPlatform,
         ),
         stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40),
+        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40, showColor: false),
       );
       logger.printStatus('0123456789' * 15, indent: 5);
       final List<String> lines = outputStdout();
@@ -864,7 +811,7 @@ void main() {
           platform: _kNoAnsiPlatform,
         ),
         stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40)
+        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40, showColor: false)
       );
       logger.printStatus('0123456789' * 15, hangingIndent: 5);
       final List<String> lines = outputStdout();
@@ -887,7 +834,7 @@ void main() {
           platform: _kNoAnsiPlatform,
         ),
         stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40),
+        outputPreferences: OutputPreferences.test(wrapText: true, wrapColumn: 40, showColor: false),
       );
       logger.printStatus('0123456789' * 15, indent: 4, hangingIndent: 5);
       final List<String> lines = outputStdout();
@@ -967,7 +914,7 @@ void main() {
           platform: _kNoAnsiPlatform,
         ),
         stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(),
+        outputPreferences: OutputPreferences.test(showColor: false),
       );
       logger.printStatus(
         null,
@@ -982,184 +929,6 @@ void main() {
       expect(lines[0], equals(''));
     });
 
-    testWithoutContext('Stdout printBox puts content inside a box', () {
-      final Logger logger = StdoutLogger(
-        terminal: AnsiTerminal(
-          stdio: fakeStdio,
-          platform: FakePlatform(),
-        ),
-        stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(showColor: true),
-      );
-      logger.printBox('Hello world', title: 'Test title');
-      final String stdout = fakeStdio.writtenToStdout.join('');
-      expect(stdout,
-        contains(
-          '\n'
-          '┌─ Test title ┐\n'
-          '│ Hello world │\n'
-          '└─────────────┘\n'
-        ),
-      );
-    });
-
-    testWithoutContext('Stdout printBox does not require title', () {
-      final Logger logger = StdoutLogger(
-        terminal: AnsiTerminal(
-          stdio: fakeStdio,
-          platform: FakePlatform(),
-        ),
-        stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(showColor: true),
-      );
-      logger.printBox('Hello world');
-      final String stdout = fakeStdio.writtenToStdout.join('');
-      expect(stdout,
-        contains(
-          '\n'
-          '┌─────────────┐\n'
-          '│ Hello world │\n'
-          '└─────────────┘\n'
-        ),
-      );
-    });
-
-    testWithoutContext('Stdout printBox handles new lines', () {
-      final Logger logger = StdoutLogger(
-        terminal: AnsiTerminal(
-          stdio: fakeStdio,
-          platform: FakePlatform(),
-        ),
-        stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(showColor: true),
-      );
-      logger.printBox('Hello world\nThis is a new line', title: 'Test title');
-      final String stdout = fakeStdio.writtenToStdout.join('');
-      expect(stdout,
-        contains(
-          '\n'
-          '┌─ Test title ───────┐\n'
-          '│ Hello world        │\n'
-          '│ This is a new line │\n'
-          '└────────────────────┘\n'
-        ),
-      );
-    });
-
-    testWithoutContext('Stdout printBox handles content with ANSI escape characters', () {
-      final Logger logger = StdoutLogger(
-        terminal: AnsiTerminal(
-          stdio: fakeStdio,
-          platform: FakePlatform(),
-        ),
-        stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(showColor: true),
-      );
-      const String bold = '\u001B[1m';
-      const String clear = '\u001B[2J\u001B[H';
-      logger.printBox('${bold}Hello world$clear', title: 'Test title');
-      final String stdout = fakeStdio.writtenToStdout.join('');
-      expect(stdout,
-        contains(
-          '\n'
-          '┌─ Test title ┐\n'
-          '│ ${bold}Hello world$clear │\n'
-          '└─────────────┘\n'
-        ),
-      );
-    });
-
-    testWithoutContext('Stdout printBox handles column limit', () {
-      const int columnLimit = 14;
-      final Logger logger = StdoutLogger(
-        terminal: AnsiTerminal(
-          stdio: fakeStdio,
-          platform: FakePlatform(),
-        ),
-        stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(showColor: true, wrapColumn: columnLimit),
-      );
-      logger.printBox('This line is longer than $columnLimit characters', title: 'Test');
-      final String stdout = fakeStdio.writtenToStdout.join('');
-      final List<String> stdoutLines = stdout.split('\n');
-
-      expect(stdoutLines.length, greaterThan(1));
-      expect(stdoutLines[1].length, equals(columnLimit));
-      expect(stdout,
-        contains(
-          '\n'
-          '┌─ Test ─────┐\n'
-          '│ This line  │\n'
-          '│ is longer  │\n'
-          '│ than 14    │\n'
-          '│ characters │\n'
-          '└────────────┘\n'
-        ),
-      );
-    });
-
-    testWithoutContext('Stdout printBox handles column limit and respects new lines', () {
-      const int columnLimit = 14;
-      final Logger logger = StdoutLogger(
-        terminal: AnsiTerminal(
-          stdio: fakeStdio,
-          platform: FakePlatform(),
-        ),
-        stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(showColor: true, wrapColumn: columnLimit),
-      );
-      logger.printBox('This\nline is longer than\n\n$columnLimit characters', title: 'Test');
-      final String stdout = fakeStdio.writtenToStdout.join('');
-      final List<String> stdoutLines = stdout.split('\n');
-
-      expect(stdoutLines.length, greaterThan(1));
-      expect(stdoutLines[1].length, equals(columnLimit));
-      expect(stdout,
-        contains(
-          '\n'
-          '┌─ Test ─────┐\n'
-          '│ This       │\n'
-          '│ line is    │\n'
-          '│ longer     │\n'
-          '│ than       │\n'
-          '│            │\n'
-          '│ 14         │\n'
-          '│ characters │\n'
-          '└────────────┘\n'
-        ),
-      );
-    });
-
-    testWithoutContext('Stdout printBox breaks long words that exceed the column limit', () {
-      const int columnLimit = 14;
-      final Logger logger = StdoutLogger(
-        terminal: AnsiTerminal(
-          stdio: fakeStdio,
-          platform: FakePlatform(),
-        ),
-        stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(showColor: true, wrapColumn: columnLimit),
-      );
-      logger.printBox('Thiswordislongerthan${columnLimit}characters', title: 'Test');
-      final String stdout = fakeStdio.writtenToStdout.join('');
-      final List<String> stdoutLines = stdout.split('\n');
-
-      expect(stdoutLines.length, greaterThan(1));
-      expect(stdoutLines[1].length, equals(columnLimit));
-      expect(stdout,
-        contains(
-          '\n'
-          '┌─ Test ─────┐\n'
-          '│ Thiswordis │\n'
-          '│ longerthan │\n'
-          '│ 14characte │\n'
-          '│ rs         │\n'
-          '└────────────┘\n'
-        ),
-      );
-    });
-
-
     testWithoutContext('Stdout startProgress on non-color terminal', () async {
       final FakeStopwatch fakeStopwatch = FakeStopwatch();
       final Logger logger = StdoutLogger(
@@ -1168,7 +937,7 @@ void main() {
           platform: _kNoAnsiPlatform,
         ),
         stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(),
+        outputPreferences: OutputPreferences.test(showColor: false),
         stopwatchFactory: FakeStopwatchFactory(stopwatch: fakeStopwatch),
       );
       final Status status = logger.startProgress(
@@ -1238,7 +1007,7 @@ void main() {
           platform: _kNoAnsiPlatform,
         ),
         stdio: fakeStdio,
-        outputPreferences: OutputPreferences.test(),
+        outputPreferences: OutputPreferences.test(showColor: false),
       );
       logger.startProgress('AAA').stop();
       logger.startProgress('BBB').stop();
@@ -1296,7 +1065,7 @@ void main() {
 /// A fake [Logger] that throws the [Invocation] for any method call.
 class FakeLogger implements Logger {
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw invocation; // ignore: only_throw_errors
+  dynamic noSuchMethod(Invocation invocation) => throw invocation;
 }
 
 /// Returns the [Invocation] thrown from a call to [FakeLogger].
@@ -1338,14 +1107,14 @@ class FakeStdout extends Fake implements Stdout {
   @override
   void write(Object object) {
     if (syncError) {
-      throw Exception('Error!');
+      throw 'Error!';
     }
     Zone.current.runUnaryGuarded<void>((_) {
       if (completeWithError) {
         _completer.completeError(Exception('Some pipe error'));
       } else {
         _completer.complete();
-        throw Exception('Error!');
+        throw 'Error!';
       }
     }, null);
   }

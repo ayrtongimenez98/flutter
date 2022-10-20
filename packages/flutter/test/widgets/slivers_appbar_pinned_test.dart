@@ -146,7 +146,7 @@ void main() {
     verifyPaintPosition(key4, const Offset(0.0, 950.0), false);
     verifyPaintPosition(key5, const Offset(0.0, 1500.0), false);
     position.animateTo(550.0, curve: Curves.linear, duration: const Duration(minutes: 1));
-    await tester.pumpAndSettle();
+    await tester.pumpAndSettle(const Duration(milliseconds: 100));
     verifyPaintPosition(key1, Offset.zero, false);
     verifyPaintPosition(key2, Offset.zero, true);
     verifyPaintPosition(key3, const Offset(0.0, 200.0), true);
@@ -340,9 +340,8 @@ class RenderBigSliver extends RenderSliver {
   double get height => _height;
   double _height;
   set height(double value) {
-    if (value == _height) {
+    if (value == _height)
       return;
-    }
     _height = value;
     markNeedsLayout();
   }
@@ -360,7 +359,7 @@ class RenderBigSliver extends RenderSliver {
 }
 
 class BigSliver extends LeafRenderObjectWidget {
-  const BigSliver({ super.key, required this.height });
+  const BigSliver({ Key? key, required this.height }) : super(key: key);
 
   final double height;
 

@@ -13,7 +13,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import io.flutter.plugin.common.MethodCall;
@@ -21,21 +20,23 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.platform.PlatformView;
 
 public class SimplePlatformView implements PlatformView, MethodChannel.MethodCallHandler {
-    private final FrameLayout view;
+    private final TextView view;
     private final MethodChannel methodChannel;
-    private final TouchPipe touchPipe;
+    private final io.flutter.integration.platformviews.TouchPipe touchPipe;
 
     SimplePlatformView(Context context, MethodChannel methodChannel) {
         this.methodChannel = methodChannel;
-        view = new FrameLayout(context) {
+        view = new TextView(context) {
             @Override
             public boolean onTouchEvent(MotionEvent event) {
                 return true;
             }
         };
+        view.setTextSize(72);
         view.setBackgroundColor(0xff0000ff);
+        view.setText("Hello from Android view");
         this.methodChannel.setMethodCallHandler(this);
-        touchPipe = new TouchPipe(this.methodChannel, view);
+        touchPipe = new io.flutter.integration.platformviews.TouchPipe(this.methodChannel, view);
     }
 
     @Override

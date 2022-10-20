@@ -18,7 +18,7 @@ const double _kDemoItemHeight = 64.0;
 const Duration _kFrontLayerSwitchDuration = Duration(milliseconds: 300);
 
 class _FlutterLogo extends StatelessWidget {
-  const _FlutterLogo();
+  const _FlutterLogo({ Key? key }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -41,9 +41,10 @@ class _FlutterLogo extends StatelessWidget {
 
 class _CategoryItem extends StatelessWidget {
   const _CategoryItem({
+    Key? key,
     this.category,
     this.onTap,
-  });
+  }) : super (key: key);
 
   final GalleryDemoCategory? category;
   final VoidCallback? onTap;
@@ -57,12 +58,14 @@ class _CategoryItem extends StatelessWidget {
     // repainted when the button's ink splash animates.
     return RepaintBoundary(
       child: RawMaterialButton(
+        padding: EdgeInsets.zero,
         hoverColor: theme.primaryColor.withOpacity(0.05),
         splashColor: theme.primaryColor.withOpacity(0.12),
         highlightColor: Colors.transparent,
         onPressed: onTap,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.all(6.0),
@@ -94,9 +97,10 @@ class _CategoryItem extends StatelessWidget {
 
 class _CategoriesPage extends StatelessWidget {
   const _CategoriesPage({
+    Key? key,
     this.categories,
     this.onCategoryTap,
-  });
+  }) : super(key: key);
 
   final Iterable<GalleryDemoCategory>? categories;
   final ValueChanged<GalleryDemoCategory>? onCategoryTap;
@@ -160,7 +164,7 @@ class _CategoriesPage extends StatelessWidget {
 }
 
 class _DemoItem extends StatelessWidget {
-  const _DemoItem({ this.demo });
+  const _DemoItem({ Key? key, this.demo }) : super(key: key);
 
   final GalleryDemo? demo;
 
@@ -180,6 +184,7 @@ class _DemoItem extends StatelessWidget {
     final bool isDark = theme.brightness == Brightness.dark;
     final double textScaleFactor = MediaQuery.textScaleFactorOf(context);
     return RawMaterialButton(
+      padding: EdgeInsets.zero,
       splashColor: theme.primaryColor.withOpacity(0.12),
       highlightColor: Colors.transparent,
       onPressed: () {
@@ -260,10 +265,10 @@ class _DemosPage extends StatelessWidget {
 
 class GalleryHome extends StatefulWidget {
   const GalleryHome({
-    super.key,
+    Key? key,
     this.testMode = false,
     this.optionsPage,
-  });
+  }) : super(key: key);
 
   final Widget? optionsPage;
   final bool testMode;

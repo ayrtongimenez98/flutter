@@ -10,10 +10,6 @@ import 'diagnostics.dart';
 import 'print.dart';
 import 'stack_frame.dart';
 
-export 'basic_types.dart' show IterableFilter;
-export 'diagnostics.dart' show DiagnosticLevel, DiagnosticPropertiesBuilder, DiagnosticsNode, DiagnosticsTreeStyle;
-export 'stack_frame.dart' show StackFrame;
-
 // Examples can assume:
 // late String runtimeType;
 // late bool draconisAlive;
@@ -232,7 +228,7 @@ abstract class _ErrorDiagnostic extends DiagnosticsProperty<List<Object>> {
 
   @override
   String valueToString({ TextTreeConfiguration? parentConfiguration }) {
-    return value.join();
+    return value.join('');
   }
 }
 
@@ -252,7 +248,6 @@ abstract class _ErrorDiagnostic extends DiagnosticsProperty<List<Object>> {
 ///    problem that was detected.
 ///  * [ErrorHint], which provides specific, non-obvious advice that may be
 ///    applicable.
-///  * [ErrorSpacer], which renders as a blank line.
 ///  * [FlutterError], which is the most common place to use an
 ///    [ErrorDescription].
 class ErrorDescription extends _ErrorDiagnostic {
@@ -265,12 +260,12 @@ class ErrorDescription extends _ErrorDiagnostic {
   /// kernel transformer is used. The kernel transformer is required so that
   /// debugging tools can provide interactive displays of objects described by
   /// the error.
-  ErrorDescription(super.message) : super(level: DiagnosticLevel.info);
+  ErrorDescription(String message) : super(message, level: DiagnosticLevel.info);
 
   /// Calls to the default constructor may be rewritten to use this constructor
   /// in debug mode using a kernel transformer.
   // ignore: unused_element
-  ErrorDescription._fromParts(super.messageParts) : super._fromParts(level: DiagnosticLevel.info);
+  ErrorDescription._fromParts(List<Object> messageParts) : super._fromParts(messageParts, level: DiagnosticLevel.info);
 }
 
 /// A short (one line) description of the problem that was detected.
@@ -304,12 +299,12 @@ class ErrorSummary extends _ErrorDiagnostic {
   /// kernel transformer is used. The kernel transformer is required so that
   /// debugging tools can provide interactive displays of objects described by
   /// the error.
-  ErrorSummary(super.message) : super(level: DiagnosticLevel.summary);
+  ErrorSummary(String message) : super(message, level: DiagnosticLevel.summary);
 
   /// Calls to the default constructor may be rewritten to use this constructor
   /// in debug mode using a kernel transformer.
   // ignore: unused_element
-  ErrorSummary._fromParts(super.messageParts) : super._fromParts(level: DiagnosticLevel.summary);
+  ErrorSummary._fromParts(List<Object> messageParts) : super._fromParts(messageParts, level: DiagnosticLevel.summary);
 }
 
 /// An [ErrorHint] provides specific, non-obvious advice that may be applicable.
@@ -328,7 +323,6 @@ class ErrorSummary extends _ErrorDiagnostic {
 ///  * [ErrorDescription], which provides an explanation of the problem and its
 ///    cause, any information that may help track down the problem, background
 ///    information, etc.
-///  * [ErrorSpacer], which renders as a blank line.
 ///  * [FlutterError], which is the most common place to use an [ErrorHint].
 class ErrorHint extends _ErrorDiagnostic {
   /// A lint enforces that this constructor can only be called with a string
@@ -340,12 +334,12 @@ class ErrorHint extends _ErrorDiagnostic {
   /// kernel transformer is used. The kernel transformer is required so that
   /// debugging tools can provide interactive displays of objects described by
   /// the error.
-  ErrorHint(super.message) : super(level:DiagnosticLevel.hint);
+  ErrorHint(String message) : super(message, level:DiagnosticLevel.hint);
 
   /// Calls to the default constructor may be rewritten to use this constructor
   /// in debug mode using a kernel transformer.
   // ignore: unused_element
-  ErrorHint._fromParts(super.messageParts) : super._fromParts(level:DiagnosticLevel.hint);
+  ErrorHint._fromParts(List<Object> messageParts) : super._fromParts(messageParts, level:DiagnosticLevel.hint);
 }
 
 /// An [ErrorSpacer] creates an empty [DiagnosticsNode], that can be used to
@@ -395,7 +389,8 @@ class FlutterErrorDetails with Diagnosticable {
   /// subsequently be reported using [FlutterError.onError].
   ///
   /// The [exception] must not be null; other arguments can be left to
-  /// their default values.
+  /// their default values. (`throw null` results in a
+  /// [NullThrownError] exception.)
   const FlutterErrorDetails({
     required this.exception,
     this.stack,
@@ -521,52 +516,14 @@ class FlutterErrorDetails with Diagnosticable {
   /// This won't be called if [stack] is null.
   final IterableFilter<String>? stackFilter;
 
-  /// A callback which will provide information that could help with debugging
-  /// the problem.
+  /// A callback which, when called with a [StringBuffer] will write to that buffer
+  /// information that could help with debugging the problem.
   ///
-  /// Information collector callbacks can be expensive, so the generated
-  /// information should be cached by the caller, rather than the callback being
-  /// called multiple times.
+  /// Information collector callbacks can be expensive, so the generated information
+  /// should be cached, rather than the callback being called multiple times.
   ///
-  /// The callback is expected to return an iterable of [DiagnosticsNode] objects,
-  /// typically implemented using `sync*` and `yield`.
-  ///
-  /// {@tool snippet}
-  /// In this example, the information collector returns two pieces of information,
-  /// one broadly-applicable statement regarding how the error happened, and one
-  /// giving a specific piece of information that may be useful in some cases but
-  /// may also be irrelevant most of the time (an argument to the method).
-  ///
-  /// ```dart
-  /// void climbElevator(int pid) {
-  ///   try {
-  ///     // ...
-  ///   } catch (error, stack) {
-  ///     FlutterError.reportError(FlutterErrorDetails(
-  ///       exception: error,
-  ///       stack: stack,
-  ///       informationCollector: () => <DiagnosticsNode>[
-  ///         ErrorDescription('This happened while climbing the space elevator.'),
-  ///         ErrorHint('The process ID is: $pid'),
-  ///       ],
-  ///     ));
-  ///   }
-  /// }
-  /// ```
-  /// {@end-tool}
-  ///
-  /// The following classes may be of particular use:
-  ///
-  ///  * [ErrorDescription], for information that is broadly applicable to the
-  ///    situation being described.
-  ///  * [ErrorHint], for specific information that may not always be applicable
-  ///    but can be helpful in certain situations.
-  ///  * [DiagnosticsStackTrace], for reporting stack traces.
-  ///  * [ErrorSpacer], for adding spaces (a blank line) between other items.
-  ///
-  /// For objects that implement [Diagnosticable] one may consider providing
-  /// additional information by yielding the output of the object's
-  /// [Diagnosticable.toDiagnosticsNode] method.
+  /// The text written to the information argument may contain newlines but should
+  /// not end with a newline.
   final InformationCollector? informationCollector;
 
   /// Whether this error should be ignored by the default error reporting
@@ -622,12 +579,11 @@ class FlutterErrorDetails with Diagnosticable {
     } else if (exception is Error || exception is Exception) {
       longMessage = exception.toString();
     } else {
-      longMessage = '  $exception';
+      longMessage = '  ${exception.toString()}';
     }
     longMessage = longMessage.trimRight();
-    if (longMessage.isEmpty) {
+    if (longMessage.isEmpty)
       longMessage = '  <no message available>';
-    }
     return longMessage;
   }
 
@@ -670,7 +626,7 @@ class FlutterErrorDetails with Diagnosticable {
     super.debugFillProperties(properties);
     final DiagnosticsNode verb = ErrorDescription('thrown${ context != null ? ErrorDescription(" $context") : ""}');
     final Diagnosticable? diagnosticable = _exceptionToDiagnosticable();
-    if (exception is NullThrownError) { // ignore: deprecated_member_use
+    if (exception is NullThrownError) {
       properties.add(ErrorDescription('The null value was $verb.'));
     } else if (exception is num) {
       properties.add(ErrorDescription('The number $exception was $verb.'));
@@ -694,9 +650,8 @@ class FlutterErrorDetails with Diagnosticable {
         // strip out that header when we see it.
         final String prefix = '${exception.runtimeType}: ';
         String message = exceptionAsString();
-        if (message.startsWith(prefix)) {
+        if (message.startsWith(prefix))
           message = message.substring(prefix.length);
-        }
         properties.add(ErrorSummary(message));
       }
     }
@@ -779,10 +734,10 @@ class FlutterError extends Error with DiagnosticableTreeMixin implements Asserti
   /// All sentences in the error should be correctly punctuated (i.e.,
   /// do end the error message with a period).
   ///
-  /// This constructor defers to the [FlutterError.fromParts] constructor.
+  /// This constructor defers to the [new FlutterError.fromParts] constructor.
   /// The first line is wrapped in an implied [ErrorSummary], and subsequent
   /// lines are wrapped in implied [ErrorDescription]s. Consider using the
-  /// [FlutterError.fromParts] constructor to provide more detail, e.g.
+  /// [new FlutterError.fromParts] constructor to provide more detail, e.g.
   /// using [ErrorHint]s or other [DiagnosticsNode]s.
   factory FlutterError(String message) {
     final List<String> lines = message.split('\n');
@@ -912,9 +867,7 @@ class FlutterError extends Error with DiagnosticableTreeMixin implements Asserti
   /// The default behavior is to call [presentError].
   ///
   /// You can set this to your own function to override this default behavior.
-  /// For example, you could report all errors to your server. Consider calling
-  /// [presentError] from your custom error handler in order to see the logs in
-  /// the console as well.
+  /// For example, you could report all errors to your server.
   ///
   /// If the error handler throws an exception, it will not be caught by the
   /// Flutter framework.
@@ -924,11 +877,6 @@ class FlutterError extends Error with DiagnosticableTreeMixin implements Asserti
   ///
   /// Do not call [onError] directly, instead, call [reportError], which
   /// forwards to [onError] if it is not null.
-  ///
-  /// See also:
-  ///
-  ///  * <https://flutter.dev/docs/testing/errors>, more information about error
-  ///    handling in Flutter.
   static FlutterExceptionHandler? onError = presentError;
 
   /// Called by the Flutter framework before attempting to parse a [StackTrace].
@@ -1007,14 +955,14 @@ class FlutterError extends Error with DiagnosticableTreeMixin implements Asserti
       return true;
     }());
     final bool reportError = isInDebugMode || details.silent != true; // could be null
-    if (!reportError && !forceReport) {
+    if (!reportError && !forceReport)
       return;
-    }
     if (_errorCount == 0 || forceReport) {
       // Diagnostics is only available in debug mode. In profile and release modes fallback to plain print.
       if (isInDebugMode) {
         debugPrint(
           TextTreeRenderer(
+            wrapWidth: wrapWidth,
             wrapWidthProperties: wrapWidth,
             maxDescendentsTruncatableNode: 5,
           ).render(details.toDiagnosticsNode(style: DiagnosticsTreeStyle.error)).trimRight(),
@@ -1087,7 +1035,7 @@ class FlutterError extends Error with DiagnosticableTreeMixin implements Asserti
         index -= 1;
       }
     }
-    final List<String?> reasons = List<String?>.filled(parsedFrames.length, null);
+    final List<String?> reasons = List<String?>.filled(parsedFrames.length, null, growable: false);
     for (final StackFilter filter in _stackFilters) {
       filter.filter(parsedFrames, reasons);
     }
@@ -1121,9 +1069,8 @@ class FlutterError extends Error with DiagnosticableTreeMixin implements Asserti
     if (skipped == 1) {
       result.add('(elided one frame from ${where.single})');
     } else if (skipped > 1) {
-      if (where.length > 1) {
+      if (where.length > 1)
         where[where.length - 1] = 'and ${where.last}';
-      }
       if (where.length > 2) {
         result.add('(elided $skipped frames from ${where.join(", ")})');
       } else {
@@ -1197,9 +1144,8 @@ class FlutterError extends Error with DiagnosticableTreeMixin implements Asserti
 ///
 /// The `label` argument, if present, will be printed before the stack.
 void debugPrintStack({StackTrace? stackTrace, String? label, int? maxFrames}) {
-  if (label != null) {
+  if (label != null)
     debugPrint(label);
-  }
   if (stackTrace == null) {
     stackTrace = StackTrace.current;
   } else {
@@ -1216,9 +1162,8 @@ void debugPrintStack({StackTrace? stackTrace, String? label, int? maxFrames}) {
              line.contains('dart:sdk_internal');
     });
   }
-  if (maxFrames != null) {
+  if (maxFrames != null)
     lines = lines.take(maxFrames);
-  }
   debugPrint(FlutterError.defaultStackFilter(lines).join('\n'));
 }
 
@@ -1237,12 +1182,13 @@ class DiagnosticsStackTrace extends DiagnosticsBlock {
     String name,
     StackTrace? stack, {
     IterableFilter<String>? stackFilter,
-    super.showSeparator,
+    bool showSeparator = true,
   }) : super(
     name: name,
     value: stack,
     properties: _applyStackFilter(stack, stackFilter),
     style: DiagnosticsTreeStyle.flat,
+    showSeparator: showSeparator,
     allowTruncate: true,
   );
 
@@ -1250,20 +1196,20 @@ class DiagnosticsStackTrace extends DiagnosticsBlock {
   DiagnosticsStackTrace.singleFrame(
     String name, {
     required String frame,
-    super.showSeparator,
+    bool showSeparator = true,
   }) : super(
     name: name,
     properties: <DiagnosticsNode>[_createStackFrame(frame)],
     style: DiagnosticsTreeStyle.whitespace,
+    showSeparator: showSeparator,
   );
 
   static List<DiagnosticsNode> _applyStackFilter(
     StackTrace? stack,
     IterableFilter<String>? stackFilter,
   ) {
-    if (stack == null) {
+    if (stack == null)
       return <DiagnosticsNode>[];
-    }
     final IterableFilter<String> filter = stackFilter ?? FlutterError.defaultStackFilter;
     final Iterable<String> frames = filter('${FlutterError.demangleStackTrace(stack)}'.trimRight().split('\n'));
     return frames.map<DiagnosticsNode>(_createStackFrame).toList();
@@ -1279,10 +1225,14 @@ class DiagnosticsStackTrace extends DiagnosticsBlock {
 
 class _FlutterErrorDetailsNode extends DiagnosticableNode<FlutterErrorDetails> {
   _FlutterErrorDetailsNode({
-    super.name,
-    required super.value,
-    required super.style,
-  });
+    String? name,
+    required FlutterErrorDetails value,
+    required DiagnosticsTreeStyle? style,
+  }) : super(
+    name: name,
+    value: value,
+    style: style,
+  );
 
   @override
   DiagnosticPropertiesBuilder? get builder {

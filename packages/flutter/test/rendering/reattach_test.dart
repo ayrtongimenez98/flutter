@@ -28,10 +28,7 @@ class TestTree {
                 child: RenderPositionedBox(
                   child: child = RenderConstrainedBox(
                     additionalConstraints: const BoxConstraints.tightFor(height: 20.0, width: 20.0),
-                    child: RenderSemanticsAnnotations(
-                      textDirection: TextDirection.ltr,
-                      properties: const SemanticsProperties(label: 'Hello there foo'),
-                    ),
+                    child: RenderSemanticsAnnotations(attributedLabel: AttributedString('Hello there foo'), textDirection: TextDirection.ltr),
                   ),
                 ),
               ),
@@ -84,21 +81,19 @@ class TestCompositingBitsTree {
 }
 
 void main() {
-  TestRenderingFlutterBinding.ensureInitialized();
-
   test('objects can be detached and re-attached: layout', () {
     final TestTree testTree = TestTree();
     // Lay out
-    layout(testTree.root);
+    layout(testTree.root, phase: EnginePhase.layout);
     expect(testTree.child.size, equals(const Size(20.0, 20.0)));
     // Remove testTree from the custom render view
-    TestRenderingFlutterBinding.instance.renderView.child = null;
+    renderer.renderView.child = null;
     expect(testTree.child.owner, isNull);
     // Dirty one of the elements
     testTree.child.additionalConstraints =
       const BoxConstraints.tightFor(height: 5.0, width: 5.0);
     // Lay out again
-    layout(testTree.root);
+    layout(testTree.root, phase: EnginePhase.layout);
     expect(testTree.child.size, equals(const Size(5.0, 5.0)));
   });
   test('objects can be detached and re-attached: compositingBits', () {
@@ -107,7 +102,7 @@ void main() {
     layout(testTree.root, phase: EnginePhase.paint);
     expect(testTree.painted, isTrue);
     // Remove testTree from the custom render view
-    TestRenderingFlutterBinding.instance.renderView.child = null;
+    renderer.renderView.child = null;
     expect(testTree.child.owner, isNull);
     // Dirty one of the elements
     testTree.compositor._alwaysComposite = true;
@@ -123,7 +118,7 @@ void main() {
     layout(testTree.root, phase: EnginePhase.paint);
     expect(testTree.painted, isTrue);
     // Remove testTree from the custom render view
-    TestRenderingFlutterBinding.instance.renderView.child = null;
+    renderer.renderView.child = null;
     expect(testTree.child.owner, isNull);
     // Dirty one of the elements
     testTree.child.markNeedsPaint();
@@ -135,7 +130,7 @@ void main() {
   test('objects can be detached and re-attached: semantics (no change)', () {
     final TestTree testTree = TestTree();
     int semanticsUpdateCount = 0;
-    final SemanticsHandle semanticsHandle = TestRenderingFlutterBinding.instance.pipelineOwner.ensureSemantics(
+    final SemanticsHandle semanticsHandle = renderer.pipelineOwner.ensureSemantics(
       listener: () {
         ++semanticsUpdateCount;
       },
@@ -144,7 +139,7 @@ void main() {
     layout(testTree.root, phase: EnginePhase.flushSemantics);
     expect(semanticsUpdateCount, 1);
     // Remove testTree from the custom render view
-    TestRenderingFlutterBinding.instance.renderView.child = null;
+    renderer.renderView.child = null;
     expect(testTree.child.owner, isNull);
     // Dirty one of the elements
     semanticsUpdateCount = 0;
@@ -158,7 +153,7 @@ void main() {
   test('objects can be detached and re-attached: semantics (with change)', () {
     final TestTree testTree = TestTree();
     int semanticsUpdateCount = 0;
-    final SemanticsHandle semanticsHandle = TestRenderingFlutterBinding.instance.pipelineOwner.ensureSemantics(
+    final SemanticsHandle semanticsHandle = renderer.pipelineOwner.ensureSemantics(
       listener: () {
         ++semanticsUpdateCount;
       },
@@ -167,7 +162,7 @@ void main() {
     layout(testTree.root, phase: EnginePhase.flushSemantics);
     expect(semanticsUpdateCount, 1);
     // Remove testTree from the custom render view
-    TestRenderingFlutterBinding.instance.renderView.child = null;
+    renderer.renderView.child = null;
     expect(testTree.child.owner, isNull);
     // Dirty one of the elements
     semanticsUpdateCount = 0;

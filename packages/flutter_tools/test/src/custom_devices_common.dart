@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:flutter_tools/src/base/file_system.dart';
 import 'package:flutter_tools/src/convert.dart';
 import 'package:flutter_tools/src/custom_devices/custom_device_config.dart';
 
 void writeCustomDevicesConfigFile(
   Directory dir, {
-  List<CustomDeviceConfig>? configs,
+  List<CustomDeviceConfig> configs,
   dynamic json
 }) {
   dir.createSync(recursive: true);
@@ -18,7 +20,7 @@ void writeCustomDevicesConfigFile(
     <String, dynamic>{
       'custom-devices': configs != null ?
         configs.map<dynamic>((CustomDeviceConfig c) => c.toJson()).toList() :
-        json,
+        json
     },
   ));
 }
@@ -38,6 +40,16 @@ final CustomDeviceConfig testConfig = CustomDeviceConfig(
   forwardPortSuccessRegex: RegExp('testforwardportsuccess')
 );
 
+const String testConfigPingSuccessOutput = 'testpingsuccess\n';
+const String testConfigForwardPortSuccessOutput = 'testforwardportsuccess\n';
+final CustomDeviceConfig disabledTestConfig = testConfig.copyWith(enabled: false);
+final CustomDeviceConfig testConfigNonForwarding = testConfig.copyWith(
+  explicitForwardPortCommand: true,
+  forwardPortCommand: null,
+  explicitForwardPortSuccessRegex: true,
+  forwardPortSuccessRegex: null,
+);
+
 const Map<String, dynamic> testConfigJson = <String, dynamic>{
   'id': 'testid',
   'label': 'testlabel',
@@ -50,5 +62,5 @@ const Map<String, dynamic> testConfigJson = <String, dynamic>{
   'uninstall': <String>['testuninstall'],
   'runDebug': <String>['testrundebug'],
   'forwardPort': <String>['testforwardport'],
-  'forwardPortSuccessRegex': 'testforwardportsuccess',
+  'forwardPortSuccessRegex': 'testforwardportsuccess'
 };

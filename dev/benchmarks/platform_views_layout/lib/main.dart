@@ -15,8 +15,8 @@ void main() {
 
 class PlatformViewApp extends StatefulWidget {
   const PlatformViewApp({
-    super.key,
-  });
+    Key? key,
+  }) : super(key: key);
 
   @override
   PlatformViewAppState createState() => PlatformViewAppState();
@@ -40,7 +40,7 @@ class PlatformViewAppState extends State<PlatformViewApp> {
 }
 
 class PlatformViewLayout extends StatelessWidget {
-  const PlatformViewLayout({ super.key });
+  const PlatformViewLayout({ Key? key }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +70,7 @@ class PlatformViewLayout extends StatelessWidget {
 }
 
 class DummyPlatformView extends StatelessWidget {
-  const DummyPlatformView({super.key});
+  const DummyPlatformView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +96,7 @@ class DummyPlatformView extends StatelessWidget {
 }
 
 class RotationContainer extends StatefulWidget {
-  const RotationContainer({super.key});
+  const RotationContainer({Key? key}) : super(key: key);
 
   @override
   State<RotationContainer> createState() => _RotationContainerState();

@@ -14,10 +14,11 @@ import 'utils.dart';
 /// data structure given to it.
 class WindowsCodeGenerator extends PlatformCodeGenerator {
   WindowsCodeGenerator(
-    super.keyData,
-    super.logicalData,
+    PhysicalKeyData keyData,
+    LogicalKeyData logicalData,
     String scancodeToLogical,
-  ) : _scancodeToLogical = parseMapOfString(scancodeToLogical);
+  ) : _scancodeToLogical = parseMapOfString(scancodeToLogical),
+      super(keyData, logicalData);
 
   /// This generates the map of Windows scan codes to physical keys.
   String get _windowsScanCodeMap {
@@ -83,7 +84,7 @@ class WindowsCodeGenerator extends PlatformCodeGenerator {
 
   @override
   String outputPath(String platform) => path.join(PlatformCodeGenerator.engineRoot,
-      'shell', 'platform', 'windows', 'flutter_key_map.g.cc');
+      'shell', 'platform', 'windows', 'flutter_key_map.cc');
 
   @override
   Map<String, String> mappings() {

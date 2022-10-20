@@ -28,7 +28,8 @@ const List<String> kSpecialLogicalKeys = <String>['CapsLock'];
 /// Generates the key mapping for iOS, based on the information in the key
 /// data structure given to it.
 class IOSCodeGenerator extends PlatformCodeGenerator {
-  IOSCodeGenerator(super.keyData, super.logicalData);
+  IOSCodeGenerator(PhysicalKeyData keyData, LogicalKeyData logicalData)
+      : super(keyData, logicalData);
 
   /// This generates the map of iOS key codes to physical keys.
   String get _scanCodeMap {
@@ -80,7 +81,7 @@ class IOSCodeGenerator extends PlatformCodeGenerator {
       buffer.write(wrapString(constant.description, prefix: ' * '));
       buffer.writeln(' */');
       buffer.writeln('const uint64_t k${constant.upperCamelName} = ${toHex(constant.value, digits: 11)};');
-      buffer.writeln();
+      buffer.writeln('');
     }
     return buffer.toString().trimRight();
   }
@@ -89,7 +90,7 @@ class IOSCodeGenerator extends PlatformCodeGenerator {
   String get _keyToModifierFlagMap {
     final StringBuffer modifierKeyMap = StringBuffer();
     for (final String name in kModifiersOfInterest) {
-      final String line = '{${toHex(logicalData.entryByName(name).iOSKeyCodeValues[0])}, kModifierFlag${lowerCamelToUpperCamel(name)}},';
+      final String line ='    {${toHex(logicalData.entryByName(name).iOSKeyCodeValues[0])}, kModifierFlag${lowerCamelToUpperCamel(name)}},';
       modifierKeyMap.writeln('    ${line.padRight(42)}// $name');
     }
     return modifierKeyMap.toString().trimRight();
@@ -99,7 +100,7 @@ class IOSCodeGenerator extends PlatformCodeGenerator {
   String get _modifierFlagToKeyMap {
     final StringBuffer modifierKeyMap = StringBuffer();
     for (final String name in kModifiersOfInterest) {
-      final String line = '{kModifierFlag${lowerCamelToUpperCamel(name)}, ${toHex(logicalData.entryByName(name).iOSKeyCodeValues[0])}},';
+      final String line ='    {kModifierFlag${lowerCamelToUpperCamel(name)}, ${toHex(logicalData.entryByName(name).iOSKeyCodeValues[0])}},';
       modifierKeyMap.writeln('    ${line.padRight(42)}// $name');
     }
     return modifierKeyMap.toString().trimRight();
@@ -122,7 +123,7 @@ class IOSCodeGenerator extends PlatformCodeGenerator {
 
   @override
   String outputPath(String platform) => path.join(PlatformCodeGenerator.engineRoot,
-      'shell', 'platform', 'darwin', 'ios', 'framework', 'Source', 'KeyCodeMap.g.mm');
+      'shell', 'platform', 'darwin', 'ios', 'framework', 'Source', 'KeyCodeMap.mm');
 
   @override
   Map<String, String> mappings() {

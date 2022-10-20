@@ -45,7 +45,5 @@
 	<true/>
 	<key>io.flutter.metal_preview</key>
 	<true/>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
 </dict>
 </plist>

@@ -119,10 +119,10 @@ Widget _buildTestWidget({
 
 class ProblemWidget extends StatefulWidget {
   const ProblemWidget({
-    super.key,
+    Key? key,
     required this.extraPadding,
     required this.text,
-  });
+  }) : super(key: key);
 
   final bool extraPadding;
   final String text;

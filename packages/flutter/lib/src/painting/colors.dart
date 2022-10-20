@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+
 import 'dart:math' as math;
-import 'dart:ui' show Color, lerpDouble;
+import 'dart:ui' show Color, lerpDouble, hashValues;
 
 import 'package:flutter/foundation.dart';
 
@@ -199,28 +200,24 @@ class HSVColor {
   /// Values outside of the valid range for each channel will be clamped.
   static HSVColor? lerp(HSVColor? a, HSVColor? b, double t) {
     assert(t != null);
-    if (a == null && b == null) {
+    if (a == null && b == null)
       return null;
-    }
-    if (a == null) {
+    if (a == null)
       return b!._scaleAlpha(t);
-    }
-    if (b == null) {
+    if (b == null)
       return a._scaleAlpha(1.0 - t);
-    }
     return HSVColor.fromAHSV(
-      clampDouble(lerpDouble(a.alpha, b.alpha, t)!, 0.0, 1.0),
+      lerpDouble(a.alpha, b.alpha, t)!.clamp(0.0, 1.0),
       lerpDouble(a.hue, b.hue, t)! % 360.0,
-      clampDouble(lerpDouble(a.saturation, b.saturation, t)!, 0.0, 1.0),
-      clampDouble(lerpDouble(a.value, b.value, t)!, 0.0, 1.0),
+      lerpDouble(a.saturation, b.saturation, t)!.clamp(0.0, 1.0),
+      lerpDouble(a.value, b.value, t)!.clamp(0.0, 1.0),
     );
   }
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) {
+    if (identical(this, other))
       return true;
-    }
     return other is HSVColor
         && other.alpha == alpha
         && other.hue == hue
@@ -229,7 +226,7 @@ class HSVColor {
   }
 
   @override
-  int get hashCode => Object.hash(alpha, hue, saturation, value);
+  int get hashCode => hashValues(alpha, hue, saturation, value);
 
   @override
   String toString() => '${objectRuntimeType(this, 'HSVColor')}($alpha, $hue, $saturation, $value)';
@@ -294,7 +291,7 @@ class HSLColor {
     // Saturation can exceed 1.0 with rounding errors, so clamp it.
     final double saturation = lightness == 1.0
       ? 0.0
-      : clampDouble(delta / (1.0 - (2.0 * lightness - 1.0).abs()), 0.0, 1.0);
+      : ((delta / (1.0 - (2.0 * lightness - 1.0).abs())).clamp(0.0, 1.0));
     return HSLColor.fromAHSL(alpha, hue, saturation, lightness);
   }
 
@@ -387,28 +384,24 @@ class HSLColor {
   /// an [AnimationController].
   static HSLColor? lerp(HSLColor? a, HSLColor? b, double t) {
     assert(t != null);
-    if (a == null && b == null) {
+    if (a == null && b == null)
       return null;
-    }
-    if (a == null) {
+    if (a == null)
       return b!._scaleAlpha(t);
-    }
-    if (b == null) {
+    if (b == null)
       return a._scaleAlpha(1.0 - t);
-    }
     return HSLColor.fromAHSL(
-      clampDouble(lerpDouble(a.alpha, b.alpha, t)!, 0.0, 1.0),
+      lerpDouble(a.alpha, b.alpha, t)!.clamp(0.0, 1.0),
       lerpDouble(a.hue, b.hue, t)! % 360.0,
-      clampDouble(lerpDouble(a.saturation, b.saturation, t)!, 0.0, 1.0),
-      clampDouble(lerpDouble(a.lightness, b.lightness, t)!, 0.0, 1.0),
+      lerpDouble(a.saturation, b.saturation, t)!.clamp(0.0, 1.0),
+      lerpDouble(a.lightness, b.lightness, t)!.clamp(0.0, 1.0),
     );
   }
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) {
+    if (identical(this, other))
       return true;
-    }
     return other is HSLColor
         && other.alpha == alpha
         && other.hue == hue
@@ -417,7 +410,7 @@ class HSLColor {
   }
 
   @override
-  int get hashCode => Object.hash(alpha, hue, saturation, lightness);
+  int get hashCode => hashValues(alpha, hue, saturation, lightness);
 
   @override
   String toString() => '${objectRuntimeType(this, 'HSLColor')}($alpha, $hue, $saturation, $lightness)';
@@ -429,19 +422,19 @@ class HSLColor {
 ///
 /// See also:
 ///
-///  * [MaterialColor] and [MaterialAccentColor], which define Material Design
+///  * [MaterialColor] and [MaterialAccentColor], which define material design
 ///    primary and accent color swatches.
-///  * [material.Colors], which defines all of the standard Material Design
+///  * [material.Colors], which defines all of the standard material design
 ///    colors.
 @immutable
 class ColorSwatch<T> extends Color {
   /// Creates a color that has a small table of related colors called a "swatch".
   ///
   /// The `primary` argument should be the 32 bit ARGB value of one of the
-  /// values in the swatch, as would be passed to the [Color.new] constructor
+  /// values in the swatch, as would be passed to the [new Color] constructor
   /// for that same color, and as is exposed by [value]. (This is distinct from
   /// the specific index of the color in the swatch.)
-  const ColorSwatch(super.primary, this._swatch);
+  const ColorSwatch(int primary, this._swatch) : super(primary);
 
   @protected
   final Map<T, Color> _swatch;
@@ -451,60 +444,20 @@ class ColorSwatch<T> extends Color {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) {
+    if (identical(this, other))
       return true;
-    }
-    if (other.runtimeType != runtimeType) {
+    if (other.runtimeType != runtimeType)
       return false;
-    }
     return super == other
         && other is ColorSwatch<T>
         && mapEquals<T, Color>(other._swatch, _swatch);
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, value, _swatch);
+  int get hashCode => hashValues(runtimeType, value, _swatch);
 
   @override
   String toString() => '${objectRuntimeType(this, 'ColorSwatch')}(primary value: ${super.toString()})';
-
-  /// Linearly interpolate between two [ColorSwatch]es.
-  ///
-  /// It delegates to [Color.lerp] to interpolate the different colors of the
-  /// swatch.
-  ///
-  /// If either color is null, this function linearly interpolates from a
-  /// transparent instance of the other color.
-  ///
-  /// The `t` argument represents position on the timeline, with 0.0 meaning
-  /// that the interpolation has not started, returning `a` (or something
-  /// equivalent to `a`), 1.0 meaning that the interpolation has finished,
-  /// returning `b` (or something equivalent to `b`), and values in between
-  /// meaning that the interpolation is at the relevant point on the timeline
-  /// between `a` and `b`. The interpolation can be extrapolated beyond 0.0 and
-  /// 1.0, so negative values and values greater than 1.0 are valid (and can
-  /// easily be generated by curves such as [Curves.elasticInOut]). Each channel
-  /// will be clamped to the range 0 to 255.
-  ///
-  /// Values for `t` are usually obtained from an [Animation<double>], such as
-  /// an [AnimationController].
-  static ColorSwatch<T>? lerp<T>(ColorSwatch<T>? a, ColorSwatch<T>? b, double t) {
-    final Map<T, Color> swatch;
-    if (b == null) {
-      if (a == null) {
-        return null;
-      } else {
-        swatch = a._swatch.map((T key, Color color) => MapEntry<T, Color>(key, Color.lerp(color, null, t)!));
-      }
-    } else {
-      if (a == null) {
-        swatch = b._swatch.map((T key, Color color) => MapEntry<T, Color>(key, Color.lerp(null, color, t)!));
-      } else {
-        swatch = a._swatch.map((T key, Color color) => MapEntry<T, Color>(key, Color.lerp(color, b[key], t)!));
-      }
-    }
-    return ColorSwatch<T>(Color.lerp(a, b, t)!.value, swatch);
-  }
 }
 
 /// [DiagnosticsProperty] that has an [Color] as value.
@@ -513,15 +466,21 @@ class ColorProperty extends DiagnosticsProperty<Color> {
   ///
   /// The [showName], [style], and [level] arguments must not be null.
   ColorProperty(
-    String super.name,
-    super.value, {
-    super.showName,
-    super.defaultValue,
-    super.style,
-    super.level,
+    String name,
+    Color? value, {
+    bool showName = true,
+    Object? defaultValue = kNoDefaultValue,
+    DiagnosticsTreeStyle style = DiagnosticsTreeStyle.singleLine,
+    DiagnosticLevel level = DiagnosticLevel.info,
   }) : assert(showName != null),
        assert(style != null),
-       assert(level != null);
+       assert(level != null),
+       super(name, value,
+         defaultValue: defaultValue,
+         showName: showName,
+         style: style,
+         level: level,
+       );
 
   @override
   Map<String, Object?> toJsonMap(DiagnosticsSerializationDelegate delegate) {

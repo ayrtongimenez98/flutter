@@ -263,9 +263,7 @@ abstract class SearchDelegate<T> {
   set query(String value) {
     assert(query != null);
     _queryTextController.text = value;
-    if (_queryTextController.text.isNotEmpty) {
-      _queryTextController.selection = TextSelection.fromPosition(TextPosition(offset: _queryTextController.text.length));
-    }
+    _queryTextController.selection = TextSelection.fromPosition(TextPosition(offset: _queryTextController.text.length));
   }
 
   /// Transition from the suggestions returned by [buildSuggestions] to the
@@ -583,7 +581,7 @@ class _SearchPageState<T> extends State<_SearchPage<T>> {
             title: TextField(
               controller: widget.delegate._queryTextController,
               focusNode: focusNode,
-              style: widget.delegate.searchFieldStyle ?? theme.textTheme.headline6,
+              style: theme.textTheme.headline6,
               textInputAction: widget.delegate.textInputAction,
               keyboardType: widget.delegate.keyboardType,
               onSubmitted: (String _) {

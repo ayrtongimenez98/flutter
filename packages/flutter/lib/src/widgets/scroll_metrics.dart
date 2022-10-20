@@ -116,9 +116,9 @@ mixin ScrollMetrics {
     assert(minScrollExtent <= maxScrollExtent);
     return viewportDimension
       // "above" overscroll value
-      - clampDouble(minScrollExtent - pixels, 0, viewportDimension)
+      - (minScrollExtent - pixels).clamp(0, viewportDimension)
       // "below" overscroll value
-      - clampDouble(pixels - maxScrollExtent, 0, viewportDimension);
+      - (pixels - maxScrollExtent).clamp(0, viewportDimension);
   }
 
   /// The quantity of content conceptually "below" the viewport in the scrollable.

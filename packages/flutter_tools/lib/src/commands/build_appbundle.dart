@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import '../android/android_builder.dart';
 import '../android/build_validation.dart';
 import '../android/deferred_components_prebuild_validator.dart';
@@ -10,16 +12,14 @@ import '../base/deferred_component.dart';
 import '../base/file_system.dart';
 import '../build_info.dart';
 import '../cache.dart';
-import '../globals.dart' as globals;
+import '../globals_null_migrated.dart' as globals;
 import '../project.dart';
 import '../reporting/reporting.dart';
 import '../runner/flutter_command.dart' show FlutterCommandResult;
 import 'build.dart';
 
 class BuildAppBundleCommand extends BuildSubCommand {
-  BuildAppBundleCommand({
-    bool verboseHelp = false,
-  }) : super(verboseHelp: verboseHelp) {
+  BuildAppBundleCommand({bool verboseHelp = false}) {
     addTreeShakeIconsFlag();
     usesTargetOption();
     addBuildModeFlags(verboseHelp: verboseHelp);
@@ -39,14 +39,14 @@ class BuildAppBundleCommand extends BuildSubCommand {
     addEnableExperimentation(hide: !verboseHelp);
     usesAnalyzeSizeFlag();
     addAndroidSpecificBuildOptions(hide: !verboseHelp);
-    addMultidexOption();
-    addIgnoreDeprecationOption();
     argParser.addMultiOption('target-platform',
+      splitCommas: true,
       defaultsTo: <String>['android-arm', 'android-arm64', 'android-x64'],
       allowed: <String>['android-arm', 'android-arm64', 'android-x64'],
       help: 'The target platform for which the app is compiled.',
     );
     argParser.addFlag('deferred-components',
+      negatable: true,
       defaultsTo: true,
       help: 'Setting to false disables building with deferred components. All deferred code '
             'will be compiled into the base app, and assets act as if they were defined under'
@@ -54,6 +54,7 @@ class BuildAppBundleCommand extends BuildSubCommand {
             'non-deferred components apps.',
     );
     argParser.addFlag('validate-deferred-components',
+      negatable: true,
       defaultsTo: true,
       help: 'When enabled, deferred component apps will fail to build if setup problems are '
             'detected that would prevent deferred components from functioning properly. The '
@@ -67,9 +68,6 @@ class BuildAppBundleCommand extends BuildSubCommand {
 
   @override
   final String name = 'appbundle';
-
-  @override
-  DeprecationBehavior get deprecationBehavior => boolArgDeprecated('ignore-deprecation') ? DeprecationBehavior.ignore : DeprecationBehavior.exit;
 
   @override
   Future<Set<DevelopmentArtifact>> get requiredArtifacts async => <DevelopmentArtifact>{
@@ -87,11 +85,11 @@ class BuildAppBundleCommand extends BuildSubCommand {
   Future<CustomDimensions> get usageValues async {
     String buildMode;
 
-    if (boolArgDeprecated('release')) {
+    if (boolArg('release')) {
       buildMode = 'release';
-    } else if (boolArgDeprecated('debug')) {
+    } else if (boolArg('debug')) {
       buildMode = 'debug';
-    } else if (boolArgDeprecated('profile')) {
+    } else if (boolArg('profile')) {
       buildMode = 'profile';
     } else {
       // The build defaults to release.
@@ -112,27 +110,26 @@ class BuildAppBundleCommand extends BuildSubCommand {
 
     final AndroidBuildInfo androidBuildInfo = AndroidBuildInfo(await getBuildInfo(),
       targetArchs: stringsArg('target-platform').map<AndroidArch>(getAndroidArchForName),
-      multidexEnabled: boolArgDeprecated('multidex'),
     );
     // Do all setup verification that doesn't involve loading units. Checks that
     // require generated loading units are done after gen_snapshot in assemble.
-    final List<DeferredComponent>? deferredComponents = FlutterProject.current().manifest.deferredComponents;
-    if (deferredComponents != null && boolArgDeprecated('deferred-components') && boolArgDeprecated('validate-deferred-components') && !boolArgDeprecated('debug')) {
+    if (FlutterProject.current().manifest.deferredComponents != null && boolArg('deferred-components') && boolArg('validate-deferred-components') && !boolArg('debug')) {
       final DeferredComponentsPrebuildValidator validator = DeferredComponentsPrebuildValidator(
         FlutterProject.current().directory,
         globals.logger,
         globals.platform,
         title: 'Deferred components prebuild validation',
+        exitOnFail: true,
       );
       validator.clearOutputDir();
-      await validator.checkAndroidDynamicFeature(deferredComponents);
-      validator.checkAndroidResourcesStrings(deferredComponents);
+      await validator.checkAndroidDynamicFeature(FlutterProject.current().manifest.deferredComponents);
+      validator.checkAndroidResourcesStrings(FlutterProject.current().manifest.deferredComponents);
 
       validator.handleResults();
 
       // Delete intermediates libs dir for components to resolve mismatching
       // abis supported by base and dynamic feature modules.
-      for (final DeferredComponent component in deferredComponents) {
+      for (final DeferredComponent component in FlutterProject.current().manifest.deferredComponents) {
         final Directory deferredLibsIntermediate = FlutterProject.current().directory
           .childDirectory('build')
           .childDirectory(component.name)
@@ -148,13 +145,12 @@ class BuildAppBundleCommand extends BuildSubCommand {
 
     validateBuild(androidBuildInfo);
     displayNullSafetyMode(androidBuildInfo.buildInfo);
-    globals.terminal.usesTerminalUi = true;
-    await androidBuilder?.buildAab(
+    await androidBuilder.buildAab(
       project: FlutterProject.current(),
       target: targetFile,
       androidBuildInfo: androidBuildInfo,
-      validateDeferredComponents: boolArgDeprecated('validate-deferred-components'),
-      deferredComponentsEnabled: boolArgDeprecated('deferred-components') && !boolArgDeprecated('debug'),
+      validateDeferredComponents: boolArg('validate-deferred-components'),
+      deferredComponentsEnabled: boolArg('deferred-components') && !boolArg('debug'),
     );
     return FlutterCommandResult.success();
   }

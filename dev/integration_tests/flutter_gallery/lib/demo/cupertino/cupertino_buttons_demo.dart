@@ -7,7 +7,7 @@ import 'package:flutter/cupertino.dart';
 import '../../gallery/demo.dart';
 
 class CupertinoButtonsDemo extends StatefulWidget {
-  const CupertinoButtonsDemo({super.key});
+  const CupertinoButtonsDemo({Key? key}) : super(key: key);
 
   static const String routeName = '/cupertino/buttons';
 

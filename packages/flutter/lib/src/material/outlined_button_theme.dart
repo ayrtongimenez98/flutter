@@ -47,25 +47,24 @@ class OutlinedButtonThemeData with Diagnosticable {
   /// Linearly interpolate between two outlined button themes.
   static OutlinedButtonThemeData? lerp(OutlinedButtonThemeData? a, OutlinedButtonThemeData? b, double t) {
     assert (t != null);
-    if (a == null && b == null) {
+    if (a == null && b == null)
       return null;
-    }
     return OutlinedButtonThemeData(
       style: ButtonStyle.lerp(a?.style, b?.style, t),
     );
   }
 
   @override
-  int get hashCode => style.hashCode;
+  int get hashCode {
+    return style.hashCode;
+  }
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) {
+    if (identical(this, other))
       return true;
-    }
-    if (other.runtimeType != runtimeType) {
+    if (other.runtimeType != runtimeType)
       return false;
-    }
     return other is OutlinedButtonThemeData && other.style == style;
   }
 
@@ -92,10 +91,10 @@ class OutlinedButtonTheme extends InheritedTheme {
   ///
   /// The [data] parameter must not be null.
   const OutlinedButtonTheme({
-    super.key,
+    Key? key,
     required this.data,
-    required super.child,
-  }) : assert(data != null);
+    required Widget child,
+  }) : assert(data != null), super(key: key, child: child);
 
   /// The configuration of this theme.
   final OutlinedButtonThemeData data;
@@ -108,7 +107,7 @@ class OutlinedButtonTheme extends InheritedTheme {
   /// Typical usage is as follows:
   ///
   /// ```dart
-  /// OutlinedButtonThemeData theme = OutlinedButtonTheme.of(context);
+  /// OutlinedButtonTheme theme = OutlinedButtonTheme.of(context);
   /// ```
   static OutlinedButtonThemeData of(BuildContext context) {
     final OutlinedButtonTheme? buttonTheme = context.dependOnInheritedWidgetOfExactType<OutlinedButtonTheme>();

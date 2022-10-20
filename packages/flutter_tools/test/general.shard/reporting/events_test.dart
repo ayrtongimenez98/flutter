@@ -107,7 +107,7 @@ void main() {
   testWithoutContext('a null language version is treated as unmigrated', () {
     final TestUsage usage = TestUsage();
     final PackageConfig packageConfig = PackageConfig(<Package>[
-      Package('foo', Uri.parse('file:///foo/lib/')),
+      Package('foo', Uri.parse('file:///foo/lib/'), languageVersion: null),
     ]);
 
     NullSafetyAnalysisEvent(
@@ -127,11 +127,11 @@ void main() {
 }
 
 class FakeGroupedValidator extends GroupedValidator {
-  FakeGroupedValidator(super.subValidators);
+  FakeGroupedValidator(List<DoctorValidator> subValidators) : super(subValidators);
 }
 
 class FakeDoctorValidator extends DoctorValidator {
-  FakeDoctorValidator(super.title);
+  FakeDoctorValidator(String title) : super(title);
 
   @override
   Future<ValidationResult> validate() async {

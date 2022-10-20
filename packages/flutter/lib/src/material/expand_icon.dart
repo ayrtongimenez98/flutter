@@ -31,7 +31,7 @@ class ExpandIcon extends StatefulWidget {
   /// Creates an [ExpandIcon] with the given padding, and a callback that is
   /// triggered when the icon is pressed.
   const ExpandIcon({
-    super.key,
+    Key? key,
     this.isExpanded = false,
     this.size = 24.0,
     required this.onPressed,
@@ -41,7 +41,8 @@ class ExpandIcon extends StatefulWidget {
     this.expandedColor,
   }) : assert(isExpanded != null),
        assert(size != null),
-       assert(padding != null);
+       assert(padding != null),
+       super(key: key);
 
   /// Whether the icon is in an expanded state.
   ///

@@ -191,7 +191,7 @@ abstract class Target {
   /// Resolve the set of input patterns and functions into a concrete list of
   /// files.
   ResolvedFiles resolveInputs(Environment environment) {
-    return _resolveConfiguration(inputs, depfiles, environment);
+    return _resolveConfiguration(inputs, depfiles, environment, implicit: true, inputs: true);
   }
 
   /// Find the current set of declared outputs, including wildcard directories.
@@ -236,11 +236,8 @@ abstract class Target {
     return environment.buildDir.childFile(fileName);
   }
 
-  static ResolvedFiles _resolveConfiguration(
-    List<Source> config,
-    List<String> depfiles,
-    Environment environment, {
-    bool inputs = true,
+  static ResolvedFiles _resolveConfiguration(List<Source> config,
+    List<String> depfiles, Environment environment, { bool implicit = true, bool inputs = true,
   }) {
     final SourceVisitor collector = SourceVisitor(environment, inputs);
     for (final Source source in config) {
@@ -608,7 +605,7 @@ class FlutterBuildSystem extends BuildSystem {
       // Always persist the file cache to disk.
       fileCache.persist();
     }
-    // This is a bit of a hack, due to various parts of
+    // TODO(jonahwilliams): this is a bit of a hack, due to various parts of
     // the flutter tool writing these files unconditionally. Since Xcode uses
     // timestamps to track files, this leads to unnecessary rebuilds if they
     // are included. Once all the places that write these files have been
@@ -863,7 +860,7 @@ class _BuildInstance {
         ErrorHandlingFileSystem.deleteIfExists(previousFile);
       }
     } on Exception catch (exception, stackTrace) {
-      // TODO(zanderso): throw specific exception for expected errors to mark
+      // TODO(jonahwilliams): throw specific exception for expected errors to mark
       // as non-fatal. All others should be fatal.
       node.target.clearStamp(environment);
       succeeded = false;

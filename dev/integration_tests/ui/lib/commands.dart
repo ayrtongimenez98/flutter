@@ -11,7 +11,7 @@ void main() {
 }
 
 class Test extends SingleChildRenderObjectWidget {
-  const Test({ super.key });
+  const Test({ Key? key }) : super(key: key);
 
   @override
   RenderTest createRenderObject(BuildContext context) => RenderTest();

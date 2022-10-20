@@ -7,7 +7,7 @@ import 'package:flutter/widgets.dart';
 export '../services/restoration.dart';
 
 class BucketSpy extends StatefulWidget {
-  const BucketSpy({super.key, this.child});
+  const BucketSpy({Key? key, this.child}) : super(key: key);
 
   final Widget? child;
 

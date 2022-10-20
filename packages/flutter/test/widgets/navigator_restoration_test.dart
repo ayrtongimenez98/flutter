@@ -812,7 +812,9 @@ void main() {
     // Move navigator into restoration scope.
     await tester.pumpWidget(const RootRestorationScope(
       restorationId: 'root',
-      child: TestWidget(),
+      child: TestWidget(
+        restorationId: 'app',
+      ),
     ));
 
     expect(findRoute('Foo'), findsOneWidget);
@@ -1034,7 +1036,7 @@ Route<void> _routeFutureBuilder(BuildContext context, Object? arguments) {
 }
 
 class PagedTestWidget extends StatelessWidget {
-  const PagedTestWidget({super.key, this.restorationId = 'app'});
+  const PagedTestWidget({Key? key, this.restorationId = 'app'}) : super(key: key);
 
   final String restorationId;
 
@@ -1051,7 +1053,7 @@ class PagedTestWidget extends StatelessWidget {
 }
 
 class PagedTestNavigator extends StatefulWidget {
-  const PagedTestNavigator({super.key});
+  const PagedTestNavigator({Key? key}) : super(key: key);
 
   @override
   State<PagedTestNavigator> createState() => PagedTestNavigatorState();
@@ -1141,7 +1143,7 @@ class PagedTestNavigatorState extends State<PagedTestNavigator> with Restoration
 }
 
 class TestPage extends Page<void> {
-  const TestPage({super.key, required String super.name, super.restorationId});
+  const TestPage({LocalKey? key, required String name, String? restorationId}) : super(name: name, key: key, restorationId: restorationId);
 
   @override
   Route<void> createRoute(BuildContext context) {
@@ -1157,7 +1159,7 @@ class TestPage extends Page<void> {
 }
 
 class TestWidget extends StatelessWidget {
-  const TestWidget({super.key, this.restorationId = 'app'});
+  const TestWidget({Key? key, this.restorationId = 'app'}) : super(key: key);
 
   final String? restorationId;
 
@@ -1188,7 +1190,7 @@ class TestWidget extends StatelessWidget {
 }
 
 class RouteWidget extends StatefulWidget {
-  const RouteWidget({super.key, required this.name, this.arguments});
+  const RouteWidget({Key? key, required this.name, this.arguments}) : super(key: key);
 
   final String name;
   final Object? arguments;
@@ -1237,7 +1239,7 @@ class RouteWidgetState extends State<RouteWidget> with RestorationMixin {
 }
 
 class RouteFutureWidget extends StatefulWidget {
-  const RouteFutureWidget({super.key});
+  const RouteFutureWidget({Key? key}): super(key: key);
 
   @override
   State<RouteFutureWidget> createState() => RouteFutureWidgetState();
@@ -1292,7 +1294,7 @@ Future<void> tapRouteCounter(String name, WidgetTester tester) async {
 }
 
 class _RouteFinder extends MatchFinder {
-  _RouteFinder(this.name, { this.arguments, this.count, super.skipOffstage });
+  _RouteFinder(this.name, { this.arguments, this.count, bool skipOffstage = true }) : super(skipOffstage: skipOffstage);
 
   final String name;
   final Object? arguments;

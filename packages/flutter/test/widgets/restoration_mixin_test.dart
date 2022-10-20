@@ -170,7 +170,9 @@ void main() {
     await tester.pumpWidget(
       UnmanagedRestorationScope(
         bucket: root,
-        child: const _TestRestorableWidget(),
+        child: const _TestRestorableWidget(
+          restorationId: null,
+        ),
       ),
     );
     final _TestRestorableWidgetState state = tester.state(find.byType(_TestRestorableWidget));
@@ -211,7 +213,9 @@ void main() {
     await tester.pumpWidget(
       UnmanagedRestorationScope(
         bucket: root,
-        child: const _TestRestorableWidget(),
+        child: const _TestRestorableWidget(
+          restorationId: null,
+        ),
       ),
     );
     manager.doSerialization();
@@ -642,7 +646,7 @@ void _clearLogs(_TestRestorableWidgetState state) {
 
 class _TestRestorableWidget extends StatefulWidget {
 
-  const _TestRestorableWidget({super.key, this.restorationId});
+  const _TestRestorableWidget({Key? key, this.restorationId}) : super(key: key);
 
   final String? restorationId;
 

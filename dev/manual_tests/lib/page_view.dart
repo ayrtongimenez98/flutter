@@ -14,7 +14,7 @@ class CardModel {
 }
 
 class PageViewApp extends StatefulWidget {
-  const PageViewApp({super.key});
+  const PageViewApp({Key? key}) : super(key: key);
 
   @override
   PageViewAppState createState() => PageViewAppState();

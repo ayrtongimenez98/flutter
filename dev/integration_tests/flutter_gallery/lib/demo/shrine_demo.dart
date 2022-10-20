@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
-import 'shrine/app.dart';
+import 'package:flutter_gallery/demo/shrine/app.dart';
 
 class ShrineDemo extends StatelessWidget {
-  const ShrineDemo({ super.key });
+  const ShrineDemo({ Key? key }) : super(key: key);
 
   static const String routeName = '/shrine'; // Used by the Gallery app.
 

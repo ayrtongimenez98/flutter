@@ -42,11 +42,11 @@ final List<Palette> allPalettes = <Palette>[
 
 class ColorItem extends StatelessWidget {
   const ColorItem({
-    super.key,
+    Key? key,
     required this.index,
     required this.color,
     this.prefix = '',
-  });
+  }) : super(key: key);
 
   final int index;
   final Color color;
@@ -67,6 +67,7 @@ class ColorItem extends StatelessWidget {
           bottom: false,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Text('$prefix$index'),
               Text(colorString()),
@@ -80,9 +81,10 @@ class ColorItem extends StatelessWidget {
 
 class PaletteTabView extends StatelessWidget {
   PaletteTabView({
-    super.key,
+    Key? key,
     required this.colors,
-  }) : assert(colors.isValid);
+  }) : assert(colors.isValid),
+       super(key: key);
 
   final Palette colors;
 
@@ -96,7 +98,6 @@ class PaletteTabView extends StatelessWidget {
     final TextStyle blackTextStyle = textTheme.bodyText2!.copyWith(color: Colors.black);
     return Scrollbar(
       child: ListView(
-        primary: true,
         itemExtent: kColorItemHeight,
         children: <Widget>[
           ...primaryKeys.map<Widget>((int index) {
@@ -119,7 +120,7 @@ class PaletteTabView extends StatelessWidget {
 }
 
 class ColorsDemo extends StatelessWidget {
-  const ColorsDemo({super.key});
+  const ColorsDemo({Key? key}) : super(key: key);
 
   static const String routeName = '/colors';
 

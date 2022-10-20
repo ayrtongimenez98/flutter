@@ -10,7 +10,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'colors.dart';
-import 'material_state.dart';
 import 'theme.dart';
 
 /// Applies a slider theme to descendant [Slider] widgets.
@@ -31,31 +30,46 @@ import 'theme.dart';
 ///
 ///  * [SliderThemeData], which describes the actual configuration of a slider
 ///    theme.
+/// {@template flutter.material.SliderTheme.sliderComponentShape}
 ///  * [SliderComponentShape], which can be used to create custom shapes for
 ///    the [Slider]'s thumb, overlay, and value indicator and the
 ///    [RangeSlider]'s overlay.
+/// {@endtemplate}
+/// {@template flutter.material.SliderTheme.sliderTrackShape}
 ///  * [SliderTrackShape], which can be used to create custom shapes for the
 ///    [Slider]'s track.
+/// {@endtemplate}
+/// {@template flutter.material.SliderTheme.sliderTickMarkShape}
 ///  * [SliderTickMarkShape], which can be used to create custom shapes for the
 ///    [Slider]'s tick marks.
+/// {@endtemplate}
+/// {@template flutter.material.SliderTheme.rangeSliderThumbShape}
 ///  * [RangeSliderThumbShape], which can be used to create custom shapes for
 ///    the [RangeSlider]'s thumb.
+/// {@endtemplate}
+/// {@template flutter.material.SliderTheme.rangeSliderValueIndicatorShape}
 ///  * [RangeSliderValueIndicatorShape], which can be used to create custom
 ///    shapes for the [RangeSlider]'s value indicator.
+/// {@endtemplate}
+/// {@template flutter.material.SliderTheme.rangeSliderTrackShape}
 ///  * [RangeSliderTrackShape], which can be used to create custom shapes for
 ///    the [RangeSlider]'s track.
+/// {@endtemplate}
+/// {@template flutter.material.SliderTheme.rangeSliderTickMarkShape}
 ///  * [RangeSliderTickMarkShape], which can be used to create custom shapes for
 ///    the [RangeSlider]'s tick marks.
+/// {@endtemplate}
 class SliderTheme extends InheritedTheme {
   /// Applies the given theme [data] to [child].
   ///
   /// The [data] and [child] arguments must not be null.
   const SliderTheme({
-    super.key,
+    Key? key,
     required this.data,
-    required super.child,
+    required Widget child,
   }) : assert(child != null),
-       assert(data != null);
+       assert(data != null),
+       super(key: key, child: child);
 
   /// Specifies the color and shape values for descendant slider widgets.
   final SliderThemeData data;
@@ -70,7 +84,7 @@ class SliderTheme extends InheritedTheme {
   ///
   /// ```dart
   /// class Launch extends StatefulWidget {
-  ///   const Launch({super.key});
+  ///   const Launch({Key? key}) : super(key: key);
   ///
   ///   @override
   ///   State createState() => LaunchState();
@@ -150,7 +164,7 @@ enum Thumb {
   end,
 }
 
-/// Holds the color, shape, and typography values for a Material Design slider
+/// Holds the color, shape, and typography values for a material design slider
 /// theme.
 ///
 /// Use this class to configure a [SliderTheme] widget, or to set the
@@ -210,21 +224,13 @@ enum Thumb {
 ///  * [Theme] widget, which performs a similar function to [SliderTheme],
 ///    but for overall themes.
 ///  * [ThemeData], which has a default [SliderThemeData].
-///  * [SliderComponentShape], which can be used to create custom shapes for
-///    the [Slider]'s thumb, overlay, and value indicator and the
-///    [RangeSlider]'s overlay.
-///  * [SliderTrackShape], which can be used to create custom shapes for the
-///    [Slider]'s track.
-///  * [SliderTickMarkShape], which can be used to create custom shapes for the
-///    [Slider]'s tick marks.
-///  * [RangeSliderThumbShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s thumb.
-///  * [RangeSliderValueIndicatorShape], which can be used to create custom
-///    shapes for the [RangeSlider]'s value indicator.
-///  * [RangeSliderTrackShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s track.
-///  * [RangeSliderTickMarkShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s tick marks.
+/// {@macro flutter.material.SliderTheme.sliderComponentShape}
+/// {@macro flutter.material.SliderTheme.sliderTrackShape}
+/// {@macro flutter.material.SliderTheme.sliderTickMarkShape}
+/// {@macro flutter.material.SliderTheme.rangeSliderThumbShape}
+/// {@macro flutter.material.SliderTheme.rangeSliderValueIndicatorShape}
+/// {@macro flutter.material.SliderTheme.rangeSliderTrackShape}
+/// {@macro flutter.material.SliderTheme.rangeSliderTickMarkShape}
 @immutable
 class SliderThemeData with Diagnosticable {
   /// Create a [SliderThemeData] given a set of exact values.
@@ -240,7 +246,7 @@ class SliderThemeData with Diagnosticable {
   ///
   /// ```dart
   /// class Blissful extends StatefulWidget {
-  ///   const Blissful({super.key});
+  ///   const Blissful({Key? key}) : super(key: key);
   ///
   ///   @override
   ///   State createState() => BlissfulState();
@@ -290,7 +296,6 @@ class SliderThemeData with Diagnosticable {
     this.valueIndicatorTextStyle,
     this.minThumbSeparation,
     this.thumbSelector,
-    this.mouseCursor,
   });
 
   /// Generates a SliderThemeData from three main colors.
@@ -562,11 +567,6 @@ class SliderThemeData with Diagnosticable {
   /// Override this for custom thumb selection.
   final RangeThumbSelector? thumbSelector;
 
-  /// {@macro flutter.material.slider.mouseCursor}
-  ///
-  /// If specified, overrides the default value of [Slider.mouseCursor].
-  final MaterialStateProperty<MouseCursor?>? mouseCursor;
-
   /// Creates a copy of this object but with the given fields replaced with the
   /// new values.
   SliderThemeData copyWith({
@@ -597,7 +597,6 @@ class SliderThemeData with Diagnosticable {
     TextStyle? valueIndicatorTextStyle,
     double? minThumbSeparation,
     RangeThumbSelector? thumbSelector,
-    MaterialStateProperty<MouseCursor?>? mouseCursor,
   }) {
     return SliderThemeData(
       trackHeight: trackHeight ?? this.trackHeight,
@@ -627,7 +626,6 @@ class SliderThemeData with Diagnosticable {
       valueIndicatorTextStyle: valueIndicatorTextStyle ?? this.valueIndicatorTextStyle,
       minThumbSeparation: minThumbSeparation ?? this.minThumbSeparation,
       thumbSelector: thumbSelector ?? this.thumbSelector,
-      mouseCursor: mouseCursor ?? this.mouseCursor,
     );
   }
 
@@ -668,32 +666,31 @@ class SliderThemeData with Diagnosticable {
       valueIndicatorTextStyle: TextStyle.lerp(a.valueIndicatorTextStyle, b.valueIndicatorTextStyle, t),
       minThumbSeparation: lerpDouble(a.minThumbSeparation, b.minThumbSeparation, t),
       thumbSelector: t < 0.5 ? a.thumbSelector : b.thumbSelector,
-      mouseCursor: t < 0.5 ? a.mouseCursor : b.mouseCursor,
     );
   }
 
   @override
-  int get hashCode => Object.hash(
-    trackHeight,
-    activeTrackColor,
-    inactiveTrackColor,
-    disabledActiveTrackColor,
-    disabledInactiveTrackColor,
-    activeTickMarkColor,
-    inactiveTickMarkColor,
-    disabledActiveTickMarkColor,
-    disabledInactiveTickMarkColor,
-    thumbColor,
-    overlappingShapeStrokeColor,
-    disabledThumbColor,
-    overlayColor,
-    valueIndicatorColor,
-    overlayShape,
-    tickMarkShape,
-    thumbShape,
-    trackShape,
-    valueIndicatorShape,
-    Object.hash(
+  int get hashCode {
+    return hashList(<Object?>[
+      trackHeight,
+      activeTrackColor,
+      inactiveTrackColor,
+      disabledActiveTrackColor,
+      disabledInactiveTrackColor,
+      activeTickMarkColor,
+      inactiveTickMarkColor,
+      disabledActiveTickMarkColor,
+      disabledInactiveTickMarkColor,
+      thumbColor,
+      overlappingShapeStrokeColor,
+      disabledThumbColor,
+      overlayColor,
+      valueIndicatorColor,
+      overlayShape,
+      tickMarkShape,
+      thumbShape,
+      trackShape,
+      valueIndicatorShape,
       rangeTickMarkShape,
       rangeThumbShape,
       rangeTrackShape,
@@ -702,9 +699,8 @@ class SliderThemeData with Diagnosticable {
       valueIndicatorTextStyle,
       minThumbSeparation,
       thumbSelector,
-      mouseCursor,
-    ),
-  );
+    ]);
+  }
 
   @override
   bool operator ==(Object other) {
@@ -741,8 +737,7 @@ class SliderThemeData with Diagnosticable {
         && other.showValueIndicator == showValueIndicator
         && other.valueIndicatorTextStyle == valueIndicatorTextStyle
         && other.minThumbSeparation == minThumbSeparation
-        && other.thumbSelector == thumbSelector
-        && other.mouseCursor == mouseCursor;
+        && other.thumbSelector == thumbSelector;
   }
 
   @override
@@ -776,7 +771,6 @@ class SliderThemeData with Diagnosticable {
     properties.add(DiagnosticsProperty<TextStyle>('valueIndicatorTextStyle', valueIndicatorTextStyle, defaultValue: defaultData.valueIndicatorTextStyle));
     properties.add(DoubleProperty('minThumbSeparation', minThumbSeparation, defaultValue: defaultData.minThumbSeparation));
     properties.add(DiagnosticsProperty<RangeThumbSelector>('thumbSelector', thumbSelector, defaultValue: defaultData.thumbSelector));
-    properties.add(DiagnosticsProperty<MaterialStateProperty<MouseCursor?>>('mouseCursor', mouseCursor, defaultValue: defaultData.mouseCursor));
   }
 }
 
@@ -916,11 +910,8 @@ abstract class SliderComponentShape {
 ///
 ///  * [RoundSliderTickMarkShape], which is the default [Slider]'s tick mark
 ///    shape that paints a solid circle.
-///  * [SliderTrackShape], which can be used to create custom shapes for the
-///    [Slider]'s track.
-///  * [SliderComponentShape], which can be used to create custom shapes for
-///    the [Slider]'s thumb, overlay, and value indicator and the
-///    [RangeSlider]'s overlay.
+/// {@macro flutter.material.SliderTheme.sliderTrackShape}
+/// {@macro flutter.material.SliderTheme.sliderComponentShape}
 abstract class SliderTickMarkShape {
   /// This abstract const constructor enables subclasses to provide
   /// const constructors so that they can be used in const expressions.
@@ -995,11 +986,8 @@ abstract class SliderTickMarkShape {
 ///
 ///  * [RoundedRectSliderTrackShape] for the default [Slider]'s track shape that
 ///    paints a stadium-like track.
-///  * [SliderTickMarkShape], which can be used to create custom shapes for the
-///    [Slider]'s tick marks.
-///  * [SliderComponentShape], which can be used to create custom shapes for
-///    the [Slider]'s thumb, overlay, and value indicator and the
-///    [RangeSlider]'s overlay.
+/// {@macro flutter.material.SliderTheme.sliderTickMarkShape}
+/// {@macro flutter.material.SliderTheme.sliderComponentShape}
 abstract class SliderTrackShape {
   /// This abstract const constructor enables subclasses to provide
   /// const constructors so that they can be used in const expressions.
@@ -1080,15 +1068,10 @@ abstract class SliderTrackShape {
 ///
 ///  * [RoundRangeSliderThumbShape] for the default [RangeSlider]'s thumb shape
 ///    that paints a solid circle.
-///  * [RangeSliderTickMarkShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s tick marks.
-///  * [RangeSliderTrackShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s track.
-///  * [RangeSliderValueIndicatorShape], which can be used to create custom
-///    shapes for the [RangeSlider]'s value indicator.
-///  * [SliderComponentShape], which can be used to create custom shapes for
-///    the [Slider]'s thumb, overlay, and value indicator and the
-///    [RangeSlider]'s overlay.
+/// {@macro flutter.material.SliderTheme.rangeSliderTickMarkShape}
+/// {@macro flutter.material.SliderTheme.rangeSliderTrackShape}
+/// {@macro flutter.material.SliderTheme.rangeSliderValueIndicatorShape}
+/// {@macro flutter.material.SliderTheme.sliderComponentShape}
 abstract class RangeSliderThumbShape {
   /// This abstract const constructor enables subclasses to provide
   /// const constructors so that they can be used in const expressions.
@@ -1175,15 +1158,10 @@ abstract class RangeSliderThumbShape {
 ///
 ///  * [PaddleRangeSliderValueIndicatorShape] for the default [RangeSlider]'s
 ///    value indicator shape that paints a custom path with text in it.
-///  * [RangeSliderTickMarkShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s tick marks.
-///  * [RangeSliderThumbShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s thumb.
-///  * [RangeSliderTrackShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s track.
-///  * [SliderComponentShape], which can be used to create custom shapes for
-///    the [Slider]'s thumb, overlay, and value indicator and the
-///    [RangeSlider]'s overlay.
+/// {@macro flutter.material.SliderTheme.rangeSliderTickMarkShape}
+/// {@macro flutter.material.SliderTheme.rangeSliderThumbShape}
+/// {@macro flutter.material.SliderTheme.rangeSliderTrackShape}
+/// {@macro flutter.material.SliderTheme.sliderComponentShape}
 abstract class RangeSliderValueIndicatorShape {
   /// This abstract const constructor enables subclasses to provide
   /// const constructors so that they can be used in const expressions.
@@ -1285,15 +1263,10 @@ abstract class RangeSliderValueIndicatorShape {
 ///
 ///  * [RoundRangeSliderTickMarkShape] for the default [RangeSlider]'s tick mark
 ///    shape that paints a solid circle.
-///  * [RangeSliderThumbShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s thumb.
-///  * [RangeSliderTrackShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s track.
-///  * [RangeSliderValueIndicatorShape], which can be used to create custom
-///    shapes for the [RangeSlider]'s value indicator.
-///  * [SliderComponentShape], which can be used to create custom shapes for
-///    the [Slider]'s thumb, overlay, and value indicator and the
-///    [RangeSlider]'s overlay.
+/// {@macro flutter.material.SliderTheme.rangeSliderThumbShape}
+/// {@macro flutter.material.SliderTheme.rangeSliderTrackShape}
+/// {@macro flutter.material.SliderTheme.rangeSliderValueIndicatorShape}
+/// {@macro flutter.material.SliderTheme.sliderComponentShape}
 abstract class RangeSliderTickMarkShape {
   /// This abstract const constructor enables subclasses to provide
   /// const constructors so that they can be used in const expressions.
@@ -1360,15 +1333,10 @@ abstract class RangeSliderTickMarkShape {
 ///
 ///  * [RoundedRectRangeSliderTrackShape] for the default [RangeSlider]'s track
 ///    shape that paints a stadium-like track.
-///  * [RangeSliderTickMarkShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s tick marks.
-///  * [RangeSliderThumbShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s thumb.
-///  * [RangeSliderValueIndicatorShape], which can be used to create custom
-///    shapes for the [RangeSlider]'s value indicator.
-///  * [SliderComponentShape], which can be used to create custom shapes for
-///    the [Slider]'s thumb, overlay, and value indicator and the
-///    [RangeSlider]'s overlay.
+/// {@macro flutter.material.SliderTheme.rangeSliderTickMarkShape}
+/// {@macro flutter.material.SliderTheme.rangeSliderThumbShape}
+/// {@macro flutter.material.SliderTheme.rangeSliderValueIndicatorShape}
+/// {@macro flutter.material.SliderTheme.sliderComponentShape}
 abstract class RangeSliderTrackShape {
   /// This abstract const constructor enables subclasses to provide
   /// const constructors so that they can be used in const expressions.
@@ -1518,12 +1486,29 @@ mixin BaseSliderTrackShape {
 ///  * [Slider], for the component that is meant to display this shape.
 ///  * [SliderThemeData], where an instance of this class is set to inform the
 ///    slider of the visual details of the its track.
-///  * [SliderTrackShape], which can be used to create custom shapes for the
-///    [Slider]'s track.
+/// {@macro flutter.material.SliderTheme.sliderTrackShape}
 ///  * [RoundedRectSliderTrackShape], for a similar track with rounded edges.
 class RectangularSliderTrackShape extends SliderTrackShape with BaseSliderTrackShape {
   /// Creates a slider track that draws 2 rectangles.
-  const RectangularSliderTrackShape();
+  const RectangularSliderTrackShape({
+    @Deprecated(
+      'It no longer has any effect because the thumb does not shrink when the slider is disabled now. '
+      'This feature was deprecated after v1.26.0-18.0.pre.',
+    )
+    this.disabledThumbGapWidth = 2.0,
+  });
+
+  /// Horizontal spacing, or gap, between the disabled thumb and the track.
+  ///
+  /// This is only used when the slider is disabled. There is no gap around
+  /// the thumb and any part of the track when the slider is enabled. The
+  /// Material spec defaults this gap width 2, which is half of the disabled
+  /// thumb radius.
+  @Deprecated(
+    'It no longer has any effect because the thumb does not shrink when the slider is disabled now. '
+    'This feature was deprecated after v1.26.0-18.0.pre.',
+  )
+  final double disabledThumbGapWidth;
 
   @override
   void paint(
@@ -1586,13 +1571,11 @@ class RectangularSliderTrackShape extends SliderTrackShape with BaseSliderTrackS
     );
 
     final Rect leftTrackSegment = Rect.fromLTRB(trackRect.left, trackRect.top, thumbCenter.dx, trackRect.bottom);
-    if (!leftTrackSegment.isEmpty) {
+    if (!leftTrackSegment.isEmpty)
       context.canvas.drawRect(leftTrackSegment, leftTrackPaint);
-    }
     final Rect rightTrackSegment = Rect.fromLTRB(thumbCenter.dx, trackRect.top, trackRect.right, trackRect.bottom);
-    if (!rightTrackSegment.isEmpty) {
+    if (!rightTrackSegment.isEmpty)
       context.canvas.drawRect(rightTrackSegment, rightTrackPaint);
-    }
   }
 }
 
@@ -1619,8 +1602,7 @@ class RectangularSliderTrackShape extends SliderTrackShape with BaseSliderTrackS
 ///  * [Slider], for the component that is meant to display this shape.
 ///  * [SliderThemeData], where an instance of this class is set to inform the
 ///    slider of the visual details of the its track.
-///  * [SliderTrackShape], which can be used to create custom shapes for the
-///    [Slider]'s track.
+/// {@macro flutter.material.SliderTheme.sliderTrackShape}
 ///  * [RectangularSliderTrackShape], for a similar track with sharp edges.
 class RoundedRectSliderTrackShape extends SliderTrackShape with BaseSliderTrackShape {
   /// Create a slider track that draws two rectangles with rounded outer edges.
@@ -1735,8 +1717,7 @@ class RoundedRectSliderTrackShape extends SliderTrackShape with BaseSliderTrackS
 ///  * [RangeSlider], for the component that is meant to display this shape.
 ///  * [SliderThemeData], where an instance of this class is set to inform the
 ///    slider of the visual details of the its track.
-///  * [RangeSliderTrackShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s track.
+/// {@macro flutter.material.SliderTheme.rangeSliderTrackShape}
 ///  * [RoundedRectRangeSliderTrackShape], for a similar track with rounded
 ///    edges.
 class RectangularRangeSliderTrackShape extends RangeSliderTrackShape {
@@ -1829,17 +1810,14 @@ class RectangularRangeSliderTrackShape extends RangeSliderTrackShape {
       isDiscrete: isDiscrete,
     );
     final Rect leftTrackSegment = Rect.fromLTRB(trackRect.left, trackRect.top, leftThumbOffset.dx, trackRect.bottom);
-    if (!leftTrackSegment.isEmpty) {
+    if (!leftTrackSegment.isEmpty)
       context.canvas.drawRect(leftTrackSegment, inactivePaint);
-    }
     final Rect middleTrackSegment = Rect.fromLTRB(leftThumbOffset.dx, trackRect.top, rightThumbOffset.dx, trackRect.bottom);
-    if (!middleTrackSegment.isEmpty) {
+    if (!middleTrackSegment.isEmpty)
       context.canvas.drawRect(middleTrackSegment, activePaint);
-    }
     final Rect rightTrackSegment = Rect.fromLTRB(rightThumbOffset.dx, trackRect.top, trackRect.right, trackRect.bottom);
-    if (!rightTrackSegment.isEmpty) {
+    if (!rightTrackSegment.isEmpty)
       context.canvas.drawRect(rightTrackSegment, inactivePaint);
-    }
   }
 }
 
@@ -1867,8 +1845,7 @@ class RectangularRangeSliderTrackShape extends RangeSliderTrackShape {
 ///  * [RangeSlider], for the component that is meant to display this shape.
 ///  * [SliderThemeData], where an instance of this class is set to inform the
 ///    slider of the visual details of the its track.
-///  * [RangeSliderTrackShape], which can be used to create custom shapes for
-///    the [RangeSlider]'s track.
+/// {@macro flutter.material.SliderTheme.rangeSliderTrackShape}
 ///  * [RectangularRangeSliderTrackShape], for a similar track with sharp edges.
 class RoundedRectRangeSliderTrackShape extends RangeSliderTrackShape {
   /// Create a slider track with rounded outer edges.
@@ -2291,7 +2268,7 @@ class RoundSliderThumbShape extends SliderComponentShape {
 
   /// The preferred radius of the round thumb shape when the slider is enabled.
   ///
-  /// If it is not provided, then the Material Design default of 10 is used.
+  /// If it is not provided, then the material default of 10 is used.
   final double enabledThumbRadius;
 
   /// The preferred radius of the round thumb shape when the slider is disabled.
@@ -2366,19 +2343,7 @@ class RoundSliderThumbShape extends SliderComponentShape {
     final double evaluatedElevation = elevationTween.evaluate(activationAnimation);
     final Path path = Path()
       ..addArc(Rect.fromCenter(center: center, width: 2 * radius, height: 2 * radius), 0, math.pi * 2);
-
-    bool paintShadows = true;
-    assert(() {
-      if (debugDisableShadows) {
-        _debugDrawShadow(canvas, path, evaluatedElevation);
-        paintShadows = false;
-      }
-      return true;
-    }());
-
-    if (paintShadows) {
-      canvas.drawShadow(path, Colors.black, evaluatedElevation, true);
-    }
+    canvas.drawShadow(path, Colors.black, evaluatedElevation, true);
 
     canvas.drawCircle(
       center,
@@ -2411,7 +2376,7 @@ class RoundRangeSliderThumbShape extends RangeSliderThumbShape {
 
   /// The preferred radius of the round thumb shape when the slider is enabled.
   ///
-  /// If it is not provided, then the Material Design default of 10 is used.
+  /// If it is not provided, then the material default of 10 is used.
   final double enabledThumbRadius;
 
   /// The preferred radius of the round thumb shape when the slider is disabled.
@@ -2474,7 +2439,7 @@ class RoundRangeSliderThumbShape extends RangeSliderThumbShape {
 
     // Add a stroke of 1dp around the circle if this thumb would overlap
     // the other thumb.
-    if (isOnTop ?? false) {
+    if (isOnTop == true) {
       final Paint strokePaint = Paint()
         ..color = sliderTheme.overlappingShapeStrokeColor!
         ..strokeWidth = 1.0
@@ -2487,19 +2452,7 @@ class RoundRangeSliderThumbShape extends RangeSliderThumbShape {
     final double evaluatedElevation = isPressed! ? elevationTween.evaluate(activationAnimation) : elevation;
     final Path shadowPath = Path()
       ..addArc(Rect.fromCenter(center: center, width: 2 * radius, height: 2 * radius), 0, math.pi * 2);
-
-    bool paintShadows = true;
-    assert(() {
-      if (debugDisableShadows) {
-        _debugDrawShadow(canvas, shadowPath, evaluatedElevation);
-        paintShadows = false;
-      }
-      return true;
-    }());
-
-    if (paintShadows) {
-      canvas.drawShadow(shadowPath, Colors.black, evaluatedElevation, true);
-    }
+    canvas.drawShadow(shadowPath, Colors.black, evaluatedElevation, true);
 
     canvas.drawCircle(
       center,
@@ -3209,7 +3162,7 @@ class _PaddleSliderValueIndicatorPathPainter {
     // factor of the value indicator.
     final double neckStretchBaseline = math.max(0.0, rightBottomNeckCenterY - math.max(leftTopNeckCenter.dy, neckRightCenter.dy));
     final double t = math.pow(inverseTextScale, 3.0) as double;
-    final double stretch = clampDouble(neckStretchBaseline * t, 0.0, 10.0 * neckStretchBaseline);
+    final double stretch = (neckStretchBaseline * t).clamp(0.0, 10.0 * neckStretchBaseline);
     final Offset neckStretch = Offset(0.0, neckStretchBaseline - stretch);
 
     assert(!_debuggingLabelLocation || () {
@@ -3326,16 +3279,15 @@ class RangeValues {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
+    if (other.runtimeType != runtimeType)
       return false;
-    }
     return other is RangeValues
         && other.start == start
         && other.end == end;
   }
 
   @override
-  int get hashCode => Object.hash(start, end);
+  int get hashCode => hashValues(start, end);
 
   @override
   String toString() {
@@ -3367,31 +3319,18 @@ class RangeLabels {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
+    if (other.runtimeType != runtimeType)
       return false;
-    }
     return other is RangeLabels
         && other.start == start
         && other.end == end;
   }
 
   @override
-  int get hashCode => Object.hash(start, end);
+  int get hashCode => hashValues(start, end);
 
   @override
   String toString() {
     return '${objectRuntimeType(this, 'RangeLabels')}($start, $end)';
-  }
-}
-
-void _debugDrawShadow(Canvas canvas, Path path, double elevation) {
-  if (elevation > 0.0) {
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = Colors.black
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = elevation * 2.0,
-    );
   }
 }

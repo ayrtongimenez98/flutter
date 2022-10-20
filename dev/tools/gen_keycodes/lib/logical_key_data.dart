@@ -5,11 +5,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:gen_keycodes/utils.dart';
 import 'package:path/path.dart' as path;
 
 import 'constants.dart';
 import 'physical_key_data.dart';
-import 'utils.dart';
 
 bool _isControlCharacter(int codeUnit) {
   return (codeUnit <= 0x1f && codeUnit >= 0x00) || (codeUnit >= 0x7f && codeUnit <= 0x9f);
@@ -53,7 +53,8 @@ class LogicalKeyData {
     String glfwNameMap,
     PhysicalKeyData physicalKeyData,
   ) {
-    final Map<String, LogicalKeyEntry> data = _readKeyEntries(chromiumKeys);
+    final Map<String, LogicalKeyEntry> data = <String, LogicalKeyEntry>{};
+    _readKeyEntries(data, chromiumKeys);
     _readWindowsKeyCodes(data, windowsKeyCodeHeader, parseMapOfListOfString(windowsNameMap));
     _readGtkKeyCodes(data, gtkKeyCodeHeader, parseMapOfListOfString(gtkNameMap));
     _readAndroidKeyCodes(data, androidKeyCodeHeader, parseMapOfListOfString(androidNameMap));
@@ -129,8 +130,7 @@ class LogicalKeyData {
   /// The following format should be mapped to the Flutter plane.
   ///                 Key       Enum       Character
   /// FLUTTER_KEY_MAP("Lang4",  LANG4,     0x00013),
-  static Map<String, LogicalKeyEntry> _readKeyEntries(String input) {
-    final Map<int, LogicalKeyEntry> dataByValue = <int, LogicalKeyEntry>{};
+  static void _readKeyEntries(Map<String, LogicalKeyEntry> data, String input) {
     final RegExp domKeyRegExp = RegExp(
       r'(?<source>DOM|FLUTTER)_KEY_(?<kind>UNI|MAP)\s*\(\s*'
       r'"(?<name>[^\s]+?)",\s*'
@@ -162,23 +162,17 @@ class LogicalKeyData {
       }
 
       final bool isPrintable = keyLabel != null;
-      final int entryValue = toPlane(value, _sourceToPlane(source, isPrintable));
-      final LogicalKeyEntry entry = dataByValue.putIfAbsent(entryValue, () =>
-        LogicalKeyEntry.fromName(
-          value: entryValue,
+      data.putIfAbsent(name, () {
+        final LogicalKeyEntry entry = LogicalKeyEntry.fromName(
+          value: toPlane(value, _sourceToPlane(source, isPrintable)),
           name: name,
           keyLabel: keyLabel,
-        ),
-      );
-      if (source == 'DOM' && !isPrintable) {
-        entry.webNames.add(webName);
-      }
+        );
+        if (source == 'DOM' && !isPrintable)
+          entry.webNames.add(webName);
+        return entry;
+      });
     }
-    return Map<String, LogicalKeyEntry>.fromEntries(
-      dataByValue.values.map((LogicalKeyEntry entry) =>
-        MapEntry<String, LogicalKeyEntry>(entry.name, entry),
-      ),
-    );
   }
 
   static void _readMacOsKeyCodes(
@@ -378,9 +372,6 @@ class LogicalKeyData {
 
     glfwNameToKeyCode.forEach((String glfwName, int value) {
       final String? name = nameToFlutterName[glfwName];
-      if (name == null) {
-        return;
-      }
       final LogicalKeyEntry? entry = data[nameToFlutterName[glfwName]];
       if (entry == null) {
         print('Invalid logical entry by name $name (from GLFW $glfwName)');
@@ -396,7 +387,7 @@ class LogicalKeyData {
   }
 
   // Map Web key to the pair of key names
-  static final Map<String, _ModifierPair> _chromeModifiers = () {
+  static late final Map<String, _ModifierPair> _chromeModifiers = () {
     final String rawJson = File(path.join(dataRoot, 'chromium_modifiers.json',)).readAsStringSync();
     return (json.decode(rawJson) as Map<String, dynamic>).map((String key, dynamic value) {
       final List<dynamic> pair = value as List<dynamic>;
@@ -405,7 +396,7 @@ class LogicalKeyData {
   }();
 
   /// Returns the static map of printable representations.
-  static final Map<String, String> printable = (() {
+  static late final Map<String, String> printable = (() {
     final String printableKeys = File(path.join(dataRoot, 'printable.json',)).readAsStringSync();
     return (json.decode(printableKeys) as Map<String, dynamic>)
       .cast<String, String>();
@@ -416,7 +407,7 @@ class LogicalKeyData {
   /// These include synonyms for keys which don't have printable
   /// representations, and appear in more than one place on the keyboard (e.g.
   /// SHIFT, ALT, etc.).
-  static final Map<String, List<String>> synonyms = (() {
+  static late final Map<String, List<String>> synonyms = (() {
     final String synonymKeys = File(path.join(dataRoot, 'synonyms.json',)).readAsStringSync();
     final Map<String, dynamic> dynamicSynonym = json.decode(synonymKeys) as Map<String, dynamic>;
     return dynamicSynonym.map((String name, dynamic values) {
@@ -569,7 +560,7 @@ class LogicalKeyEntry {
 
   /// A string indicating the letter on the keycap of a letter key.
   ///
-  /// This is only used to generate the key label mapping in keyboard_maps.g.dart.
+  /// This is only used to generate the key label mapping in keyboard_map.dart.
   /// [LogicalKeyboardKey.keyLabel] uses a different definition and is generated
   /// differently.
   final String? keyLabel;
@@ -607,7 +598,7 @@ class LogicalKeyEntry {
   }
 
   /// Gets the named used for the key constant in the definitions in
-  /// keyboard_key.g.dart.
+  /// keyboard_key.dart.
   ///
   /// If set by the constructor, returns the name set, but otherwise constructs
   /// the name from the various different names available, making sure that the

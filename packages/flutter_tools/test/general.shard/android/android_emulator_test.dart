@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'dart:async';
 
 import 'package:flutter_tools/src/android/android_emulator.dart';
@@ -123,7 +125,7 @@ void main() {
   });
 
   group('Android emulator launch ', () {
-    late FakeAndroidSdk mockSdk;
+    FakeAndroidSdk mockSdk;
 
     setUp(() {
       mockSdk = FakeAndroidSdk();
@@ -145,7 +147,7 @@ void main() {
     testWithoutContext('succeeds with coldboot launch', () async {
       final List<String> kEmulatorLaunchColdBootCommand = <String>[
         ...kEmulatorLaunchCommand,
-        '-no-snapshot-load',
+        '-no-snapshot-load'
       ];
       final AndroidEmulator emulator = AndroidEmulator(emulatorID,
         processManager: FakeProcessManager.list(<FakeCommand>[
@@ -185,6 +187,7 @@ void main() {
           FakeCommand(
             command: kEmulatorLaunchCommand,
             exitCode: 1,
+            stderr: '',
             stdout: 'dummy text',
             completer: Completer<void>(),
           ),
@@ -196,30 +199,10 @@ void main() {
 
       expect(logger.errorText, isEmpty);
     });
-
-    testWithoutContext('throws if emulator not found', () async {
-      mockSdk.emulatorPath = null;
-
-      final AndroidEmulator emulator = AndroidEmulator(
-        emulatorID,
-        processManager: FakeProcessManager.empty(),
-        androidSdk: mockSdk,
-        logger: BufferLogger.test(),
-      );
-
-      await expectLater(
-        () => emulator.launch(startupDuration: Duration.zero),
-        throwsA(isException.having(
-          (Exception exception) => exception.toString(),
-          'description',
-          contains('Emulator is missing from the Android SDK'),
-        )),
-      );
-    });
   });
 }
 
 class FakeAndroidSdk extends Fake implements AndroidSdk {
   @override
-  String? emulatorPath;
+  String emulatorPath;
 }

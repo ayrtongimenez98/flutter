@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:file/memory.dart';
 import 'package:flutter_tools/src/android/android_device.dart';
 import 'package:flutter_tools/src/android/android_sdk.dart';
@@ -31,7 +33,7 @@ const FakeCommand kInstallCommand = FakeCommand(
     '-r',
     '--user',
     '10',
-    'app.apk',
+    'app.apk'
   ],
 );
 const FakeCommand kStoreShaCommand = FakeCommand(
@@ -39,8 +41,8 @@ const FakeCommand kStoreShaCommand = FakeCommand(
 );
 
 void main() {
-  late FileSystem fileSystem;
-  late BufferLogger logger;
+  FileSystem fileSystem;
+  BufferLogger logger;
 
   setUp(() {
     fileSystem = MemoryFileSystem.test();
@@ -48,16 +50,15 @@ void main() {
   });
 
   AndroidDevice setUpAndroidDevice({
-    AndroidSdk? androidSdk,
-    ProcessManager? processManager,
+    AndroidSdk androidSdk,
+    ProcessManager processManager,
   }) {
     androidSdk ??= FakeAndroidSdk();
     return AndroidDevice('1234',
-      modelID: 'TestModel',
       logger: logger,
-      platform: FakePlatform(),
+      platform: FakePlatform(operatingSystem: 'linux'),
       androidSdk: androidSdk,
-      fileSystem: fileSystem,
+      fileSystem: fileSystem ?? MemoryFileSystem.test(),
       processManager: processManager ?? FakeProcessManager.any(),
     );
   }
@@ -73,7 +74,7 @@ void main() {
     ]);
     final File apk = fileSystem.file('app.apk')..createSync();
     final AndroidApk androidApk = AndroidApk(
-      applicationPackage: apk,
+      file: apk,
       id: 'app',
       versionCode: 22,
       launchActivity: 'Main',
@@ -89,7 +90,7 @@ void main() {
   testWithoutContext('Cannot install app if APK file is missing', () async {
     final File apk = fileSystem.file('app.apk');
     final AndroidApk androidApk = AndroidApk(
-      applicationPackage: apk,
+      file: apk,
       id: 'app',
       versionCode: 22,
       launchActivity: 'Main',
@@ -117,7 +118,7 @@ void main() {
     ]);
     final File apk = fileSystem.file('app.apk')..createSync();
     final AndroidApk androidApk = AndroidApk(
-      applicationPackage: apk,
+      file: apk,
       id: 'app',
       versionCode: 22,
       launchActivity: 'Main',
@@ -146,7 +147,7 @@ void main() {
     ]);
     final File apk = fileSystem.file('app.apk')..createSync();
     final AndroidApk androidApk = AndroidApk(
-      applicationPackage: apk,
+      file: apk,
       id: 'app',
       versionCode: 22,
       launchActivity: 'Main',
@@ -182,7 +183,7 @@ void main() {
           '-r',
           '--user',
           'jane',
-          'app.apk',
+          'app.apk'
         ],
         exitCode: 1,
         stderr: 'Exception occurred while executing: java.lang.IllegalArgumentException: Bad user number: jane',
@@ -190,7 +191,7 @@ void main() {
     ]);
     final File apk = fileSystem.file('app.apk')..createSync();
     final AndroidApk androidApk = AndroidApk(
-      applicationPackage: apk,
+      file: apk,
       id: 'app',
       versionCode: 22,
       launchActivity: 'Main',
@@ -224,7 +225,7 @@ void main() {
     final File apk = fileSystem.file('app.apk')..createSync();
     fileSystem.file('app.apk.sha1').writeAsStringSync('example_sha');
     final AndroidApk androidApk = AndroidApk(
-      applicationPackage: apk,
+      file: apk,
       id: 'app',
       versionCode: 22,
       launchActivity: 'Main',
@@ -265,7 +266,7 @@ void main() {
     final File apk = fileSystem.file('app.apk')..createSync();
     fileSystem.file('app.apk.sha1').writeAsStringSync('example_sha');
     final AndroidApk androidApk = AndroidApk(
-      applicationPackage: apk,
+      file: apk,
       id: 'app',
       versionCode: 22,
       launchActivity: 'Main',
@@ -298,7 +299,7 @@ void main() {
     ]);
     final File apk = fileSystem.file('app.apk')..createSync();
     final AndroidApk androidApk = AndroidApk(
-      applicationPackage: apk,
+      file: apk,
       id: 'app',
       versionCode: 22,
       launchActivity: 'Main',

@@ -49,9 +49,7 @@ class RenderErrorBox extends RenderBox {
         _paragraph = null;
       }
     } catch (error) {
-      // If an error happens here we're in a terrible state, so we really should
-      // just forget about it and let the developer deal with the already-reported
-      // errors. It's unlikely that these errors are going to help with that.
+      // Intentionally left empty.
     }
   }
 
@@ -163,10 +161,8 @@ class RenderErrorBox extends RenderBox {
         }
         context.canvas.drawParagraph(_paragraph!, offset + Offset(left, top));
       }
-    } catch (error) {
-      // If an error happens here we're in a terrible state, so we really should
-      // just forget about it and let the developer deal with the already-reported
-      // errors. It's unlikely that these errors are going to help with that.
+    } catch (e) {
+      // Intentionally left empty.
     }
   }
 }

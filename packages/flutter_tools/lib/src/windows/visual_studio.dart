@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:meta/meta.dart';
 import 'package:process/process.dart';
 
 import '../base/common.dart';
@@ -23,23 +22,18 @@ class VisualStudio {
     required Logger logger,
   }) : _platform = platform,
        _fileSystem = fileSystem,
-       _processUtils = ProcessUtils(processManager: processManager, logger: logger),
-       _logger = logger;
+       _processUtils = ProcessUtils(processManager: processManager, logger: logger);
 
   final FileSystem _fileSystem;
   final Platform _platform;
   final ProcessUtils _processUtils;
-  final Logger _logger;
-
-  /// Matches the description property from the vswhere.exe JSON output.
-  final RegExp _vswhereDescriptionProperty = RegExp(r'\s*"description"\s*:\s*".*"\s*,?');
 
   /// True if Visual Studio installation was found.
   ///
   /// Versions older than 2017 Update 2 won't be detected, so error messages to
   /// users should take into account that [false] may mean that the user may
   /// have an old version rather than no installation at all.
-  bool get isInstalled => _bestVisualStudioDetails != null;
+  bool get isInstalled => _bestVisualStudioDetails.isNotEmpty;
 
   bool get isAtLeastMinimumVersion {
     final int? installedMajorVersion = _majorVersion;
@@ -48,27 +42,30 @@ class VisualStudio {
 
   /// True if there is a version of Visual Studio with all the components
   /// necessary to build the project.
-  bool get hasNecessaryComponents => _bestVisualStudioDetails?.isUsable ?? false;
+  bool get hasNecessaryComponents => _usableVisualStudioDetails.isNotEmpty;
 
   /// The name of the Visual Studio install.
   ///
-  /// For instance: "Visual Studio Community 2019". This should only be used for
-  /// display purposes.
-  String? get displayName => _bestVisualStudioDetails?.displayName;
+  /// For instance: "Visual Studio Community 2019".
+  String? get displayName => _bestVisualStudioDetails[_displayNameKey] as String?;
 
   /// The user-friendly version number of the Visual Studio install.
   ///
-  /// For instance: "15.4.0". This should only be used for display purposes.
-  /// Logic based off the installation's version should use the `fullVersion`.
-  String? get displayVersion => _bestVisualStudioDetails?.catalogDisplayVersion;
+  /// For instance: "15.4.0".
+  String? get displayVersion {
+    if (_bestVisualStudioDetails[_catalogKey] == null) {
+      return null;
+    }
+    return (_bestVisualStudioDetails[_catalogKey] as Map<String, dynamic>)[_catalogDisplayVersionKey] as String?;
+  }
 
   /// The directory where Visual Studio is installed.
-  String? get installLocation => _bestVisualStudioDetails?.installationPath;
+  String? get installLocation => _bestVisualStudioDetails[_installationPathKey] as String?;
 
   /// The full version of the Visual Studio install.
   ///
   /// For instance: "15.4.27004.2002".
-  String? get fullVersion => _bestVisualStudioDetails?.fullVersion;
+  String? get fullVersion => _bestVisualStudioDetails[_fullVersionKey] as String?;
 
   // Properties that determine the status of the installation. There might be
   // Visual Studio versions that don't include them, so default to a "valid" value to
@@ -78,27 +75,27 @@ class VisualStudio {
   ///
   /// False if installation is not found.
   bool get isComplete {
-    if (_bestVisualStudioDetails == null) {
+    if (_bestVisualStudioDetails.isEmpty) {
       return false;
     }
-    return _bestVisualStudioDetails!.isComplete ?? true;
+    return _bestVisualStudioDetails[_isCompleteKey] as bool? ?? true;
   }
 
   /// True if Visual Studio is launchable.
   ///
   /// False if installation is not found.
   bool get isLaunchable {
-    if (_bestVisualStudioDetails == null) {
+    if (_bestVisualStudioDetails.isEmpty) {
       return false;
     }
-    return _bestVisualStudioDetails!.isLaunchable ?? true;
+    return _bestVisualStudioDetails[_isLaunchableKey] as bool? ?? true;
   }
 
-  /// True if the Visual Studio installation is a pre-release version.
-  bool get isPrerelease => _bestVisualStudioDetails?.isPrerelease ?? false;
+  /// True if the Visual Studio installation is as pre-release version.
+  bool get isPrerelease => _bestVisualStudioDetails[_isPrereleaseKey] as bool? ?? false;
 
   /// True if a reboot is required to complete the Visual Studio installation.
-  bool get isRebootRequired => _bestVisualStudioDetails?.isRebootRequired ?? false;
+  bool get isRebootRequired => _bestVisualStudioDetails[_isRebootRequiredKey] as bool? ?? false;
 
   /// The name of the recommended Visual Studio installer workload.
   String get workloadDescription => 'Desktop development with C++';
@@ -153,13 +150,12 @@ class VisualStudio {
   /// The path to CMake, or null if no Visual Studio installation has
   /// the components necessary to build.
   String? get cmakePath {
-    final VswhereDetails? details = _bestVisualStudioDetails;
-    if (details == null || !details.isUsable || details.installationPath == null) {
+    final Map<String, dynamic> details = _usableVisualStudioDetails;
+    if (details.isEmpty || _usableVisualStudioDetails[_installationPathKey] == null) {
       return null;
     }
-
     return _fileSystem.path.joinAll(<String>[
-      details.installationPath!,
+      _usableVisualStudioDetails[_installationPathKey] as String,
       'Common7',
       'IDE',
       'CommonExtensions',
@@ -169,19 +165,6 @@ class VisualStudio {
       'bin',
       'cmake.exe',
     ]);
-  }
-
-  /// The generator string to pass to CMake to select this Visual Studio
-  /// version.
-  String? get cmakeGenerator {
-    // From https://cmake.org/cmake/help/v3.22/manual/cmake-generators.7.html#visual-studio-generators
-    switch (_majorVersion) {
-      case 17:
-        return 'Visual Studio 17 2022';
-      case 16:
-      default:
-        return 'Visual Studio 16 2019';
-    }
   }
 
   /// The major version of the Visual Studio install, as an integer.
@@ -212,7 +195,7 @@ class VisualStudio {
   /// See https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids
   static const List<String> _requiredWorkloads = <String>[
     'Microsoft.VisualStudio.Workload.NativeDesktop',
-    'Microsoft.VisualStudio.Workload.VCTools',
+    'Microsoft.VisualStudio.Workload.VCTools'
   ];
 
   /// Components for use with vswhere requirements.
@@ -257,6 +240,33 @@ class VisualStudio {
   /// vswhere argument to allow prerelease versions.
   static const String _vswherePrereleaseArgument = '-prerelease';
 
+  // Keys in a VS details dictionary returned from vswhere.
+
+  /// The root directory of the Visual Studio installation.
+  static const String _installationPathKey = 'installationPath';
+
+  /// The user-friendly name of the installation.
+  static const String _displayNameKey = 'displayName';
+
+  /// The complete version.
+  static const String _fullVersionKey = 'installationVersion';
+
+  /// Keys for the status of the installation.
+  static const String _isCompleteKey = 'isComplete';
+  static const String _isLaunchableKey = 'isLaunchable';
+  static const String _isRebootRequiredKey = 'isRebootRequired';
+
+  /// The 'catalog' entry containing more details.
+  static const String _catalogKey = 'catalog';
+
+  /// The key for a pre-release version.
+  static const String _isPrereleaseKey = 'isPrerelease';
+
+  /// The user-friendly version.
+  ///
+  /// This key is under the 'catalog' entry.
+  static const String _catalogDisplayVersionKey = 'productDisplayVersion';
+
   /// The registry path for Windows 10 SDK installation details.
   static const String _windows10SdkRegistryPath = r'HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\v10.0';
 
@@ -264,11 +274,10 @@ class VisualStudio {
   /// SDKs are installed.
   static const String _windows10SdkRegistryKey = 'InstallationFolder';
 
-  /// Returns the details of the newest version of Visual Studio.
-  ///
+  /// Returns the details dictionary for the newest version of Visual Studio.
   /// If [validateRequirements] is set, the search will be limited to versions
   /// that have all of the required workloads and components.
-  VswhereDetails? _visualStudioDetails({
+  Map<String, dynamic>? _visualStudioDetails({
       bool validateRequirements = false,
       List<String>? additionalArguments,
       String? requiredWorkload
@@ -279,7 +288,7 @@ class VisualStudio {
               '-requires',
               requiredWorkload,
             ],
-            ..._requiredComponents(_minimumSupportedVersion).keys,
+            ..._requiredComponents(_minimumSupportedVersion).keys
           ]
         : <String>[];
     try {
@@ -289,93 +298,117 @@ class VisualStudio {
         '-utf8',
         '-latest',
       ];
-      // Ignore replacement characters as vswhere.exe is known to output them.
-      // See: https://github.com/flutter/flutter/issues/102451
-      const Encoding encoding = Utf8Codec(reportErrors: false);
       final RunResult whereResult = _processUtils.runSync(<String>[
         _vswherePath,
         ...defaultArguments,
         ...?additionalArguments,
         ...requirementArguments,
-      ], encoding: encoding);
+      ], encoding: utf8);
       if (whereResult.exitCode == 0) {
-        final List<Map<String, dynamic>>? installations = _tryDecodeVswhereJson(whereResult.stdout);
-        if (installations != null && installations.isNotEmpty) {
-          return VswhereDetails.fromJson(validateRequirements, installations[0]);
+        final List<Map<String, dynamic>> installations =
+            (json.decode(whereResult.stdout) as List<dynamic>).cast<Map<String, dynamic>>();
+        if (installations.isNotEmpty) {
+          return installations[0];
         }
       }
     } on ArgumentError {
       // Thrown if vswhere doesn't exist; ignore and return null below.
     } on ProcessException {
       // Ignored, return null below.
+    } on FormatException {
+      // may be thrown if invalid JSON is returned.
     }
     return null;
   }
 
-  List<Map<String, dynamic>>? _tryDecodeVswhereJson(String vswhereJson) {
-    List<dynamic>? result;
-    FormatException? originalError;
-    try {
-      // Some versions of vswhere.exe are known to encode their output incorrectly,
-      // resulting in invalid JSON in the 'description' property when interpreted
-      // as UTF-8. First, try to decode without any pre-processing.
-      try {
-        result = json.decode(vswhereJson) as List<dynamic>;
-      } on FormatException catch (error) {
-        // If that fails, remove the 'description' property and try again.
-        // See: https://github.com/flutter/flutter/issues/106601
-        vswhereJson = vswhereJson.replaceFirst(_vswhereDescriptionProperty, '');
-
-        _logger.printTrace('Failed to decode vswhere.exe JSON output. $error'
-          'Retrying after removing the unused description property:\n$vswhereJson');
-
-        originalError = error;
-        result = json.decode(vswhereJson) as List<dynamic>;
-      }
-    } on FormatException {
-      // Removing the description property didn't help.
-      // Report the original decoding error on the unprocessed JSON.
-      _logger.printWarning('Warning: Unexpected vswhere.exe JSON output. $originalError'
-        'To see the full JSON, run flutter doctor -vv.');
-      return null;
+  /// Checks if the given installation has issues that the user must resolve.
+  ///
+  /// Returns false if the required information is missing since older versions
+  /// of Visual Studio might not include them.
+  bool installationHasIssues(Map<String, dynamic>installationDetails) {
+    assert(installationDetails != null);
+    if (installationDetails[_isCompleteKey] != null && !(installationDetails[_isCompleteKey] as bool)) {
+      return true;
     }
 
-    return result.cast<Map<String, dynamic>>();
+    if (installationDetails[_isLaunchableKey] != null && !(installationDetails[_isLaunchableKey] as bool)) {
+      return true;
+    }
+
+    if (installationDetails[_isRebootRequiredKey] != null && installationDetails[_isRebootRequiredKey] as bool) {
+      return true;
+    }
+
+    return false;
   }
 
-  /// Returns the details of the best available version of Visual Studio.
+  /// Returns the details dictionary for the latest version of Visual Studio
+  /// that has all required components and is a supported version, or {} if
+  /// there is no such installation.
   ///
-  /// If there's a version that has all the required components, that
-  /// will be returned, otherwise returns the latest installed version regardless
-  /// of components and version, or null if no such installation is found.
-  late final VswhereDetails?  _bestVisualStudioDetails = () {
-    // First, attempt to find the latest version of Visual Studio that satifies
-    // both the minimum supported version and the required workloads.
-    // Check in the order of stable VS, stable BT, pre-release VS, pre-release BT.
+  /// If no installation is found, the cached VS details are set to an empty map
+  /// to avoid repeating vswhere queries that have already not found an installation.
+  Map<String, dynamic>? _cachedUsableVisualStudioDetails;
+  Map<String, dynamic> get _usableVisualStudioDetails {
+    if (_cachedUsableVisualStudioDetails != null) {
+      return _cachedUsableVisualStudioDetails!;
+    }
     final List<String> minimumVersionArguments = <String>[
       _vswhereMinVersionArgument,
       _minimumSupportedVersion.toString(),
     ];
+    Map<String, dynamic>? visualStudioDetails;
+    // Check in the order of stable VS, stable BT, pre-release VS, pre-release BT
     for (final bool checkForPrerelease in <bool>[false, true]) {
       for (final String requiredWorkload in _requiredWorkloads) {
-        final VswhereDetails? result = _visualStudioDetails(
+        visualStudioDetails ??= _visualStudioDetails(
           validateRequirements: true,
           additionalArguments: checkForPrerelease
               ? <String>[...minimumVersionArguments, _vswherePrereleaseArgument]
               : minimumVersionArguments,
           requiredWorkload: requiredWorkload);
-
-          if (result != null) {
-            return result;
-          }
       }
     }
 
-    // An installation that satifies requirements could not be found.
-    // Fallback to the latest Visual Studio installation.
-    return _visualStudioDetails(
+    if (visualStudioDetails != null) {
+      if (installationHasIssues(visualStudioDetails)) {
+        _cachedAnyVisualStudioDetails = visualStudioDetails;
+      } else {
+        _cachedUsableVisualStudioDetails = visualStudioDetails;
+      }
+    }
+    _cachedUsableVisualStudioDetails ??= <String, dynamic>{};
+    return _cachedUsableVisualStudioDetails!;
+  }
+
+  /// Returns the details dictionary of the latest version of Visual Studio,
+  /// regardless of components and version, or {} if no such installation is
+  /// found.
+  ///
+  /// If no installation is found, the cached VS details are set to an empty map
+  /// to avoid repeating vswhere queries that have already not found an
+  /// installation.
+  Map<String, dynamic>? _cachedAnyVisualStudioDetails;
+  Map<String, dynamic> get _anyVisualStudioDetails {
+    // Search for all types of installations.
+    _cachedAnyVisualStudioDetails ??= _visualStudioDetails(
         additionalArguments: <String>[_vswherePrereleaseArgument, '-all']);
-  }();
+    // Add a sentinel empty value to avoid querying vswhere again.
+    _cachedAnyVisualStudioDetails ??= <String, dynamic>{};
+    return _cachedAnyVisualStudioDetails!;
+  }
+
+  /// Returns the details dictionary of the best available version of Visual
+  /// Studio.
+  ///
+  /// If there's a version that has all the required components, that
+  /// will be returned, otherwise returns the latest installed version (if any).
+  Map<String, dynamic> get _bestVisualStudioDetails {
+    if (_usableVisualStudioDetails.isNotEmpty) {
+      return _usableVisualStudioDetails;
+    }
+    return _anyVisualStudioDetails;
+  }
 
   /// Returns the installation location of the Windows 10 SDKs, or null if the
   /// registry doesn't contain that information.
@@ -427,112 +460,5 @@ class VisualStudio {
     }
     // Re-add the leading '10.' that was removed for comparison.
     return highestVersion == null ? null : '10.$highestVersion';
-  }
-}
-
-/// The details of a Visual Studio installation according to vswhere.
-@visibleForTesting
-class VswhereDetails {
-  const VswhereDetails({
-    required this.meetsRequirements,
-    required this.installationPath,
-    required this.displayName,
-    required this.fullVersion,
-    required this.isComplete,
-    required this.isLaunchable,
-    required this.isRebootRequired,
-    required this.isPrerelease,
-    required this.catalogDisplayVersion,
-  });
-
-  /// Create a `VswhereDetails` from the JSON output of vswhere.exe.
-  factory VswhereDetails.fromJson(
-    bool meetsRequirements,
-    Map<String, dynamic> details
-  ) {
-    final Map<String, dynamic>? catalog = details['catalog'] as Map<String, dynamic>?;
-
-    return VswhereDetails(
-      meetsRequirements: meetsRequirements,
-      isComplete: details['isComplete'] as bool?,
-      isLaunchable: details['isLaunchable'] as bool?,
-      isRebootRequired: details['isRebootRequired'] as bool?,
-      isPrerelease: details['isPrerelease'] as bool?,
-
-      // Below are strings that must be well-formed without replacement characters.
-      installationPath: _validateString(details['installationPath'] as String?),
-      fullVersion: _validateString(details['installationVersion'] as String?),
-
-      // Below are strings that are used only for display purposes and are allowed to
-      // contain replacement characters.
-      displayName: details['displayName'] as String?,
-      catalogDisplayVersion: catalog == null ? null : catalog['productDisplayVersion'] as String?,
-    );
-  }
-
-  /// Verify JSON strings from vswhere.exe output are valid.
-  ///
-  /// The output of vswhere.exe is known to output replacement characters.
-  /// Use this to ensure values that must be well-formed are valid. Strings that
-  /// are only used for display purposes should skip this check.
-  /// See: https://github.com/flutter/flutter/issues/102451
-  static String? _validateString(String? value) {
-    if (value != null && value.contains('\u{FFFD}')) {
-      throwToolExit(
-        'Bad UTF-8 encoding (U+FFFD; REPLACEMENT CHARACTER) found in string: $value. '
-        'The Flutter team would greatly appreciate if you could file a bug explaining '
-        'exactly what you were doing when this happened:\n'
-        'https://github.com/flutter/flutter/issues/new/choose\n');
-    }
-
-    return value;
-  }
-
-  /// Whether the installation satisfies the required workloads and minimum version.
-  final bool meetsRequirements;
-
-  /// The root directory of the Visual Studio installation.
-  final String? installationPath;
-
-  /// The user-friendly name of the installation.
-  final String? displayName;
-
-  /// The complete version.
-  final String? fullVersion;
-
-  /// Keys for the status of the installation.
-  final bool? isComplete;
-  final bool? isLaunchable;
-  final bool? isRebootRequired;
-
-  /// The key for a pre-release version.
-  final bool? isPrerelease;
-
-  /// The user-friendly version.
-  final String? catalogDisplayVersion;
-
-  /// Checks if the Visual Studio installation can be used by Flutter.
-  ///
-  /// Returns false if the installation has issues the user must resolve.
-  /// This may return true even if required information is missing as older
-  /// versions of Visual Studio might not include them.
-  bool get isUsable {
-    if (!meetsRequirements) {
-      return false;
-    }
-
-    if (!(isComplete ?? true)) {
-      return false;
-    }
-
-    if (!(isLaunchable ?? true)) {
-      return false;
-    }
-
-    if (isRebootRequired ?? false) {
-      return false;
-    }
-
-    return true;
   }
 }

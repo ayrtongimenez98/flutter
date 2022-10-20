@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const bool isCanvasKit =
-    bool.fromEnvironment('FLUTTER_WEB_USE_SKIA');
+    bool.fromEnvironment('FLUTTER_WEB_USE_SKIA', defaultValue: false);
 
 void main() {
   test('TextPainter caret test', () {
@@ -37,30 +37,12 @@ void main() {
     expect(caretOffset.dx, painter.width);
   });
 
-  test('TextPainter caret test with WidgetSpan', () {
-    // Regression test for https://github.com/flutter/flutter/issues/98458.
-    final TextPainter painter = TextPainter()
-      ..textDirection = TextDirection.ltr;
-
-    painter.text = const TextSpan(children: <InlineSpan>[
-      TextSpan(text: 'before'),
-      WidgetSpan(child: Text('widget')),
-      TextSpan(text: 'after'),
-    ]);
-    painter.setPlaceholderDimensions(const <PlaceholderDimensions>[
-      PlaceholderDimensions(size: Size(50, 30), baselineOffset: 25, alignment: ui.PlaceholderAlignment.bottom),
-    ]);
-    painter.layout();
-    final Offset caretOffset = painter.getOffsetForCaret(ui.TextPosition(offset: painter.text!.toPlainText().length), ui.Rect.zero);
-    expect(caretOffset.dx, painter.width);
-  }, skip: isBrowser && !isCanvasKit); // https://github.com/flutter/flutter/issues/56308
-
   test('TextPainter null text test', () {
     final TextPainter painter = TextPainter()
       ..textDirection = TextDirection.ltr;
 
     List<TextSpan> children = <TextSpan>[const TextSpan(text: 'B'), const TextSpan(text: 'C')];
-    painter.text = TextSpan(children: children);
+    painter.text = TextSpan(text: null, children: children);
     painter.layout();
 
     Offset caretOffset = painter.getOffsetForCaret(const ui.TextPosition(offset: 0), ui.Rect.zero);
@@ -71,7 +53,7 @@ void main() {
     expect(caretOffset.dx, painter.width);
 
     children = <TextSpan>[];
-    painter.text = TextSpan(children: children);
+    painter.text = TextSpan(text: null, children: children);
     painter.layout();
 
     caretOffset = painter.getOffsetForCaret(const ui.TextPosition(offset: 0), ui.Rect.zero);
@@ -170,16 +152,7 @@ void main() {
 
   test('TextPainter error test', () {
     final TextPainter painter = TextPainter(textDirection: TextDirection.ltr);
-    Object? e;
-    try {
-      painter.paint(MockCanvas(), Offset.zero);
-    } catch (exception) {
-      e = exception;
-    }
-    expect(
-      e.toString(),
-      contains('TextPainter.paint called when text geometry was not yet calculated'),
-    );
+    expect(() { painter.paint(MockCanvas(), Offset.zero); }, anyOf(throwsFlutterError, throwsAssertionError));
   });
 
   test('TextPainter requires textDirection', () {
@@ -777,7 +750,7 @@ void main() {
 
   // Null values are valid. See https://github.com/flutter/flutter/pull/48346#issuecomment-584839221
   test('TextPainter set TextHeightBehavior null test', () {
-    final TextPainter painter = TextPainter()
+    final TextPainter painter = TextPainter(textHeightBehavior: null)
       ..textDirection = TextDirection.ltr;
 
     painter.textHeightBehavior = const TextHeightBehavior();
@@ -925,6 +898,7 @@ void main() {
         ..textHeightBehavior = const TextHeightBehavior(
             applyHeightToFirstAscent: false,
             applyHeightToLastDescent: false,
+            leadingDistribution: TextLeadingDistribution.proportional,
           )
         ..layout();
 
@@ -971,7 +945,9 @@ void main() {
         const TextSelection(baseOffset: 0, extentOffset: 1),
       ).first.toRect();
 
-      painter.textHeightBehavior = const TextHeightBehavior();
+      painter.textHeightBehavior = const TextHeightBehavior(
+        leadingDistribution: TextLeadingDistribution.proportional,
+      );
       painter.layout();
 
       final Rect newGlyphBox = painter.getBoxesForSelection(
@@ -1014,26 +990,6 @@ void main() {
         ui.Rect.zero);
     expect(caretOffset.dx, painter.width);
   }, skip: kIsWeb && !isCanvasKit); // https://github.com/flutter/flutter/issues/87545
-
-  test('TextPainter line metrics update after layout', () {
-    final TextPainter painter = TextPainter()
-      ..textDirection = TextDirection.ltr;
-
-    const String text = 'word1 word2 word3';
-    painter.text = const TextSpan(
-      text: text,
-    );
-
-    painter.layout(maxWidth: 80);
-
-    List<ui.LineMetrics> lines = painter.computeLineMetrics();
-    expect(lines.length, 3);
-
-    painter.layout(maxWidth: 1000);
-
-    lines = painter.computeLineMetrics();
-    expect(lines.length, 1);
-  }, skip: kIsWeb && !isCanvasKit); // https://github.com/flutter/flutter/issues/62819
 }
 
 class MockCanvas extends Fake implements Canvas {

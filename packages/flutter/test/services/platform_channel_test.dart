@@ -5,7 +5,7 @@
 // TODO(gspencergoog): Remove this tag once this test's state leaks/test
 // dependencies have been fixed.
 // https://github.com/flutter/flutter/issues/85160
-// Fails with "flutter test --test-randomize-ordering-seed=20210826"
+// Fails with "flutter test --test-randomize-ordering-seed=456"
 @Tags(<String>['no-shuffle'])
 
 import 'package:flutter/services.dart';
@@ -217,7 +217,7 @@ void main() {
 
     test('can handle method call with expressive error result', () async {
       channel.setMethodCallHandler((MethodCall call) async {
-        throw PlatformException(code: 'bad', message: 'sayHello failed');
+        throw PlatformException(code: 'bad', message: 'sayHello failed', details: null);
       });
       final ByteData call = jsonMethod.encodeMethodCall(const MethodCall('sayHello', 'hello'));
       ByteData? envelope;
@@ -232,7 +232,6 @@ void main() {
             .having((PlatformException e) => e.message, 'message', equals('sayHello failed')),
         ),
       );
-      channel.setMethodCallHandler(null);
     });
 
     test('can handle method call with other error result', () async {
@@ -252,11 +251,10 @@ void main() {
             .having((PlatformException e) => e.message, 'message', equals('Invalid argument(s): bad')),
         ),
       );
-      channel.setMethodCallHandler(null);
     });
 
     test('can check the mock handler', () async {
-      Future<dynamic> handler(MethodCall call) => Future<dynamic>.value();
+      Future<dynamic> handler(MethodCall call) => Future<dynamic>.value(null);
 
       const MethodChannel channel = MethodChannel('test_handler');
       expect(TestDefaultBinaryMessengerBinding.instance!.defaultBinaryMessenger.checkMockMessageHandler(channel.name, null), true);

@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This file is run as part of a reduced test set in CI on Mac and Windows
-// machines.
-@Tags(<String>['reduced-test-set'])
-
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -525,6 +521,7 @@ void main() {
 
     // Start hovering
     final TestGesture gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(gesture.removePointer);
     await gesture.moveTo(tester.getCenter(find.byKey(radioKey)));
 
     // Check when the radio isn't selected.
@@ -703,10 +700,11 @@ void main() {
 
     final TestGesture gesture = await tester.createGesture(kind: PointerDeviceKind.mouse, pointer: 1);
     await gesture.addPointer(location: tester.getCenter(find.byKey(key)));
+    addTearDown(gesture.removePointer);
 
     await tester.pump();
 
-    expect(RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.text);
+    expect(RendererBinding.instance!.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.text);
 
 
     // Test default cursor
@@ -730,7 +728,7 @@ void main() {
       ),
     );
 
-    expect(RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.click);
+    expect(RendererBinding.instance!.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.click);
 
     // Test default cursor when disabled
     await tester.pumpWidget(
@@ -753,7 +751,7 @@ void main() {
       ),
     );
 
-    expect(RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.basic);
+    expect(RendererBinding.instance!.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.basic);
   });
 
   testWidgets('Radio button fill color resolves in enabled/disabled states', (WidgetTester tester) async {
@@ -933,6 +931,7 @@ void main() {
     // Start hovering
     final TestGesture gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await gesture.addPointer();
+    addTearDown(gesture.removePointer);
     await gesture.moveTo(tester.getCenter(find.byKey(radioKey)));
     await tester.pumpAndSettle();
 
@@ -977,12 +976,12 @@ void main() {
     }
     const double splashRadius = 24.0;
 
-    Finder findRadio() {
+    Finder _findRadio() {
       return find.byWidgetPredicate((Widget widget) => widget is Radio<bool>);
     }
 
-    MaterialInkController? getRadioMaterial(WidgetTester tester) {
-      return Material.of(tester.element(findRadio()));
+    MaterialInkController? _getRadioMaterial(WidgetTester tester) {
+      return Material.of(tester.element(_findRadio()));
     }
 
     Widget buildRadio({bool active = false, bool focused = false, bool useOverlay = true}) {
@@ -994,7 +993,7 @@ void main() {
             value: active,
             groupValue: true,
             onChanged: (_) { },
-            fillColor: const MaterialStatePropertyAll<Color>(fillColor),
+            fillColor: MaterialStateProperty.all(fillColor),
             overlayColor: useOverlay ? MaterialStateProperty.resolveWith(getOverlayColor) : null,
             hoverColor: hoverColor,
             focusColor: focusColor,
@@ -1004,12 +1003,12 @@ void main() {
       );
     }
 
-    await tester.pumpWidget(buildRadio(useOverlay: false));
-    await tester.press(findRadio());
+    await tester.pumpWidget(buildRadio(active: false, useOverlay: false));
+    await tester.press(_findRadio());
     await tester.pumpAndSettle();
 
     expect(
-      getRadioMaterial(tester),
+      _getRadioMaterial(tester),
       paints
         ..circle(
           color: fillColor.withAlpha(kRadialReactionAlpha),
@@ -1019,11 +1018,11 @@ void main() {
     );
 
     await tester.pumpWidget(buildRadio(active: true, useOverlay: false));
-    await tester.press(findRadio());
+    await tester.press(_findRadio());
     await tester.pumpAndSettle();
 
     expect(
-      getRadioMaterial(tester),
+      _getRadioMaterial(tester),
       paints
         ..circle(
           color: fillColor.withAlpha(kRadialReactionAlpha),
@@ -1032,12 +1031,12 @@ void main() {
       reason: 'Default active pressed Radio should have overlay color from fillColor',
     );
 
-    await tester.pumpWidget(buildRadio());
-    await tester.press(findRadio());
+    await tester.pumpWidget(buildRadio(active: false));
+    await tester.press(_findRadio());
     await tester.pumpAndSettle();
 
     expect(
-      getRadioMaterial(tester),
+      _getRadioMaterial(tester),
       paints
         ..circle(
           color: inactivePressedOverlayColor,
@@ -1047,11 +1046,11 @@ void main() {
     );
 
     await tester.pumpWidget(buildRadio(active: true));
-    await tester.press(findRadio());
+    await tester.press(_findRadio());
     await tester.pumpAndSettle();
 
     expect(
-      getRadioMaterial(tester),
+      _getRadioMaterial(tester),
       paints
         ..circle(
           color: activePressedOverlayColor,
@@ -1065,7 +1064,7 @@ void main() {
 
     expect(focusNode.hasPrimaryFocus, isTrue);
     expect(
-      getRadioMaterial(tester),
+      _getRadioMaterial(tester),
       paints
         ..circle(
           color: focusOverlayColor,
@@ -1077,11 +1076,12 @@ void main() {
     // Start hovering
     final TestGesture gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await gesture.addPointer();
-    await gesture.moveTo(tester.getCenter(findRadio()));
+    addTearDown(gesture.removePointer);
+    await gesture.moveTo(tester.getCenter(_findRadio()));
     await tester.pumpAndSettle();
 
     expect(
-      getRadioMaterial(tester),
+      _getRadioMaterial(tester),
       paints
         ..circle(
           color: hoverOverlayColor,

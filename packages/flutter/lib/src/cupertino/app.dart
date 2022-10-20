@@ -43,12 +43,6 @@ import 'theme.dart';
 /// widget, which the [CupertinoApp] composes. If you use Material widgets, a
 /// [MaterialApp] also creates the needed dependencies for Cupertino widgets.
 ///
-/// {@template flutter.cupertino.CupertinoApp.defaultSelectionStyle}
-/// The [CupertinoApp] automatically creates a [DefaultSelectionStyle] with
-/// selectionColor sets to [CupertinoThemeData.primaryColor] with 0.2 opacity
-/// and cursorColor sets to [CupertinoThemeData.primaryColor].
-/// {@endtemplate}
-///
 /// Use this widget with caution on Android since it may produce behaviors
 /// Android users are not expecting such as:
 ///
@@ -148,7 +142,7 @@ class CupertinoApp extends StatefulWidget {
   ///
   /// The boolean arguments, [routes], and [navigatorObservers], must not be null.
   const CupertinoApp({
-    super.key,
+    Key? key,
     this.navigatorKey,
     this.home,
     this.theme,
@@ -189,18 +183,15 @@ class CupertinoApp extends StatefulWidget {
        routeInformationParser = null,
        routerDelegate = null,
        backButtonDispatcher = null,
-       routerConfig = null;
+       super(key: key);
 
   /// Creates a [CupertinoApp] that uses the [Router] instead of a [Navigator].
-  ///
-  /// {@macro flutter.widgets.WidgetsApp.router}
   const CupertinoApp.router({
-    super.key,
+    Key? key,
     this.routeInformationProvider,
-    this.routeInformationParser,
-    this.routerDelegate,
+    required RouteInformationParser<Object> this.routeInformationParser,
+    required RouterDelegate<Object> this.routerDelegate,
     this.backButtonDispatcher,
-    this.routerConfig,
     this.theme,
     this.builder,
     this.title = '',
@@ -221,8 +212,7 @@ class CupertinoApp extends StatefulWidget {
     this.restorationScopeId,
     this.scrollBehavior,
     this.useInheritedMediaQuery = false,
-  }) : assert(routerDelegate != null || routerConfig != null),
-       assert(title != null),
+  }) : assert(title != null),
        assert(showPerformanceOverlay != null),
        assert(checkerboardRasterCacheImages != null),
        assert(checkerboardOffscreenLayers != null),
@@ -235,7 +225,8 @@ class CupertinoApp extends StatefulWidget {
        onGenerateInitialRoutes = null,
        onUnknownRoute = null,
        routes = null,
-       initialRoute = null;
+       initialRoute = null,
+       super(key: key);
 
   /// {@macro flutter.widgets.widgetsApp.navigatorKey}
   final GlobalKey<NavigatorState>? navigatorKey;
@@ -287,9 +278,6 @@ class CupertinoApp extends StatefulWidget {
   /// {@macro flutter.widgets.widgetsApp.backButtonDispatcher}
   final BackButtonDispatcher? backButtonDispatcher;
 
-  /// {@macro flutter.widgets.widgetsApp.routerConfig}
-  final RouterConfig<Object>? routerConfig;
-
   /// {@macro flutter.widgets.widgetsApp.builder}
   final TransitionBuilder? builder;
 
@@ -331,7 +319,7 @@ class CupertinoApp extends StatefulWidget {
   ///
   /// See also:
   ///
-  ///  * <https://flutter.dev/debugging/#performance-overlay>
+  ///  * <https://flutter.dev/debugging/#performanceoverlay>
   final bool showPerformanceOverlay;
 
   /// Turns on checkerboarding of raster cache images.
@@ -486,7 +474,7 @@ class CupertinoScrollBehavior extends ScrollBehavior {
 
 class _CupertinoAppState extends State<CupertinoApp> {
   late HeroController _heroController;
-  bool get _usesRouter => widget.routerDelegate != null || widget.routerConfig != null;
+  bool get _usesRouter => widget.routerDelegate != null;
 
   @override
   void initState() {
@@ -499,12 +487,10 @@ class _CupertinoAppState extends State<CupertinoApp> {
   // of a particular LocalizationsDelegate.type is loaded so the
   // localizationsDelegate parameter can be used to override
   // _CupertinoLocalizationsDelegate.
-  Iterable<LocalizationsDelegate<dynamic>> get _localizationsDelegates {
-    return <LocalizationsDelegate<dynamic>>[
-      if (widget.localizationsDelegates != null)
-        ...widget.localizationsDelegates!,
-      DefaultCupertinoLocalizations.delegate,
-    ];
+  Iterable<LocalizationsDelegate<dynamic>> get _localizationsDelegates sync* {
+    if (widget.localizationsDelegates != null)
+      yield* widget.localizationsDelegates!;
+    yield DefaultCupertinoLocalizations.delegate;
   }
 
   Widget _inspectorSelectButtonBuilder(BuildContext context, VoidCallback onPressed) {
@@ -527,9 +513,8 @@ class _CupertinoAppState extends State<CupertinoApp> {
       return WidgetsApp.router(
         key: GlobalObjectKey(this),
         routeInformationProvider: widget.routeInformationProvider,
-        routeInformationParser: widget.routeInformationParser,
-        routerDelegate: widget.routerDelegate,
-        routerConfig: widget.routerConfig,
+        routeInformationParser: widget.routeInformationParser!,
+        routerDelegate: widget.routerDelegate!,
         backButtonDispatcher: widget.backButtonDispatcher,
         builder: widget.builder,
         title: widget.title,
@@ -599,14 +584,10 @@ class _CupertinoAppState extends State<CupertinoApp> {
         data: CupertinoUserInterfaceLevelData.base,
         child: CupertinoTheme(
           data: effectiveThemeData,
-          child: DefaultSelectionStyle(
-            selectionColor: effectiveThemeData.primaryColor.withOpacity(0.2),
-            cursorColor: effectiveThemeData.primaryColor,
-            child: HeroControllerScope(
-              controller: _heroController,
-              child: Builder(
-                builder: _buildWidgetApp,
-              ),
+          child: HeroControllerScope(
+            controller: _heroController,
+            child: Builder(
+              builder: _buildWidgetApp,
             ),
           ),
         ),

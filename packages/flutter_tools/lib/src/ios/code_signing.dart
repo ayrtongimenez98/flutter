@@ -2,20 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
-
 import 'package:process/process.dart';
 
 import '../base/common.dart';
 import '../base/config.dart';
 import '../base/io.dart';
 import '../base/logger.dart';
-import '../base/platform.dart';
 import '../base/process.dart';
 import '../base/terminal.dart';
 import '../convert.dart' show utf8;
-
-const String _developmentTeamBuildSettingName = 'DEVELOPMENT_TEAM';
 
 /// User message when no development certificates are found in the keychain.
 ///
@@ -96,10 +91,9 @@ final RegExp _certificateOrganizationalUnitExtractionPattern = RegExp(r'OU=([a-z
 ///
 /// Will return null if none are found, if the user cancels or if the Xcode
 /// project has a development team set in the project's build settings.
-Future<Map<String, String>?> getCodeSigningIdentityDevelopmentTeamBuildSetting({
+Future<Map<String, String>?> getCodeSigningIdentityDevelopmentTeam({
   required Map<String, String>? buildSettings,
   required ProcessManager processManager,
-  required Platform platform,
   required Logger logger,
   required Config config,
   required Terminal terminal,
@@ -110,61 +104,15 @@ Future<Map<String, String>?> getCodeSigningIdentityDevelopmentTeamBuildSetting({
 
   // If the user already has it set in the project build settings itself,
   // continue with that.
-  if (_isNotEmpty(buildSettings[_developmentTeamBuildSettingName])) {
+  if (_isNotEmpty(buildSettings['DEVELOPMENT_TEAM'])) {
     logger.printStatus(
       'Automatically signing iOS for device deployment using specified development '
-      'team in Xcode project: ${buildSettings[_developmentTeamBuildSettingName]}'
+      'team in Xcode project: ${buildSettings['DEVELOPMENT_TEAM']}'
     );
     return null;
   }
 
   if (_isNotEmpty(buildSettings['PROVISIONING_PROFILE'])) {
-    return null;
-  }
-
-  final String? developmentTeam = await _getCodeSigningIdentityDevelopmentTeam(
-    processManager: processManager,
-    platform: platform,
-    logger: logger,
-    config: config,
-    terminal: terminal,
-    shouldExitOnNoCerts: true,
-  );
-
-  if (developmentTeam == null) {
-    return null;
-  }
-
-  return <String, String>{
-    _developmentTeamBuildSettingName: developmentTeam,
-  };
-}
-
-Future<String?> getCodeSigningIdentityDevelopmentTeam({
-  required ProcessManager processManager,
-  required Platform platform,
-  required Logger logger,
-  required Config config,
-  required Terminal terminal,
-}) async =>
-    _getCodeSigningIdentityDevelopmentTeam(
-      processManager: processManager,
-      platform: platform,
-      logger: logger,
-      config: config,
-      terminal: terminal,
-    );
-
-/// Set [shouldExitOnNoCerts] to show instructions for how to add a cert when none are found, then [toolExit].
-Future<String?> _getCodeSigningIdentityDevelopmentTeam({
-  required ProcessManager processManager,
-  required Platform platform,
-  required Logger logger,
-  required Config config,
-  required Terminal terminal,
-  bool shouldExitOnNoCerts = false,
-}) async {
-  if (!platform.isMacOS) {
     return null;
   }
 
@@ -202,8 +150,7 @@ Future<String?> _getCodeSigningIdentityDevelopmentTeam({
       .toSet() // Unique.
       .toList();
 
-  final String? signingIdentity =
-      await _chooseSigningIdentity(validCodeSigningIdentities, logger, config, terminal, shouldExitOnNoCerts);
+  final String? signingIdentity = await _chooseSigningIdentity(validCodeSigningIdentities, logger, config, terminal);
 
   // If none are chosen, return null.
   if (signingIdentity == null) {
@@ -240,31 +187,34 @@ Future<String?> _getCodeSigningIdentityDevelopmentTeam({
   final String opensslOutput = await utf8.decodeStream(opensslProcess.stdout);
   // Fire and forget discard of the stderr stream so we don't hold onto resources.
   // Don't care about the result.
-  unawaited(opensslProcess.stderr.drain<String?>());
+  unawaited(opensslProcess.stderr.drain<String>());
 
   if (await opensslProcess.exitCode != 0) {
     return null;
   }
 
-  return _certificateOrganizationalUnitExtractionPattern.firstMatch(opensslOutput)?.group(1);
+  final String? developmentTeam = _certificateOrganizationalUnitExtractionPattern
+      .firstMatch(opensslOutput)
+      ?.group(1);
+  if (developmentTeam == null) {
+    return null;
+  }
+
+  return <String, String>{
+    'DEVELOPMENT_TEAM': developmentTeam,
+  };
 }
 
-/// Set [shouldExitOnNoCerts] to show instructions for how to add a cert when none are found, then [toolExit].
 Future<String?> _chooseSigningIdentity(
   List<String> validCodeSigningIdentities,
   Logger logger,
   Config config,
   Terminal terminal,
-  bool shouldExitOnNoCerts,
 ) async {
   // The user has no valid code signing identities.
   if (validCodeSigningIdentities.isEmpty) {
-    if (shouldExitOnNoCerts) {
-      logger.printError(noCertificatesInstruction, emphasis: true);
-      throwToolExit('No development certificates available to code sign app for device deployment');
-    } else {
-      return null;
-    }
+    logger.printError(noCertificatesInstruction, emphasis: true);
+    throwToolExit('No development certificates available to code sign app for device deployment');
   }
 
   if (validCodeSigningIdentities.length == 1) {
@@ -303,6 +253,7 @@ Future<String?> _chooseSigningIdentity(
       List<String>.generate(count, (int number) => '${number + 1}')
           ..add('a'),
       prompt: 'Please select a certificate for code signing',
+      displayAcceptedCharacters: true,
       defaultChoiceIndex: 0, // Just pressing enter chooses the first one.
       logger: logger,
     );

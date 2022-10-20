@@ -22,9 +22,7 @@ Future<void> main() async {
     final SerializableFinder motionEventsListTile =
     find.byValueKey('MotionEventsListTile');
     await driver.tap(motionEventsListTile);
-    await driver.runUnsynchronized(() async {
-      driver.waitFor(find.byValueKey('PlatformView'));
-    });
+    await driver.waitFor(find.byValueKey('PlatformView'));
     final String errorMessage = await driver.requestData('run test');
     expect(errorMessage, '');
     final SerializableFinder backButton = find.byValueKey('back');
@@ -63,6 +61,6 @@ Future<void> main() async {
         find.byValueKey('WindowClickCount'),
       );
       expect(windowClickCount, 'Click count: 1');
-    }, timeout: Timeout.none, skip: true); // TODO(garyq): Skipped, see https://github.com/flutter/flutter/issues/88479
+    }, timeout: Timeout.none);
   });
 }

@@ -1,17 +1,16 @@
 # This file is used by dartdoc when generating API documentation for Flutter.
 dartdoc:
-  # Before you can run dartdoc, the snippets tool needs to be
-  # activated with "pub global activate snippets <version>"
-  # The dev/bots/docs.sh script does this automatically.
+  # Before you can run dartdoc, the snippets tool needs to have a snapshot built.
+  # The dev/tools/dartdoc.dart script does this automatically.
   tools:
     snippet:
-      command: ["bin/cache/dart-sdk/bin/dart", "pub", "global", "run", "snippets", "--output-directory=doc/snippets", "--type=snippet"]
+      command: ["dev/snippets/lib/main.dart", "--type=snippet"]
       description: "Creates sample code documentation output from embedded documentation samples."
     sample:
-      command: ["bin/cache/dart-sdk/bin/dart", "pub", "global", "run", "snippets", "--output-directory=doc/snippets", "--type=sample"]
+      command: ["dev/snippets/lib/main.dart", "--type=sample"]
       description: "Creates full application sample code documentation output from embedded documentation samples."
     dartpad:
-      command: ["bin/cache/dart-sdk/bin/dart", "pub", "global", "run", "snippets", "--output-directory=doc/snippets", "--type=dartpad"]
+      command: ["dev/snippets/lib/main.dart", "--type=sample", "--dartpad"]
       description: "Creates full application sample code documentation output from embedded documentation samples and displays it in an embedded DartPad."
   errors:
     # Default errors of dartdoc:

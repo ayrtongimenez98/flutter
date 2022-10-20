@@ -56,11 +56,11 @@ class _MarkerPainter extends CustomPainter {
 
 class Marker extends StatelessWidget {
   const Marker({
-    super.key,
+    Key? key,
     this.type = MarkerType.touch,
     this.position,
     this.size = 40.0,
-  });
+  }) : super(key: key);
 
   final Offset? position;
   final double size;
@@ -86,7 +86,7 @@ class Marker extends StatelessWidget {
 }
 
 class OverlayGeometryApp extends StatefulWidget {
-  const OverlayGeometryApp({super.key});
+  const OverlayGeometryApp({Key? key}) : super(key: key);
 
   @override
   OverlayGeometryAppState createState() => OverlayGeometryAppState();

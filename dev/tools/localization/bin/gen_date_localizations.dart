@@ -87,26 +87,16 @@ Future<void> main(List<String> rawArgs) async {
 // To regenerate run (omit --overwrite to print to console instead of the file):
 // dart --enable-asserts dev/tools/localization/bin/gen_date_localizations.dart --overwrite
 
-import 'package:intl/date_symbols.dart' as intl;
-
 '''
 );
   buffer.writeln('''
 /// The subset of date symbols supported by the intl package which are also
 /// supported by flutter_localizations.''');
-  buffer.writeln('final Map<String, intl.DateSymbols> dateSymbols = <String, intl.DateSymbols> {');
+  buffer.writeln('const Map<String, dynamic> dateSymbols = <String, dynamic> {');
   symbolFiles.forEach((String locale, File data) {
     currentLocale = locale;
-    if (supportedLocales.contains(locale)) {
-      final Map<String, Object?> objData =  json.decode(data.readAsStringSync()) as Map<String, Object?>;
-      buffer.writeln("'$locale': intl.DateSymbols(");
-      objData.forEach((String key, Object? value) {
-        if (value == null)
-          return;
-        buffer.writeln(_jsonToConstructorEntry(key, value));
-      });
-      buffer.writeln('),');
-    }
+    if (supportedLocales.contains(locale))
+      buffer.writeln(_jsonToMapEntry(locale, json.decode(data.readAsStringSync())));
   });
   currentLocale = null;
   buffer.writeln('};');
@@ -133,56 +123,17 @@ import 'package:intl/date_symbols.dart' as intl;
   if (writeToFile) {
     final File dateLocalizationsFile = File(path.join('packages', 'flutter_localizations', 'lib', 'src', 'l10n', 'generated_date_localizations.dart'));
     dateLocalizationsFile.writeAsStringSync(buffer.toString());
-    final String extension = Platform.isWindows ? '.exe' : '';
-    final ProcessResult result = Process.runSync(path.join('bin', 'cache', 'dart-sdk', 'bin', 'dart$extension'), <String>[
-      'format',
+    Process.runSync(path.join('bin', 'cache', 'dart-sdk', 'bin', 'dartfmt'), <String>[
+      '-w',
       dateLocalizationsFile.path,
     ]);
-    if (result.exitCode != 0) {
-      print(result.exitCode);
-      print(result.stdout);
-      print(result.stderr);
-    }
   } else {
     print(buffer);
   }
 }
 
-String _jsonToConstructorEntry(String key, dynamic value) {
-  return '$key: ${_jsonToObject(value)},';
-}
-
 String _jsonToMapEntry(String key, dynamic value) {
   return "'$key': ${_jsonToMap(value)},";
-}
-
-String _jsonToObject(dynamic json) {
-  if (json == null || json is num || json is bool)
-    return '$json';
-
-  if (json is String)
-    return generateEncodedString(currentLocale, json);
-
-  if (json is Iterable<Object?>) {
-    final String type = json.first.runtimeType.toString();
-    final StringBuffer buffer = StringBuffer('const <$type>[');
-    for (final dynamic value in json) {
-      buffer.writeln('${_jsonToMap(value)},');
-    }
-    buffer.write(']');
-    return buffer.toString();
-  }
-
-  if (json is Map<String, dynamic>) {
-    final StringBuffer buffer = StringBuffer('<String, Object>{');
-    json.forEach((String key, dynamic value) {
-      buffer.writeln(_jsonToMapEntry(key, value));
-    });
-    buffer.write('}');
-    return buffer.toString();
-  }
-
-  throw 'Unsupported JSON type ${json.runtimeType} of value $json.';
 }
 
 String _jsonToMap(dynamic json) {
@@ -190,10 +141,10 @@ String _jsonToMap(dynamic json) {
     return '$json';
 
   if (json is String)
-    return generateEncodedString(currentLocale, json);
+    return generateEncodedString(currentLocale!, json);
 
   if (json is Iterable) {
-    final StringBuffer buffer = StringBuffer('<String>[');
+    final StringBuffer buffer = StringBuffer('<dynamic>[');
     for (final dynamic value in json) {
       buffer.writeln('${_jsonToMap(value)},');
     }
@@ -202,7 +153,7 @@ String _jsonToMap(dynamic json) {
   }
 
   if (json is Map<String, dynamic>) {
-    final StringBuffer buffer = StringBuffer('<String, Object>{');
+    final StringBuffer buffer = StringBuffer('<String, dynamic>{');
     json.forEach((String key, dynamic value) {
       buffer.writeln(_jsonToMapEntry(key, value));
     });

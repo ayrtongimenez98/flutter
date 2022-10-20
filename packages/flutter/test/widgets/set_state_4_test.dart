@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class Changer extends StatefulWidget {
-  const Changer({ super.key });
+  const Changer({ Key? key }) : super(key: key);
   @override
   ChangerState createState() => ChangerState();
 }

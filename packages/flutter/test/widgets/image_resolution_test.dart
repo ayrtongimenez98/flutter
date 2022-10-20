@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 @TestOn('!chrome')
+import 'dart:typed_data';
 import 'dart:ui' as ui show Image;
 
 import 'package:flutter/foundation.dart';
@@ -14,7 +15,10 @@ import 'package:flutter_test/flutter_test.dart';
 import '../image_data.dart';
 
 ByteData testByteData(double scale) => ByteData(8)..setFloat64(0, scale);
-double scaleOf(ByteData data) => data.getFloat64(0);
+
+extension on ByteData {
+  double get scale => getFloat64(0);
+}
 
 const String testManifest = '''
 {
@@ -61,9 +65,8 @@ class TestAssetBundle extends CachingAssetBundle {
 
   @override
   Future<String> loadString(String key, { bool cache = true }) {
-    if (key == 'AssetManifest.json') {
+    if (key == 'AssetManifest.json')
       return SynchronousFuture<String>(manifest);
-    }
     return SynchronousFuture<String>('');
   }
 
@@ -78,16 +81,17 @@ class FakeImageStreamCompleter extends ImageStreamCompleter {
 }
 
 class TestAssetImage extends AssetImage {
-  const TestAssetImage(super.name, this.images);
+  const TestAssetImage(String name, this.images) : super(name);
 
   final Map<double, ui.Image> images;
 
   @override
-  ImageStreamCompleter loadBuffer(AssetBundleImageKey key, DecoderBufferCallback decode) {
+  ImageStreamCompleter load(AssetBundleImageKey key, DecoderCallback decode) {
     late ImageInfo imageInfo;
     key.bundle.load(key.name).then<void>((ByteData data) {
-      final ui.Image image = images[scaleOf(data)]!;
-      assert(image != null, 'Expected ${scaleOf(data)} to have a key in $images');
+      final ByteData testData = data;
+      final ui.Image image = images[testData.scale]!;
+      assert(image != null, 'Expected ${testData.scale} to have a key in $images');
       imageInfo = ImageInfo(image: image, scale: key.scale);
     });
     return FakeImageStreamCompleter(
@@ -104,6 +108,7 @@ Widget buildImageAtRatio(String imageName, Key key, double ratio, bool inferSize
     data: MediaQueryData(
       size: const Size(windowSize, windowSize),
       devicePixelRatio: ratio,
+      padding: EdgeInsets.zero,
     ),
     child: DefaultAssetBundle(
       bundle: bundle ?? TestAssetBundle(),

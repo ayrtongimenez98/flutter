@@ -56,6 +56,26 @@ String _toMethodString(HttpMethod method) {
   }
 }
 
+/// Override the creation of all [HttpClient] objects with a zone injection.
+///
+/// This should only be used when the http client cannot be set directly, such as
+/// when testing `package:http` code.
+Future<void> overrideHttpClients(Future<void> Function() callback,  FakeHttpClient httpClient) async {
+  final HttpOverrides overrides = _FakeHttpClientOverrides(httpClient);
+  await HttpOverrides.runWithHttpOverrides(callback, overrides);
+}
+
+class _FakeHttpClientOverrides extends HttpOverrides {
+  _FakeHttpClientOverrides(this.httpClient);
+
+  final FakeHttpClient httpClient;
+
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return httpClient;
+  }
+}
+
 /// Create a fake request that configures the [FakeHttpClient] to respond
 /// with the provided [response].
 ///
@@ -141,19 +161,19 @@ class FakeHttpClient implements HttpClient {
   }
 
   @override
-  Future<ConnectionTask<Socket>> Function(Uri url, String? proxyHost, int? proxyPort)? connectionFactory;
+  set authenticate(Future<bool> Function(Uri url, String scheme, String realm)? f) {
+    throw UnimplementedError();
+  }
 
   @override
-  Future<bool> Function(Uri url, String scheme, String realm)? authenticate;
+  set authenticateProxy(Future<bool> Function(String host, int port, String scheme, String realm)? f) {
+    throw UnimplementedError();
+  }
 
   @override
-  Future<bool> Function(String host, int port, String scheme, String realm)? authenticateProxy;
-
-  @override
-  bool Function(X509Certificate cert, String host, int port)? badCertificateCallback;
-
-  @override
-  Function(String line)? keyLog;
+  set badCertificateCallback(bool Function(X509Certificate cert, String host, int port)? callback) {
+    throw UnimplementedError();
+  }
 
   @override
   void close({bool force = false}) { }
@@ -170,7 +190,7 @@ class FakeHttpClient implements HttpClient {
   }
 
   @override
-  String Function(Uri url)? findProxy;
+  set findProxy(String Function(Uri url)? f) { }
 
   @override
   Future<HttpClientRequest> get(String host, int port, String path) {

@@ -2,12 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:file/memory.dart';
 import 'package:file_testing/file_testing.dart';
 import 'package:flutter_tools/src/artifacts.dart';
 import 'package:flutter_tools/src/base/deferred_component.dart';
 import 'package:flutter_tools/src/base/file_system.dart';
 import 'package:flutter_tools/src/base/logger.dart';
+import 'package:flutter_tools/src/base/platform.dart';
 import 'package:flutter_tools/src/build_info.dart';
 import 'package:flutter_tools/src/build_system/build_system.dart';
 import 'package:flutter_tools/src/build_system/depfile.dart';
@@ -18,11 +21,12 @@ import '../../../src/common.dart';
 import '../../../src/context.dart';
 import '../../../src/fake_process_manager.dart';
 
+final Platform platform = FakePlatform(operatingSystem: 'linux', environment: const <String, String>{});
 void main() {
-  late FakeProcessManager processManager;
-  late FileSystem fileSystem;
-  late Artifacts artifacts;
-  late Logger logger;
+  FakeProcessManager processManager;
+  FileSystem fileSystem;
+  Artifacts artifacts;
+  Logger logger;
 
   setUp(() {
     logger = BufferLogger.test();
@@ -64,6 +68,9 @@ void main() {
     expect(fileSystem.file(fileSystem.path.join('out', 'flutter_assets', 'isolate_snapshot_data')).existsSync(), true);
     expect(fileSystem.file(fileSystem.path.join('out', 'flutter_assets', 'vm_snapshot_data')).existsSync(), true);
     expect(fileSystem.file(fileSystem.path.join('out', 'flutter_assets', 'kernel_blob.bin')).existsSync(), true);
+  }, overrides: <Type, Generator>{
+    FileSystem: () => fileSystem,
+    ProcessManager: () => processManager,
   });
 
   testUsingContext('debug bundle contains expected resources with bundle SkSL', () async {
@@ -74,7 +81,7 @@ void main() {
         kBuildMode: 'debug',
       },
       inputs: <String, String>{
-        kBundleSkSLPath: 'bundle.sksl',
+        kBundleSkSLPath: 'bundle.sksl'
       },
       processManager: processManager,
       artifacts: artifacts,
@@ -89,8 +96,8 @@ void main() {
         'platform': 'android',
         'data': <String, Object>{
           'A': 'B',
-        },
-      },
+        }
+      }
     ));
 
     // create pre-requisites.
@@ -109,9 +116,12 @@ void main() {
     expect(fileSystem.file(fileSystem.path.join('out', 'flutter_assets', 'vm_snapshot_data')), exists);
     expect(fileSystem.file(fileSystem.path.join('out', 'flutter_assets', 'kernel_blob.bin')), exists);
     expect(fileSystem.file(fileSystem.path.join('out', 'flutter_assets', 'io.flutter.shaders.json')), exists);
+  }, overrides: <Type, Generator>{
+    FileSystem: () => fileSystem,
+    ProcessManager: () => processManager,
   });
 
-  testWithoutContext('profile bundle contains expected resources', () async {
+  testUsingContext('profile bundle contains expected resources', () async {
     final Environment environment = Environment.test(
       fileSystem.currentDirectory,
       outputDir: fileSystem.directory('out')..createSync(),
@@ -132,6 +142,9 @@ void main() {
     await const ProfileAndroidApplication().build(environment);
 
     expect(fileSystem.file(fileSystem.path.join('out', 'app.so')).existsSync(), true);
+  }, overrides: <Type, Generator>{
+    FileSystem: () => fileSystem,
+    ProcessManager: () => processManager,
   });
 
   testWithoutContext('release bundle contains expected resources', () async {
@@ -191,6 +204,9 @@ void main() {
     await androidAot.build(environment);
 
     expect(processManager, hasNoRemainingExpectations);
+  }, overrides: <Type, Generator>{
+    FileSystem: () => fileSystem,
+    ProcessManager: () => processManager,
   });
 
   testUsingContext('AndroidAot provide code size information.', () async {
@@ -230,6 +246,9 @@ void main() {
     await androidAot.build(environment);
 
     expect(processManager, hasNoRemainingExpectations);
+  }, overrides: <Type, Generator>{
+    FileSystem: () => fileSystem,
+    ProcessManager: () => processManager,
   });
 
   testUsingContext('kExtraGenSnapshotOptions passes values to gen_snapshot', () async {
@@ -261,7 +280,7 @@ void main() {
         '--snapshot_kind=app-aot-elf',
         '--elf=${environment.buildDir.childDirectory('arm64-v8a').childFile('app.so').path}',
         '--strip',
-        environment.buildDir.childFile('app.dill').path,
+        environment.buildDir.childFile('app.dill').path
       ],
     ));
     environment.buildDir.createSync(recursive: true);
@@ -270,6 +289,9 @@ void main() {
 
     await const AndroidAot(TargetPlatform.android_arm64, BuildMode.release)
       .build(environment);
+  }, overrides: <Type, Generator>{
+    FileSystem: () => fileSystem,
+    ProcessManager: () => processManager,
   });
 
   testUsingContext('--no-strip in kExtraGenSnapshotOptions suppresses --strip gen_snapshot flag', () async {
@@ -299,7 +321,7 @@ void main() {
         'bar',
         '--snapshot_kind=app-aot-elf',
         '--elf=${environment.buildDir.childDirectory('arm64-v8a').childFile('app.so').path}',
-        environment.buildDir.childFile('app.dill').path,
+        environment.buildDir.childFile('app.dill').path
       ],
     ));
     environment.buildDir.createSync(recursive: true);
@@ -308,6 +330,9 @@ void main() {
 
     await const AndroidAot(TargetPlatform.android_arm64, BuildMode.release)
       .build(environment);
+  }, overrides: <Type, Generator>{
+    FileSystem: () => fileSystem,
+    ProcessManager: () => processManager,
   });
 
   testWithoutContext('android aot bundle copies so from abi directory', () async {

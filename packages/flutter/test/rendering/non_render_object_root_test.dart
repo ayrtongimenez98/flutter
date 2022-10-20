@@ -41,12 +41,11 @@ class RealRoot extends AbstractNode {
 }
 
 void main() {
-  TestRenderingFlutterBinding.ensureInitialized();
-
   test('non-RenderObject roots', () {
     RenderPositionedBox child;
     final RealRoot root = RealRoot(
       child = RenderPositionedBox(
+        alignment: Alignment.center,
         child: RenderSizedBox(const Size(100.0, 100.0)),
       ),
     );

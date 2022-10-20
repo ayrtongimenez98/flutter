@@ -33,7 +33,7 @@ class LeaveBehindItem implements Comparable<LeaveBehindItem> {
 }
 
 class LeaveBehindDemo extends StatefulWidget {
-  const LeaveBehindDemo({ super.key });
+  const LeaveBehindDemo({ Key? key }) : super(key: key);
 
   static const String routeName = '/material/leave-behind';
 
@@ -131,7 +131,6 @@ class LeaveBehindDemoState extends State<LeaveBehindDemo> {
     } else {
       body = Scrollbar(
         child: ListView(
-          primary: true,
           children: leaveBehindItems.map<Widget>((LeaveBehindItem item) {
             return _LeaveBehindListItem(
               confirmDismiss: _confirmDismiss,
@@ -189,12 +188,13 @@ class LeaveBehindDemoState extends State<LeaveBehindDemo> {
 
 class _LeaveBehindListItem extends StatelessWidget {
   const _LeaveBehindListItem({
+    Key? key,
     required this.item,
     required this.onArchive,
     required this.onDelete,
     required this.dismissDirection,
     required this.confirmDismiss,
-  });
+  }) : super(key: key);
 
   final LeaveBehindItem item;
   final DismissDirection dismissDirection;
@@ -230,9 +230,9 @@ class _LeaveBehindListItem extends StatelessWidget {
         confirmDismiss: !confirmDismiss ? null : (DismissDirection dismissDirection) async {
           switch(dismissDirection) {
             case DismissDirection.endToStart:
-              return await _showConfirmationDialog(context, 'archive') ?? false;
+              return await _showConfirmationDialog(context, 'archive') == true;
             case DismissDirection.startToEnd:
-              return await _showConfirmationDialog(context, 'delete') ?? false;
+              return await _showConfirmationDialog(context, 'delete') == true;
             case DismissDirection.horizontal:
             case DismissDirection.vertical:
             case DismissDirection.up:
@@ -276,6 +276,7 @@ class _LeaveBehindListItem extends StatelessWidget {
   Future<bool?> _showConfirmationDialog(BuildContext context, String action) {
     return showDialog<bool>(
       context: context,
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Do you want to $action this item?'),

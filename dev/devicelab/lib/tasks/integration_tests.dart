@@ -29,14 +29,6 @@ TaskFunction createFlavorsTest() {
   );
 }
 
-TaskFunction createIntegrationTestFlavorsTest() {
-  return IntegrationTest(
-    '${flutterDirectory.path}/dev/integration_tests/flavors',
-    'integration_test/integration_test.dart',
-    extraOptions: <String>['--flavor', 'paid'],
-  );
-}
-
 TaskFunction createExternalUiIntegrationTest() {
   return DriverTest(
     '${flutterDirectory.path}/dev/integration_tests/external_ui',
@@ -44,11 +36,10 @@ TaskFunction createExternalUiIntegrationTest() {
   );
 }
 
-TaskFunction createPlatformChannelSampleTest({String? deviceIdOverride}) {
+TaskFunction createPlatformChannelSampleTest() {
   return DriverTest(
     '${flutterDirectory.path}/examples/platform_channel',
     'test_driver/button_tap.dart',
-    deviceIdOverride: deviceIdOverride,
   );
 }
 
@@ -84,9 +75,6 @@ TaskFunction createIOSPlatformViewTests() {
   return DriverTest(
     '${flutterDirectory.path}/dev/integration_tests/ios_platform_view_tests',
     'lib/main.dart',
-    extraOptions: <String>[
-      '--dart-define=ENABLE_DRIVER_EXTENSION=true',
-    ],
   );
 }
 
@@ -147,25 +135,18 @@ class DriverTest {
     this.testDirectory,
     this.testTarget, {
       this.extraOptions = const <String>[],
-      this.deviceIdOverride,
     }
   );
 
   final String testDirectory;
   final String testTarget;
   final List<String> extraOptions;
-  final String? deviceIdOverride;
 
   Future<TaskResult> call() {
     return inDirectory<TaskResult>(testDirectory, () async {
-      String deviceId;
-      if (deviceIdOverride != null) {
-        deviceId = deviceIdOverride!;
-      } else {
-        final Device device = await devices.workingDevice;
-        await device.unlock();
-        deviceId = device.deviceId;
-      }
+      final Device device = await devices.workingDevice;
+      await device.unlock();
+      final String deviceId = device.deviceId;
       await flutter('packages', options: <String>['get']);
 
       final List<String> options = <String>[
@@ -185,16 +166,10 @@ class DriverTest {
 }
 
 class IntegrationTest {
-  IntegrationTest(
-    this.testDirectory,
-    this.testTarget, {
-      this.extraOptions = const <String>[],
-    }
-  );
+  IntegrationTest(this.testDirectory, this.testTarget);
 
   final String testDirectory;
   final String testTarget;
-  final List<String> extraOptions;
 
   Future<TaskResult> call() {
     return inDirectory<TaskResult>(testDirectory, () async {
@@ -208,7 +183,6 @@ class IntegrationTest {
         '-d',
         deviceId,
         testTarget,
-        ...extraOptions,
       ];
       await flutter('test', options: options);
 

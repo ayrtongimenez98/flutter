@@ -9,7 +9,6 @@ import 'package:flutter/foundation.dart';
 import 'framework.dart';
 import 'notification_listener.dart';
 import 'scroll_notification.dart';
-import 'scroll_position.dart';
 
 /// A [ScrollNotification] listener for [ScrollNotificationObserver].
 ///
@@ -21,9 +20,11 @@ typedef ScrollNotificationCallback = void Function(ScrollNotification notificati
 
 class _ScrollNotificationObserverScope extends InheritedWidget {
   const _ScrollNotificationObserverScope({
-    required super.child,
+    Key? key,
+    required Widget child,
     required ScrollNotificationObserverState scrollNotificationObserverState,
-  }) : _scrollNotificationObserverState = scrollNotificationObserverState;
+  }) : _scrollNotificationObserverState = scrollNotificationObserverState,
+      super(key: key, child: child);
 
   final ScrollNotificationObserverState  _scrollNotificationObserverState;
 
@@ -49,7 +50,7 @@ class _ListenerEntry extends LinkedListEntry<_ListenerEntry> {
 /// To remove the listener from a [ScrollNotificationObserver] ancestor:
 /// ```dart
 /// ScrollNotificationObserver.of(context).removeListener(listener);
-/// ```
+///```
 ///
 /// Stateful widgets that share an ancestor [ScrollNotificationObserver] typically
 /// add a listener in [State.didChangeDependencies] (removing the old one
@@ -63,9 +64,9 @@ class ScrollNotificationObserver extends StatefulWidget {
   ///
   /// The [child] parameter must not be null.
   const ScrollNotificationObserver({
-    super.key,
+    Key? key,
     required this.child,
-  }) : assert(child != null);
+  }) : assert(child != null), super(key: key);
 
   /// The subtree below this widget.
   final Widget child;
@@ -124,29 +125,27 @@ class ScrollNotificationObserverState extends State<ScrollNotificationObserver> 
 
   void _notifyListeners(ScrollNotification notification) {
     assert(_debugAssertNotDisposed());
-    if (_listeners!.isEmpty) {
+    if (_listeners!.isEmpty)
       return;
-    }
 
-    final List<_ListenerEntry> localListeners = List<_ListenerEntry>.of(_listeners!);
+    final List<_ListenerEntry> localListeners = List<_ListenerEntry>.from(_listeners!);
     for (final _ListenerEntry entry in localListeners) {
       try {
-        if (entry.list != null) {
+        if (entry.list != null)
           entry.listener(notification);
-        }
       } catch (exception, stack) {
         FlutterError.reportError(FlutterErrorDetails(
           exception: exception,
           stack: stack,
           library: 'widget library',
           context: ErrorDescription('while dispatching notifications for $runtimeType'),
-          informationCollector: () => <DiagnosticsNode>[
-            DiagnosticsProperty<ScrollNotificationObserverState>(
+          informationCollector: () sync* {
+            yield DiagnosticsProperty<ScrollNotificationObserverState>(
               'The $runtimeType sending notification was',
               this,
               style: DiagnosticsTreeStyle.errorProperty,
-            ),
-          ],
+            );
+          },
         ));
       }
     }
@@ -154,27 +153,14 @@ class ScrollNotificationObserverState extends State<ScrollNotificationObserver> 
 
   @override
   Widget build(BuildContext context) {
-    // A ScrollMetricsNotification allows listeners to be notified for an
-    // initial state, as well as if the content dimensions change without
-    // scrolling.
-    return NotificationListener<ScrollMetricsNotification>(
-      onNotification: (ScrollMetricsNotification notification) {
-        _notifyListeners(_ConvertedScrollMetricsNotification(
-          metrics: notification.metrics,
-          context: notification.context,
-          depth: notification.depth,
-        ));
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification notification) {
+        _notifyListeners(notification);
         return false;
       },
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (ScrollNotification notification) {
-          _notifyListeners(notification);
-          return false;
-        },
-        child: _ScrollNotificationObserverScope(
-          scrollNotificationObserverState: this,
-          child: widget.child,
-        ),
+      child: _ScrollNotificationObserverScope(
+        scrollNotificationObserverState: this,
+        child: widget.child,
       ),
     );
   }
@@ -185,12 +171,4 @@ class ScrollNotificationObserverState extends State<ScrollNotificationObserver> 
     _listeners = null;
     super.dispose();
   }
-}
-
-class _ConvertedScrollMetricsNotification extends ScrollUpdateNotification {
-  _ConvertedScrollMetricsNotification({
-    required super.metrics,
-    required super.context,
-    required super.depth,
-  });
 }

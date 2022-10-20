@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:ui' as ui show window;
+
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,10 +32,9 @@ class TestLayout {
 }
 
 void main() {
-  TestRenderingFlutterBinding.ensureInitialized();
-
   const ViewConfiguration testConfiguration = ViewConfiguration(
     size: Size(800.0, 600.0),
+    devicePixelRatio: 1.0,
   );
 
   test('onscreen layout does not affect offscreen', () {
@@ -44,7 +45,7 @@ void main() {
     expect(offscreen.child.hasSize, isFalse);
     expect(offscreen.painted, isFalse);
     // Attach the offscreen to a custom render view and owner
-    final RenderView renderView = RenderView(configuration: testConfiguration, window: RendererBinding.instance.window);
+    final RenderView renderView = RenderView(configuration: testConfiguration, window: ui.window);
     final PipelineOwner pipelineOwner = PipelineOwner();
     renderView.attach(pipelineOwner);
     renderView.child = offscreen.root;
@@ -74,7 +75,7 @@ void main() {
     expect(offscreen.child.hasSize, isFalse);
     expect(offscreen.painted, isFalse);
     // Attach the offscreen to a custom render view and owner
-    final RenderView renderView = RenderView(configuration: testConfiguration, window: RendererBinding.instance.window);
+    final RenderView renderView = RenderView(configuration: testConfiguration, window: ui.window);
     final PipelineOwner pipelineOwner = PipelineOwner();
     renderView.attach(pipelineOwner);
     renderView.child = offscreen.root;

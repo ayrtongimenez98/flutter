@@ -2,37 +2,46 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// no-shuffle:
-//   //TODO(gspencergoog): Remove this tag once this test's state leaks/test
-//   dependencies have been fixed.
-//   https://github.com/flutter/flutter/issues/85160
-//   Fails with "flutter test --test-randomize-ordering-seed=456"
-// reduced-test-set:
-//   This file is run as part of a reduced test set in CI on Mac and Windows
-//   machines.
-@Tags(<String>['reduced-test-set', 'no-shuffle'])
+// TODO(gspencergoog): Remove this tag once this test's state leaks/test
+// dependencies have been fixed.
+// https://github.com/flutter/flutter/issues/85160
+// Fails with "flutter test --test-randomize-ordering-seed=123"
+@Tags(<String>['no-shuffle'])
 
 import 'dart:ui' as ui show BoxHeightStyle, BoxWidthStyle, Color;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart' show DragStartBehavior, PointerDeviceKind, kSecondaryMouseButton, kDoubleTapTimeout;
-import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart' show DragStartBehavior, PointerDeviceKind, kSecondaryMouseButton;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../rendering/mock_canvas.dart';
-import '../widgets/clipboard_utils.dart';
-import '../widgets/editable_text_utils.dart' show OverflowWidgetTextEditingController;
 import '../widgets/semantics_tester.dart';
 
 // On web, the context menu (aka toolbar) is provided by the browser.
-const bool isContextMenuProvidedByPlatform = isBrowser;
+final bool isContextMenuProvidedByPlatform = isBrowser;
+
+class MockClipboard {
+  Object _clipboardData = <String, dynamic>{
+    'text': null,
+  };
+
+  Future<dynamic> handleMethodCall(MethodCall methodCall) async {
+    switch (methodCall.method) {
+      case 'Clipboard.getData':
+        return _clipboardData;
+      case 'Clipboard.setData':
+        _clipboardData = methodCall.arguments! as Object;
+        break;
+    }
+  }
+}
 
 class MockTextSelectionControls extends TextSelectionControls {
   @override
-  Widget buildHandle(BuildContext context, TextSelectionHandleType type, double textLineHeight, [VoidCallback? onTap]) {
+  Widget buildHandle(BuildContext context, TextSelectionHandleType type, double textLineHeight, [VoidCallback? onTap, double? startGlyphHeight, double? endGlyphHeight]) {
     throw UnimplementedError();
   }
 
@@ -44,14 +53,14 @@ class MockTextSelectionControls extends TextSelectionControls {
     Offset position,
     List<TextSelectionPoint> endpoints,
     TextSelectionDelegate delegate,
-    ClipboardStatusNotifier? clipboardStatus,
+    ClipboardStatusNotifier clipboardStatus,
     Offset? lastSecondaryTapDownPosition,
   ) {
     throw UnimplementedError();
   }
 
   @override
-  Offset getHandleAnchor(TextSelectionHandleType type, double textLineHeight) {
+  Offset getHandleAnchor(TextSelectionHandleType type, double textLineHeight, [double? startGlyphHeight, double? endGlyphHeight]) {
     throw UnimplementedError();
   }
 
@@ -85,7 +94,7 @@ class PathBoundsMatcher extends Matcher {
     final Map<Matcher, dynamic> failedMatcher = <Matcher, dynamic> {};
 
     for(int idx = 0; idx < matchers.length; idx++) {
-      if (!(matchers[idx]?.matches(values[idx], matchState) ?? true)) {
+      if (!(matchers[idx]?.matches(values[idx], matchState) != false)) {
         failedMatcher[matchers[idx]!] = values[idx];
       }
     }
@@ -236,6 +245,7 @@ void main() {
       kind: PointerDeviceKind.mouse,
       buttons: kSecondaryMouseButton,
     );
+    addTearDown(gesture.removePointer);
     await tester.pump();
     await gesture.up();
     await tester.pumpAndSettle();
@@ -248,7 +258,7 @@ void main() {
     await tester.tap(find.text('Copy'));
     await tester.pumpAndSettle();
     expect(controller.text, 'blah1 blah2');
-    expect(controller.selection, const TextSelection(baseOffset: 0, extentOffset: 5));
+    expect(controller.selection, const TextSelection(baseOffset: 5, extentOffset: 5));
     expect(find.byType(CupertinoButton), findsNothing);
 
     // Paste it at the end.
@@ -263,7 +273,7 @@ void main() {
     await tester.tap(find.text('Paste'));
     await tester.pumpAndSettle();
     expect(controller.text, 'blah1 blah2blah1');
-    expect(controller.selection, const TextSelection.collapsed(offset: 16));
+    expect(controller.selection, const TextSelection(baseOffset: 16, extentOffset: 16));
 
     // Cut the first word.
     await gesture.down(midBlah1);
@@ -284,37 +294,7 @@ void main() {
     skip: kIsWeb, // [intended] the web handles this on its own.
   );
 
-  testWidgets('can get text selection color initially on desktop', (WidgetTester tester) async {
-    final FocusNode focusNode = FocusNode();
-    final TextEditingController controller = TextEditingController(
-      text: 'blah1 blah2',
-    );
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: RepaintBoundary(
-            child: CupertinoTextField(
-              key: const ValueKey<int>(1),
-              controller: controller,
-              focusNode: focusNode,
-            ),
-          ),
-        ),
-      ),
-    );
-
-    controller.selection = const TextSelection(baseOffset: 0, extentOffset: 11);
-    focusNode.requestFocus();
-    await tester.pump();
-
-    expect(focusNode.hasFocus, true);
-    await expectLater(
-      find.byKey(const ValueKey<int>(1)),
-      matchesGoldenFile('text_field_golden.text_selection_color.0.png'),
-    );
-  });
-
-  testWidgets('Activates the text field when receives semantics focus on Mac, Windows', (WidgetTester tester) async {
+  testWidgets('Activates the text field when receives semantics focus on Mac', (WidgetTester tester) async {
     final SemanticsTester semantics = SemanticsTester(tester);
     final SemanticsOwner semanticsOwner = tester.binding.pipelineOwner.semanticsOwner!;
     final FocusNode focusNode = FocusNode();
@@ -362,7 +342,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(focusNode.hasFocus, isTrue);
     semantics.dispose();
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.macOS, TargetPlatform.windows }));
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.macOS }));
 
   testWidgets(
     'takes available space horizontally and takes intrinsic space vertically no-strut',
@@ -405,89 +385,6 @@ void main() {
       );
     },
   );
-
-  testWidgets(
-    'uses DefaultSelectionStyle for selection and cursor colors if provided',
-    (WidgetTester tester) async {
-      const Color selectionColor = Colors.black;
-      const Color cursorColor = Colors.white;
-
-      await tester.pumpWidget(
-        const CupertinoApp(
-          home: Center(
-            child: DefaultSelectionStyle(
-              selectionColor: selectionColor,
-              cursorColor: cursorColor,
-              child: CupertinoTextField(
-                autofocus: true,
-              )
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
-      final EditableTextState state = tester.state<EditableTextState>(find.byType(EditableText));
-      expect(state.widget.selectionColor, selectionColor);
-      expect(state.widget.cursorColor, cursorColor);
-    },
-  );
-
-  testWidgets('Text field drops selection color when losing focus', (WidgetTester tester) async {
-    // Regression test for https://github.com/flutter/flutter/issues/103341.
-    final Key key1 = UniqueKey();
-    final Key key2 = UniqueKey();
-    final TextEditingController controller1 = TextEditingController();
-    const Color selectionColor = Colors.orange;
-    const Color cursorColor = Colors.red;
-
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: DefaultSelectionStyle(
-            selectionColor: selectionColor,
-            cursorColor: cursorColor,
-            child: Column(
-              children: <Widget>[
-                CupertinoTextField(
-                  key: key1,
-                  controller: controller1,
-                ),
-                CupertinoTextField(key: key2),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    const TextSelection selection = TextSelection(baseOffset: 0, extentOffset: 4);
-    final EditableTextState state1 = tester.state<EditableTextState>(find.byType(EditableText).first);
-    final EditableTextState state2 = tester.state<EditableTextState>(find.byType(EditableText).last);
-
-    await tester.tap(find.byKey(key1));
-    await tester.enterText(find.byKey(key1), 'abcd');
-    await tester.pump();
-
-    await tester.tap(find.byKey(key2));
-    await tester.enterText(find.byKey(key2), 'dcba');
-    await tester.pump();
-
-    // Focus and selection is active on first TextField, so the second TextFields
-    // selectionColor should be dropped.
-    await tester.tap(find.byKey(key1));
-    controller1.selection = const TextSelection(baseOffset: 0, extentOffset: 4);
-    await tester.pump();
-    expect(controller1.selection, selection);
-    expect(state1.widget.selectionColor, selectionColor);
-    expect(state2.widget.selectionColor, null);
-
-    // Focus and selection is active on second TextField, so the first TextFields
-    // selectionColor should be dropped.
-    await tester.tap(find.byKey(key2));
-    await tester.pump();
-    expect(state1.widget.selectionColor, null);
-    expect(state2.widget.selectionColor, selectionColor);
-  });
 
   testWidgets(
     'multi-lined text fields are intrinsically taller no-strut',
@@ -613,7 +510,7 @@ void main() {
 
       expect(
         decoration.borderRadius,
-        const BorderRadius.all(Radius.circular(5)),
+        BorderRadius.circular(5),
       );
       expect(
         decoration.border!.bottom.color.value,
@@ -639,7 +536,7 @@ void main() {
 
       expect(
         decoration.borderRadius,
-        const BorderRadius.all(Radius.circular(5)),
+        BorderRadius.circular(5),
       );
       expect(
         decoration.border!.bottom.color.value,
@@ -701,6 +598,40 @@ void main() {
     final EditableText editableText = tester.firstWidget(find.byType(EditableText));
     expect(editableText.cursorOffset, const Offset(-2.0 / 3.0, 0));
   });
+
+  testWidgets('Cursor animates', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const CupertinoApp(
+        home: CupertinoTextField(),
+      ),
+    );
+
+    final Finder textFinder = find.byType(CupertinoTextField);
+    await tester.tap(textFinder);
+    await tester.pump();
+
+    final EditableTextState editableTextState = tester.firstState(find.byType(EditableText));
+    final RenderEditable renderEditable = editableTextState.renderEditable;
+
+    expect(renderEditable.cursorColor!.alpha, 255);
+
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(renderEditable.cursorColor!.alpha, 255);
+
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(renderEditable.cursorColor!.alpha, 110);
+
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(renderEditable.cursorColor!.alpha, 16);
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(renderEditable.cursorColor!.alpha, 0);
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS, TargetPlatform.macOS }));
 
   testWidgets('Cursor radius is 2.0', (WidgetTester tester) async {
     await tester.pumpWidget(
@@ -766,7 +697,7 @@ void main() {
     await expectLater(
       find.byKey(const ValueKey<int>(1)),
       matchesGoldenFile(
-        'text_field_cursor_test.cupertino_${debugDefaultTargetPlatformOverride!.name.toLowerCase()}.1.png',
+        'text_field_cursor_test.cupertino_${describeEnum(debugDefaultTargetPlatformOverride!).toLowerCase()}.1.png',
       ),
     );
   }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
@@ -1708,9 +1639,9 @@ void main() {
         ),
       );
 
-      final Offset textFieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
-      await tester.tapAt(textFieldStart + const Offset(50.0, 5.0));
+      await tester.tapAt(textfieldStart + const Offset(50.0, 5.0));
       await tester.pump();
 
       // We moved the cursor.
@@ -1721,7 +1652,8 @@ void main() {
 
       // But don't trigger the toolbar.
       expect(find.byType(CupertinoButton), findsNothing);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS }));
+    },
+  );
 
   testWidgets(
     'slow double tap does not trigger double tap',
@@ -1729,9 +1661,6 @@ void main() {
       final TextEditingController controller = TextEditingController(
         text: 'Atwater Peel Sherbrooke Bonaventure',
       );
-      // On iOS/iPadOS, during a tap we select the edge of the word closest to the tap.
-      // On macOS, we select the precise position of the tap.
-      final bool isTargetPlatformMobile = defaultTargetPlatform == TargetPlatform.iOS;
       await tester.pumpWidget(
         CupertinoApp(
           home: Center(
@@ -1742,20 +1671,23 @@ void main() {
         ),
       );
 
-      final Offset pos = textOffsetToPosition(tester, 6); // Index of 'Atwate|r'.
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
-      await tester.tapAt(pos);
+      await tester.tapAt(textfieldStart + const Offset(50.0, 5.0));
       await tester.pump(const Duration(milliseconds: 500));
-      await tester.tapAt(pos);
+      await tester.tapAt(textfieldStart + const Offset(50.0, 5.0));
       await tester.pump();
 
       // Plain collapsed selection.
-      expect(controller.selection.isCollapsed, isTrue);
-      expect(controller.selection.baseOffset, isTargetPlatformMobile ? 7 : 6);
+      expect(
+        controller.selection,
+        const TextSelection.collapsed(offset: 7, affinity: TextAffinity.upstream),
+      );
 
       // No toolbar.
       expect(find.byType(CupertinoButton), findsNothing);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
+    },
+  );
 
   testWidgets(
     'double tap selects word and first tap of double tap moves cursor',
@@ -1797,44 +1729,6 @@ void main() {
     },
   );
 
-  testWidgets(
-    'double tap does not select word on read-only obscured field',
-        (WidgetTester tester) async {
-      final TextEditingController controller = TextEditingController(
-        text: 'Atwater Peel Sherbrooke Bonaventure',
-      );
-      await tester.pumpWidget(
-        CupertinoApp(
-          home: Center(
-            child: CupertinoTextField(
-              readOnly: true,
-              obscureText: true,
-              controller: controller,
-            ),
-          ),
-        ),
-      );
-
-      // Long press to put the cursor after the "w".
-      const int index = 3;
-      await tester.longPressAt(textOffsetToPosition(tester, index));
-      await tester.pump();
-
-      // Second tap doesn't select anything.
-      await tester.tapAt(textOffsetToPosition(tester, index));
-      await tester.pump(const Duration(milliseconds: 50));
-      await tester.tapAt(textOffsetToPosition(tester, index));
-      await tester.pumpAndSettle();
-      expect(
-        controller.selection,
-        const TextSelection.collapsed(offset: 35),
-      );
-
-      // Selected text shows nothing.
-      expect(find.byType(CupertinoButton), findsNothing);
-    },
-  );
-
   testWidgets('Readonly text field does not have tap action', (WidgetTester tester) async {
     final SemanticsTester semantics = SemanticsTester(tester);
 
@@ -1860,9 +1754,6 @@ void main() {
       final TextEditingController controller = TextEditingController(
         text: 'Atwater Peel Sherbrooke Bonaventure',
       );
-      // On iOS/iPadOS, during a tap we select the edge of the word closest to the tap.
-      // On macOS, we select the precise position of the tap.
-      final bool isTargetPlatformMobile = defaultTargetPlatform == TargetPlatform.iOS;
       await tester.pumpWidget(
         CupertinoApp(
           home: Center(
@@ -1873,20 +1764,19 @@ void main() {
         ),
       );
 
-      final Offset ePos = textOffsetToPosition(tester, 6); // Index of 'Atwate|r'.
-      final Offset pPos = textOffsetToPosition(tester, 9); // Index of 'P|eel'.
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
-
-      await tester.tapAt(ePos);
+      await tester.tapAt(textfieldStart + const Offset(50.0, 5.0));
       await tester.pump(const Duration(milliseconds: 500));
 
-      await tester.tapAt(pPos);
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pump(const Duration(milliseconds: 50));
       // First tap moved the cursor.
-      expect(controller.selection.isCollapsed, isTrue);
-      expect(controller.selection.baseOffset, isTargetPlatformMobile ? 8 : 9);
-
-      await tester.tapAt(pPos);
+      expect(
+        controller.selection,
+        const TextSelection.collapsed(offset: 8, affinity: TextAffinity.downstream),
+      );
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pumpAndSettle();
 
       // Second tap selects the word around the cursor.
@@ -1897,7 +1787,8 @@ void main() {
 
       // Selected text shows 3 toolbar buttons.
       expect(find.byType(CupertinoButton), isContextMenuProvidedByPlatform ? findsNothing : findsNWidgets(3));
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
+    },
+  );
 
   testWidgets(
     'double tap hold selects word',
@@ -1915,12 +1806,12 @@ void main() {
         ),
       );
 
-      final Offset textFieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
-      await tester.tapAt(textFieldStart + const Offset(150.0, 5.0));
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pump(const Duration(milliseconds: 50));
       final TestGesture gesture =
-         await tester.startGesture(textFieldStart + const Offset(150.0, 5.0));
+         await tester.startGesture(textfieldStart + const Offset(150.0, 5.0));
       // Hold the press.
       await tester.pumpAndSettle();
 
@@ -1950,9 +1841,6 @@ void main() {
       final TextEditingController controller = TextEditingController(
         text: 'Atwater Peel Sherbrooke Bonaventure',
       );
-      // On iOS/iPadOS, during a tap we select the edge of the word closest to the tap.
-      // On macOS, we select the precise position of the tap.
-      final bool isTargetPlatformMobile = defaultTargetPlatform == TargetPlatform.iOS;
       await tester.pumpWidget(
         CupertinoApp(
           home: Center(
@@ -1963,31 +1851,34 @@ void main() {
         ),
       );
 
-      final Offset pPos = textOffsetToPosition(tester, 9); // Index of 'P|eel'.
-      final Offset ePos = textOffsetToPosition(tester, 6); // Index of 'Atwate|r'
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
-      await tester.tapAt(pPos);
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pump(const Duration(milliseconds: 50));
       // First tap moved the cursor.
-      expect(controller.selection.isCollapsed, isTrue);
-      expect(controller.selection.baseOffset, isTargetPlatformMobile ? 8 : 9);
-
-      await tester.tapAt(pPos);
+      expect(
+        controller.selection,
+        const TextSelection.collapsed(offset: 8, affinity: TextAffinity.downstream),
+      );
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pump(const Duration(milliseconds: 500));
 
-      await tester.tapAt(ePos);
+      await tester.tapAt(textfieldStart + const Offset(100.0, 5.0));
       await tester.pump();
 
       // Plain collapsed selection at the edge of first word. In iOS 12, the
       // first tap after a double tap ends up putting the cursor at where
       // you tapped instead of the edge like every other single tap. This is
       // likely a bug in iOS 12 and not present in other versions.
-      expect(controller.selection.isCollapsed, isTrue);
-      expect(controller.selection.baseOffset, isTargetPlatformMobile ? 7 : 6);
+      expect(
+        controller.selection,
+        const TextSelection.collapsed(offset: 7, affinity: TextAffinity.upstream),
+      );
 
       // No toolbar.
       expect(find.byType(CupertinoButton), findsNothing);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
+    },
+  );
 
   testWidgets('double tapping a space selects the previous word on iOS', (WidgetTester tester) async {
     final TextEditingController controller = TextEditingController(
@@ -2133,6 +2024,7 @@ void main() {
       pointer: 7,
       kind: PointerDeviceKind.mouse,
     );
+    addTearDown(gesture.removePointer);
     await tester.pump();
     await gesture.up();
     expect(controller.value.selection, isNotNull);
@@ -2194,12 +2086,12 @@ void main() {
         ),
       );
 
-      final Offset textFieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
-      await tester.tapAt(textFieldStart + const Offset(150.0, 5.0));
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pump(const Duration(milliseconds: 50));
       final TestGesture gesture =
-         await tester.startGesture(textFieldStart + const Offset(150.0, 5.0));
+         await tester.startGesture(textfieldStart + const Offset(150.0, 5.0));
       // Hold the press.
       await tester.pump(const Duration(milliseconds: 500));
 
@@ -2219,54 +2111,6 @@ void main() {
       expect(
         controller.selection,
         const TextSelection(baseOffset: 35, extentOffset: 35),
-      );
-      expect(find.byType(CupertinoButton), findsNWidgets(0));
-    },
-  );
-
-  testWidgets(
-    'A read-only obscured CupertinoTextField is not selectable',
-        (WidgetTester tester) async {
-      final TextEditingController controller = TextEditingController(
-        text: 'Atwater Peel Sherbrooke Bonaventure',
-      );
-      await tester.pumpWidget(
-        CupertinoApp(
-          home: Center(
-            child: CupertinoTextField(
-              controller: controller,
-              obscureText: true,
-              readOnly: true,
-            ),
-          ),
-        ),
-      );
-
-      final Offset textFieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
-
-      await tester.tapAt(textFieldStart + const Offset(150.0, 5.0));
-      await tester.pump(const Duration(milliseconds: 50));
-      final TestGesture gesture =
-      await tester.startGesture(textFieldStart + const Offset(150.0, 5.0));
-      // Hold the press.
-      await tester.pump(const Duration(milliseconds: 500));
-
-      // Nothing is selected despite the double tap long press gesture.
-      expect(
-        controller.selection,
-        const TextSelection(baseOffset: 35, extentOffset: 35),
-      );
-
-      // The selection menu is not present.
-      expect(find.byType(CupertinoButton), findsNWidgets(0));
-
-      await gesture.up();
-      await tester.pump();
-
-      // Still nothing selected and no selection menu.
-      expect(
-        controller.selection,
-        const TextSelection.collapsed(offset: 35),
       );
       expect(find.byType(CupertinoButton), findsNWidgets(0));
     },
@@ -2289,12 +2133,12 @@ void main() {
         ),
       );
 
-      final Offset textFieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
-      await tester.tapAt(textFieldStart + const Offset(150.0, 5.0));
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pump(const Duration(milliseconds: 50));
       final TestGesture gesture =
-         await tester.startGesture(textFieldStart + const Offset(150.0, 5.0));
+         await tester.startGesture(textfieldStart + const Offset(150.0, 5.0));
       // Hold the press.
       await tester.pumpAndSettle();
 
@@ -2335,11 +2179,11 @@ void main() {
       ),
     );
 
-    final Offset textFieldStart = tester.getCenter(find.byType(CupertinoTextField));
+    final Offset textfieldStart = tester.getCenter(find.byType(CupertinoTextField));
 
-    await tester.tapAt(textFieldStart + const Offset(150.0, 5.0));
+    await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
     await tester.pump(const Duration(milliseconds: 50));
-    await tester.longPressAt(textFieldStart + const Offset(150.0, 5.0));
+    await tester.longPressAt(textfieldStart + const Offset(150.0, 5.0));
     await tester.pump();
 
     // Should only have paste option when whole obscure text is selected.
@@ -2349,11 +2193,11 @@ void main() {
     expect(find.text('Select All'), findsNothing);
 
     // Tap to cancel selection.
-    final Offset textFieldEnd = tester.getTopRight(find.byType(CupertinoTextField));
-    await tester.tapAt(textFieldEnd + const Offset(-10.0, 5.0));
+    final Offset textfieldEnd = tester.getTopRight(find.byType(CupertinoTextField));
+    await tester.tapAt(textfieldEnd + const Offset(-10.0, 5.0));
     await tester.pump(const Duration(milliseconds: 50));
     // Long tap at the end.
-    await tester.longPressAt(textFieldEnd + const Offset(-10.0, 5.0));
+    await tester.longPressAt(textfieldEnd + const Offset(-10.0, 5.0));
     await tester.pump();
 
     // Should have paste and select all options when collapse.
@@ -2379,9 +2223,9 @@ void main() {
         ),
       );
 
-      final Offset textFieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
-      await tester.longPressAt(textFieldStart + const Offset(50.0, 5.0));
+      await tester.longPressAt(textfieldStart + const Offset(50.0, 5.0));
       await tester.pumpAndSettle();
 
       // Collapsed cursor for iOS long press.
@@ -2401,9 +2245,6 @@ void main() {
       final TextEditingController controller = TextEditingController(
         text: 'Atwater Peel Sherbrooke Bonaventure',
       );
-      // On iOS/iPadOS, during a tap we select the edge of the word closest to the tap.
-      // On macOS, we select the precise position of the tap.
-      final bool isTargetPlatformMobile = defaultTargetPlatform == TargetPlatform.iOS;
       await tester.pumpWidget(
         CupertinoApp(
           home: Center(
@@ -2414,22 +2255,25 @@ void main() {
         ),
       );
 
-      final Offset ePos = textOffsetToPosition(tester, 6); // Index of 'Atwate|r'
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
-      await tester.longPressAt(ePos);
+      await tester.longPressAt(textfieldStart + const Offset(50.0, 5.0));
       await tester.pump(const Duration(milliseconds: 50));
 
-      await tester.tapAt(ePos);
+      await tester.tapAt(textfieldStart + const Offset(50.0, 5.0));
       await tester.pump();
 
       // We ended up moving the cursor to the edge of the same word and dismissed
       // the toolbar.
-      expect(controller.selection.isCollapsed, isTrue);
-      expect(controller.selection.baseOffset, isTargetPlatformMobile ? 7 : 6);
+      expect(
+        controller.selection,
+        const TextSelection.collapsed(offset: 7, affinity: TextAffinity.upstream),
+      );
 
       // The toolbar from the long press is now dismissed by the second tap.
       expect(find.byType(CupertinoButton), findsNothing);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
+    },
+  );
 
   testWidgets(
     'long press drag moves the cursor under the drag and shows toolbar on lift',
@@ -2447,10 +2291,10 @@ void main() {
         ),
       );
 
-      final Offset textFieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
       final TestGesture gesture =
-          await tester.startGesture(textFieldStart + const Offset(50.0, 5.0));
+          await tester.startGesture(textfieldStart + const Offset(50.0, 5.0));
       await tester.pump(const Duration(milliseconds: 500));
 
       // Long press on iOS shows collapsed selection cursor.
@@ -2503,13 +2347,14 @@ void main() {
         home: Center(
           child: CupertinoTextField(
             controller: controller,
+            maxLines: 1,
           ),
         ),
       ),
     );
 
     final RenderEditable renderEditable = tester.renderObject<RenderEditable>(
-      find.byElementPredicate((Element element) => element.renderObject is RenderEditable).last,
+      find.byElementPredicate((Element element) => element.renderObject is RenderEditable),
     );
 
     List<TextSelectionPoint> lastCharEndpoint = renderEditable.getEndpointsForSelection(
@@ -2521,10 +2366,10 @@ void main() {
     // the right side of the screen.
     expect(lastCharEndpoint[0].point.dx, moreOrLessEquals(1094.73, epsilon: 0.25));
 
-    final Offset textFieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
+    final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
     final TestGesture gesture =
-        await tester.startGesture(textFieldStart + const Offset(300, 5));
+        await tester.startGesture(textfieldStart + const Offset(300, 5));
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(
@@ -2580,7 +2425,7 @@ void main() {
     expect(firstCharEndpoint.length, 1);
     // The first character is now offscreen to the left.
     expect(firstCharEndpoint[0].point.dx, moreOrLessEquals(-308.20, epsilon: 0.25));
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
+  });
 
   testWidgets(
     'long tap after a double tap select is not affected',
@@ -2588,9 +2433,6 @@ void main() {
       final TextEditingController controller = TextEditingController(
         text: 'Atwater Peel Sherbrooke Bonaventure',
       );
-      // On iOS/iPadOS, during a tap we select the edge of the word closest to the tap.
-      // On macOS, we select the precise position of the tap.
-      final bool isTargetPlatformMobile = defaultTargetPlatform == TargetPlatform.iOS;
       await tester.pumpWidget(
         CupertinoApp(
           home: Center(
@@ -2601,29 +2443,31 @@ void main() {
         ),
       );
 
-      final Offset pPos = textOffsetToPosition(tester, 9); // Index of 'P|eel'
-      final Offset ePos = textOffsetToPosition(tester, 6); // Index of 'Atwate|r'
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
-      await tester.tapAt(pPos);
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pump(const Duration(milliseconds: 50));
       // First tap moved the cursor to the beginning of the second word.
-      expect(controller.selection.isCollapsed, isTrue);
-      expect(controller.selection.baseOffset, isTargetPlatformMobile ? 8 : 9);
-      await tester.tapAt(pPos);
+      expect(
+        controller.selection,
+        const TextSelection.collapsed(offset: 8, affinity: TextAffinity.downstream),
+      );
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pump(const Duration(milliseconds: 500));
 
-      await tester.longPressAt(ePos);
+      await tester.longPressAt(textfieldStart + const Offset(100.0, 5.0));
       await tester.pumpAndSettle();
 
       // Plain collapsed selection at the exact tap position.
       expect(
         controller.selection,
-        const TextSelection.collapsed(offset: 6),
+        const TextSelection.collapsed(offset: 6, affinity: TextAffinity.upstream),
       );
 
       // Long press toolbar.
       expect(find.byType(CupertinoButton), isContextMenuProvidedByPlatform ? findsNothing : findsNWidgets(2));
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
+    },
+  );
 
   testWidgets(
     'double tap after a long tap is not affected',
@@ -2631,9 +2475,6 @@ void main() {
       final TextEditingController controller = TextEditingController(
         text: 'Atwater Peel Sherbrooke Bonaventure',
       );
-      // On iOS/iPadOS, during a tap we select the edge of the word closest to the tap.
-      // On macOS, we select the precise position of the tap.
-      final bool isTargetPlatformMobile = defaultTargetPlatform == TargetPlatform.iOS;
       await tester.pumpWidget(
         CupertinoApp(
           home: Center(
@@ -2644,18 +2485,19 @@ void main() {
         ),
       );
 
-      final Offset pPos = textOffsetToPosition(tester, 9); // Index of 'P|eel'
-      final Offset wPos = textOffsetToPosition(tester, 3); // Index of 'Atw|ater'
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
-      await tester.longPressAt(wPos);
+      await tester.longPressAt(textfieldStart + const Offset(50.0, 5.0));
       await tester.pump(const Duration(milliseconds: 50));
 
-      await tester.tapAt(pPos);
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pump(const Duration(milliseconds: 50));
       // First tap moved the cursor.
-      expect(controller.selection.isCollapsed, isTrue);
-      expect(controller.selection.baseOffset, isTargetPlatformMobile ? 8 : 9);
-      await tester.tapAt(pPos);
+      expect(
+        controller.selection,
+        const TextSelection.collapsed(offset: 8, affinity: TextAffinity.downstream),
+      );
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pumpAndSettle();
 
       // Double tap selection.
@@ -2665,7 +2507,8 @@ void main() {
       );
       // Shows toolbar.
       expect(find.byType(CupertinoButton), isContextMenuProvidedByPlatform ? findsNothing : findsNWidgets(3));
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
+    },
+  );
 
   testWidgets(
     'double tap chains work',
@@ -2683,15 +2526,15 @@ void main() {
         ),
       );
 
-      final Offset textFieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
+      final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
-      await tester.tapAt(textFieldStart + const Offset(50.0, 5.0));
+      await tester.tapAt(textfieldStart + const Offset(50.0, 5.0));
       await tester.pump(const Duration(milliseconds: 50));
       expect(
         controller.selection,
         const TextSelection.collapsed(offset: 7, affinity: TextAffinity.upstream),
       );
-      await tester.tapAt(textFieldStart + const Offset(50.0, 5.0));
+      await tester.tapAt(textfieldStart + const Offset(50.0, 5.0));
       await tester.pumpAndSettle();
       expect(
         controller.selection,
@@ -2700,14 +2543,14 @@ void main() {
       expect(find.byType(CupertinoButton), isContextMenuProvidedByPlatform ? findsNothing : findsNWidgets(3));
 
       // Double tap selecting the same word somewhere else is fine.
-      await tester.tapAt(textFieldStart + const Offset(100.0, 5.0));
+      await tester.tapAt(textfieldStart + const Offset(100.0, 5.0));
       await tester.pump(const Duration(milliseconds: 50));
       // First tap moved the cursor.
       expect(
         controller.selection,
         const TextSelection.collapsed(offset: 7, affinity: TextAffinity.upstream),
       );
-      await tester.tapAt(textFieldStart + const Offset(100.0, 5.0));
+      await tester.tapAt(textfieldStart + const Offset(100.0, 5.0));
       await tester.pumpAndSettle();
       expect(
         controller.selection,
@@ -2715,21 +2558,22 @@ void main() {
       );
       expect(find.byType(CupertinoButton), isContextMenuProvidedByPlatform ? findsNothing : findsNWidgets(3));
 
-      await tester.tapAt(textFieldStart + const Offset(150.0, 5.0));
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pump(const Duration(milliseconds: 50));
       // First tap moved the cursor.
       expect(
         controller.selection,
-        const TextSelection.collapsed(offset: 8),
+        const TextSelection.collapsed(offset: 8, affinity: TextAffinity.downstream),
       );
-      await tester.tapAt(textFieldStart + const Offset(150.0, 5.0));
+      await tester.tapAt(textfieldStart + const Offset(150.0, 5.0));
       await tester.pumpAndSettle();
       expect(
         controller.selection,
         const TextSelection(baseOffset: 8, extentOffset: 12),
       );
       expect(find.byType(CupertinoButton), isContextMenuProvidedByPlatform ? findsNothing : findsNWidgets(3));
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS }));
+    },
+  );
 
   testWidgets('force press selects word', (WidgetTester tester) async {
     final TextEditingController controller = TextEditingController(
@@ -2745,15 +2589,15 @@ void main() {
       ),
     );
 
-    final Offset textFieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
+    final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
     final int pointerValue = tester.nextPointer;
     final TestGesture gesture = await tester.createGesture();
     await gesture.downWithCustomEvent(
-      textFieldStart + const Offset(150.0, 5.0),
+      textfieldStart + const Offset(150.0, 5.0),
       PointerDownEvent(
         pointer: pointerValue,
-        position: textFieldStart + const Offset(150.0, 5.0),
+        position: textfieldStart + const Offset(150.0, 5.0),
         pressure: 3.0,
         pressureMax: 6.0,
         pressureMin: 0.0,
@@ -2775,9 +2619,6 @@ void main() {
     final TextEditingController controller = TextEditingController(
       text: 'Atwater Peel Sherbrooke Bonaventure',
     );
-    // On iOS/iPadOS, during a tap we select the edge of the word closest to the tap.
-    // On macOS, we select the precise position of the tap.
-    final bool isTargetPlatformMobile = defaultTargetPlatform == TargetPlatform.iOS;
     await tester.pumpWidget(
       CupertinoApp(
         home: Center(
@@ -2788,15 +2629,15 @@ void main() {
       ),
     );
 
-    final Offset pPos = textOffsetToPosition(tester, 9); // Index of 'P|eel'
+    final Offset textfieldStart = tester.getTopLeft(find.byType(CupertinoTextField));
 
     final int pointerValue = tester.nextPointer;
     final TestGesture gesture = await tester.createGesture();
     await gesture.downWithCustomEvent(
-      pPos,
+      textfieldStart + const Offset(150.0, 5.0),
       PointerDownEvent(
         pointer: pointerValue,
-        position: pPos,
+        position: textfieldStart + const Offset(150.0, 5.0),
         // iPhone 6 and below report 0 across the board.
         pressure: 0,
         pressureMax: 0,
@@ -2804,23 +2645,21 @@ void main() {
       ),
     );
     await gesture.up();
-    // Fall back to a single tap which selects the edge of the word on iOS, and
-    // a precise position on macOS.
-    expect(controller.selection.isCollapsed, isTrue);
-    expect(controller.selection.baseOffset, isTargetPlatformMobile ? 8 : 9);
+    // Fall back to a single tap which selects the edge of the word.
+    expect(
+      controller.selection,
+      const TextSelection.collapsed(offset: 8),
+    );
 
     await tester.pump();
     // Falling back to a single tap doesn't trigger a toolbar.
     expect(find.byType(CupertinoButton), findsNothing);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
+  });
 
   testWidgets('Cannot drag one handle past the other', (WidgetTester tester) async {
     final TextEditingController controller = TextEditingController(
       text: 'abc def ghi',
     );
-    // On iOS/iPadOS, during a tap we select the edge of the word closest to the tap.
-    // On macOS, we select the precise position of the tap.
-    final bool isTargetPlatformMobile = defaultTargetPlatform == TargetPlatform.iOS;
 
     await tester.pumpWidget(
       CupertinoApp(
@@ -2842,7 +2681,7 @@ void main() {
     await tester.tapAt(ePos, pointer: 7);
     await tester.pump(const Duration(milliseconds: 50));
     expect(controller.selection.isCollapsed, isTrue);
-    expect(controller.selection.baseOffset, isTargetPlatformMobile ? 4 : 5);
+    expect(controller.selection.baseOffset, 4);
     await tester.tapAt(ePos, pointer: 7);
     await tester.pumpAndSettle();
     expect(controller.selection.baseOffset, 4);
@@ -2877,104 +2716,7 @@ void main() {
     // The selection doesn't move beyond the left handle. There's always at
     // least 1 char selected.
     expect(controller.selection.extentOffset, 5);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS, TargetPlatform.macOS }));
-
-  testWidgets('Selection updates on tap down (Desktop platforms)', (WidgetTester tester) async {
-    final TextEditingController controller = TextEditingController();
-
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: CupertinoTextField(controller: controller),
-        ),
-      ),
-    );
-
-    const String testValue = 'abc def ghi';
-    await tester.enterText(find.byType(CupertinoTextField), testValue);
-    // Skip past scrolling animation.
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-
-    final Offset ePos = textOffsetToPosition(tester, 5);
-    final Offset gPos = textOffsetToPosition(tester, 8);
-
-    final TestGesture gesture = await tester.startGesture(ePos, kind: PointerDeviceKind.mouse);
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 5);
-    expect(controller.selection.extentOffset, 5);
-
-    await gesture.up();
-    await tester.pumpAndSettle(kDoubleTapTimeout);
-
-    await gesture.down(gPos);
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 8);
-
-    // This should do nothing. The selection is set on tap down on desktop platforms.
-    await gesture.up();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 8);
-  },
-      variant: TargetPlatformVariant.desktop(),
-  );
-
-  testWidgets('Selection updates on tap up (Mobile platforms)', (WidgetTester tester) async {
-    final TextEditingController controller = TextEditingController();
-    final bool isTargetPlatformApple = defaultTargetPlatform == TargetPlatform.iOS;
-
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: CupertinoTextField(controller: controller),
-        ),
-      ),
-    );
-
-    const String testValue = 'abc def ghi';
-    await tester.enterText(find.byType(CupertinoTextField), testValue);
-    // Skip past scrolling animation.
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-
-    final Offset ePos = textOffsetToPosition(tester, 5);
-    final Offset gPos = textOffsetToPosition(tester, 8);
-
-    final TestGesture gesture = await tester.startGesture(ePos, kind: PointerDeviceKind.mouse);
-    await gesture.up();
-    await tester.pumpAndSettle(kDoubleTapTimeout);
-
-    await gesture.down(gPos);
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 5);
-    expect(controller.selection.extentOffset, 5);
-
-    await gesture.up();
-    await tester.pumpAndSettle(kDoubleTapTimeout);
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 8);
-
-    final TestGesture touchGesture = await tester.startGesture(ePos);
-    await touchGesture.up();
-    await tester.pumpAndSettle(kDoubleTapTimeout);
-    // On iOS, a tap to select, selects the word edge instead of the exact tap position.
-    expect(controller.selection.baseOffset, isTargetPlatformApple ? 4 : 5);
-    expect(controller.selection.extentOffset, isTargetPlatformApple ? 4 : 5);
-
-    // Selection should stay the same since it is set on tap up for mobile platforms.
-    await touchGesture.down(gPos);
-    await tester.pump();
-    expect(controller.selection.baseOffset, isTargetPlatformApple ? 4 : 5);
-    expect(controller.selection.extentOffset, isTargetPlatformApple ? 4 : 5);
-
-    await touchGesture.up();
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 8);
-  },
-      variant: TargetPlatformVariant.mobile(),
-  );
+  });
 
   testWidgets('Can select text by dragging with a mouse', (WidgetTester tester) async {
     final TextEditingController controller = TextEditingController();
@@ -3004,6 +2746,7 @@ void main() {
     final Offset gPos = textOffsetToPosition(tester, testValue.indexOf('g'));
 
     final TestGesture gesture = await tester.startGesture(ePos, kind: PointerDeviceKind.mouse);
+    addTearDown(gesture.removePointer);
     await tester.pump();
     await gesture.moveTo(gPos);
     await tester.pump();
@@ -3044,6 +2787,7 @@ void main() {
 
     // Drag from 'c' to 'g'.
     final TestGesture gesture = await tester.startGesture(cPos, kind: PointerDeviceKind.mouse);
+    addTearDown(gesture.removePointer);
     await tester.pump();
     await gesture.moveTo(gPos);
     await tester.pumpAndSettle();
@@ -3194,6 +2938,7 @@ void main() {
         textFieldPos,
         kind: PointerDeviceKind.mouse,
       );
+      addTearDown(gesture.removePointer);
       await tester.pump(const Duration(seconds: 2));
       await gesture.up();
       await tester.pump();
@@ -3227,6 +2972,7 @@ void main() {
         textEndPos,
         kind: PointerDeviceKind.mouse,
       );
+      addTearDown(gesture.removePointer);
       await tester.pump(const Duration(milliseconds: 50));
       await gesture.up();
       await tester.pump();
@@ -3409,7 +3155,7 @@ void main() {
 
       expect(
         tester.renderObject<RenderEditable>(
-          find.byElementPredicate((Element element) => element.renderObject is RenderEditable).last,
+          find.byElementPredicate((Element element) => element.renderObject is RenderEditable),
         ).text!.style!.color,
         isSameColorAs(CupertinoColors.white),
       );
@@ -3491,7 +3237,6 @@ void main() {
     final List<MethodCall> log = <MethodCall>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.textInput, (MethodCall methodCall) async {
       log.add(methodCall);
-      return null;
     });
 
     await tester.pumpWidget(
@@ -3515,7 +3260,6 @@ void main() {
     final List<MethodCall> log = <MethodCall>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.textInput, (MethodCall methodCall) async {
       log.add(methodCall);
-      return null;
     });
 
     await tester.pumpWidget(
@@ -3644,7 +3388,7 @@ void main() {
 
     expect(left.opacity.value, equals(1.0));
     expect(right.opacity.value, equals(1.0));
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS, TargetPlatform.macOS }));
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
 
   testWidgets('when CupertinoTextField would be blocked by keyboard, it is shown with enough space for the selection handle', (WidgetTester tester) async {
     final ScrollController scrollController = ScrollController();
@@ -3839,6 +3583,7 @@ void main() {
           debugShowCheckedModeBanner: false,
           home: CupertinoPageScaffold(
             child: Align(
+              alignment: Alignment.center,
               child: SizedBox(
                 width: 200,
                 height: 200,
@@ -3904,6 +3649,7 @@ void main() {
           debugShowCheckedModeBanner: false,
           home: CupertinoPageScaffold(
             child: Align(
+              alignment: Alignment.center,
               child: SizedBox(
                 width: 200,
                 height: 200,
@@ -3974,6 +3720,7 @@ void main() {
           debugShowCheckedModeBanner: false,
           home: CupertinoPageScaffold(
             child: Align(
+              alignment: Alignment.center,
               child: SizedBox(
                 width: 200,
                 height: 200,
@@ -4092,6 +3839,7 @@ void main() {
             debugShowCheckedModeBanner: false,
             home: CupertinoPageScaffold(
               child: Align(
+                alignment: Alignment.center,
                 child: SizedBox(
                   width: size.width,
                   height: size.height,
@@ -4138,6 +3886,7 @@ void main() {
             debugShowCheckedModeBanner: false,
             home: CupertinoPageScaffold(
               child: Align(
+                alignment: Alignment.center,
                 child: SizedBox(
                   width: size.width,
                   height: size.height,
@@ -4185,6 +3934,7 @@ void main() {
             debugShowCheckedModeBanner: false,
             home: CupertinoPageScaffold(
               child: Align(
+                alignment: Alignment.center,
                 child: SizedBox(
                   width: size.width,
                   height: size.height,
@@ -4232,6 +3982,7 @@ void main() {
             debugShowCheckedModeBanner: false,
             home: CupertinoPageScaffold(
               child: Align(
+                alignment: Alignment.center,
                 child: SizedBox(
                   width: size.width,
                   height: size.height,
@@ -4281,6 +4032,7 @@ void main() {
             debugShowCheckedModeBanner: false,
             home: CupertinoPageScaffold(
               child: Align(
+                alignment: Alignment.center,
                 child: SizedBox(
                   width: size.width,
                   height: size.height,
@@ -4332,6 +4084,7 @@ void main() {
             debugShowCheckedModeBanner: false,
             home: CupertinoPageScaffold(
               child: Align(
+                alignment: Alignment.center,
                 child: SizedBox(
                   width: size.width,
                   height: size.height,
@@ -4385,6 +4138,7 @@ void main() {
             debugShowCheckedModeBanner: false,
             home: CupertinoPageScaffold(
               child: Align(
+                alignment: Alignment.center,
                 child: SizedBox(
                   width: size.width,
                   height: size.height,
@@ -4438,6 +4192,7 @@ void main() {
             debugShowCheckedModeBanner: false,
             home: CupertinoPageScaffold(
               child: Align(
+                alignment: Alignment.center,
                 child: SizedBox(
                   width: size.width,
                   height: size.height,
@@ -4604,7 +4359,6 @@ void main() {
           actions: <Type, Action<Intent>>{
             ScrollIntent: CallbackAction<ScrollIntent>(onInvoke: (Intent intent) {
               scrollInvoked = true;
-              return null;
             }),
           },
           child: ListView(
@@ -4680,7 +4434,9 @@ void main() {
         ).first,
       ),
       matchesSemantics(
+        isEnabled: false,
         hasEnabledState: true,
+        hasTapAction: false,
       ),
     );
   });
@@ -4718,22 +4474,19 @@ void main() {
       ),
     );
 
-    final Offset textFieldStart = tester.getTopLeft(find.byKey(const Key('field0')));
+    final Offset textfieldStart = tester.getTopLeft(find.byKey(const Key('field0')));
 
-    await tester.longPressAt(textFieldStart + const Offset(50.0, 2.0));
+    await tester.longPressAt(textfieldStart + const Offset(50.0, 2.0));
     await tester.pump(const Duration(milliseconds: 150));
     // Tap the Select All button.
-    await tester.tapAt(textFieldStart + const Offset(20.0, 100.0));
+    await tester.tapAt(textfieldStart + const Offset(20.0, 100.0));
     await tester.pump(const Duration(milliseconds: 300));
 
     await expectLater(
       find.byType(CupertinoApp),
       matchesGoldenFile('text_field_golden.TextSelectionStyle.1.png'),
     );
-  },
-    variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS }),
-    skip: kIsWeb, // [intended] the web has its own Select All.
-  );
+  });
 
   testWidgets('text selection style 2', (WidgetTester tester) async {
     final TextEditingController controller = TextEditingController(
@@ -4757,6 +4510,7 @@ void main() {
                     style: const TextStyle(height: 4, color: ui.Color.fromARGB(100, 0, 0, 0)),
                     toolbarOptions: const ToolbarOptions(selectAll: true),
                     selectionHeightStyle: ui.BoxHeightStyle.includeLineSpacingBottom,
+                    selectionWidthStyle: ui.BoxWidthStyle.tight,
                     maxLines: 3,
                   ),
                 ],
@@ -4767,22 +4521,19 @@ void main() {
       ),
     );
 
-    final Offset textFieldStart = tester.getTopLeft(find.byKey(const Key('field0')));
+    final Offset textfieldStart = tester.getTopLeft(find.byKey(const Key('field0')));
 
-    await tester.longPressAt(textFieldStart + const Offset(50.0, 2.0));
+    await tester.longPressAt(textfieldStart + const Offset(50.0, 2.0));
     await tester.pump(const Duration(milliseconds: 150));
     // Tap the Select All button.
-    await tester.tapAt(textFieldStart + const Offset(20.0, 100.0));
+    await tester.tapAt(textfieldStart + const Offset(20.0, 100.0));
     await tester.pump(const Duration(milliseconds: 300));
 
     await expectLater(
       find.byType(CupertinoApp),
       matchesGoldenFile('text_field_golden.TextSelectionStyle.2.png'),
     );
-  },
-    variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS }),
-    skip: kIsWeb, // [intended] the web has its own Select All.
-  );
+  });
 
   testWidgets('textSelectionControls is passed to EditableText', (WidgetTester tester) async {
     final MockTextSelectionControls selectionControl = MockTextSelectionControls();
@@ -5036,22 +4787,6 @@ void main() {
     },
   );
 
-  testWidgets('autofill info has placeholder text', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const CupertinoApp(
-        home: CupertinoTextField(
-          placeholder: 'placeholder text',
-        ),
-      ),
-    );
-    await tester.tap(find.byType(CupertinoTextField));
-
-    expect(
-      tester.testTextInput.setClientArgs?['autofill'],
-      containsPair('hintText', 'placeholder text'),
-    );
-  });
-
   testWidgets('textDirection is passed to EditableText', (WidgetTester tester) async {
     await tester.pumpWidget(
       const CupertinoApp(
@@ -5078,839 +4813,5 @@ void main() {
 
     final EditableText rtlWidget = tester.widget(find.byType(EditableText));
     expect(rtlWidget.textDirection, TextDirection.rtl);
-  });
-
-  testWidgets('clipBehavior has expected defaults', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const CupertinoApp(
-        home: CupertinoTextField(
-        ),
-      ),
-    );
-
-    final CupertinoTextField textField = tester.firstWidget(find.byType(CupertinoTextField));
-    expect(textField.clipBehavior, Clip.hardEdge);
-  });
-
-  testWidgets('Overflow clipBehavior none golden', (WidgetTester tester) async {
-    final Widget widget = CupertinoApp(
-      home: RepaintBoundary(
-        key: const ValueKey<int>(1),
-        child: SizedBox(
-          height: 200.0,
-          width: 200.0,
-          child: Center(
-            child: CupertinoTextField(
-              controller: OverflowWidgetTextEditingController(),
-              clipBehavior: Clip.none,
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpWidget(widget);
-
-    final CupertinoTextField textField = tester.firstWidget(find.byType(CupertinoTextField));
-    expect(textField.clipBehavior, Clip.none);
-
-    final EditableText editableText = tester.firstWidget(find.byType(EditableText));
-    expect(editableText.clipBehavior, Clip.none);
-
-    await expectLater(
-      find.byKey(const ValueKey<int>(1)),
-      matchesGoldenFile('overflow_clipbehavior_none.cupertino.0.png'),
-    );
-  });
-
-  testWidgets('can shift + tap to select with a keyboard (Apple platforms)', (WidgetTester tester) async {
-    final TextEditingController controller = TextEditingController(
-      text: 'Atwater Peel Sherbrooke Bonaventure',
-    );
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: CupertinoTextField(
-            controller: controller,
-          ),
-        ),
-      ),
-    );
-
-    await tester.tapAt(textOffsetToPosition(tester, 13));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 13);
-    expect(controller.selection.extentOffset, 13);
-
-    await tester.pump(kDoubleTapTimeout);
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.shift);
-    await tester.tapAt(textOffsetToPosition(tester, 20));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 13);
-    expect(controller.selection.extentOffset, 20);
-
-    await tester.pump(kDoubleTapTimeout);
-    await tester.tapAt(textOffsetToPosition(tester, 23));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 13);
-    expect(controller.selection.extentOffset, 23);
-
-    await tester.pump(kDoubleTapTimeout);
-    await tester.tapAt(textOffsetToPosition(tester, 4));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 4);
-
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.shift);
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 4);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
-
-  testWidgets('can shift + tap to select with a keyboard (non-Apple platforms)', (WidgetTester tester) async {
-    final TextEditingController controller = TextEditingController(
-      text: 'Atwater Peel Sherbrooke Bonaventure',
-    );
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: CupertinoTextField(
-            controller: controller,
-          ),
-        ),
-      ),
-    );
-
-    await tester.tapAt(textOffsetToPosition(tester, 13));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 13);
-    expect(controller.selection.extentOffset, 13);
-
-    await tester.pump(kDoubleTapTimeout);
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.shift);
-    await tester.tapAt(textOffsetToPosition(tester, 20));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 13);
-    expect(controller.selection.extentOffset, 20);
-
-    await tester.pump(kDoubleTapTimeout);
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.shift);
-    await tester.tapAt(textOffsetToPosition(tester, 23));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 13);
-    expect(controller.selection.extentOffset, 23);
-
-    await tester.pump(kDoubleTapTimeout);
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.shift);
-    await tester.tapAt(textOffsetToPosition(tester, 4));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 13);
-    expect(controller.selection.extentOffset, 4);
-
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.shift);
-    expect(controller.selection.baseOffset, 13);
-    expect(controller.selection.extentOffset, 4);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.android, TargetPlatform.fuchsia, TargetPlatform.linux, TargetPlatform.windows }));
-
-  testWidgets('shift tapping an unfocused field', (WidgetTester tester) async {
-    final TextEditingController controller = TextEditingController(
-      text: 'Atwater Peel Sherbrooke Bonaventure',
-    );
-    final FocusNode focusNode = FocusNode();
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: CupertinoTextField(
-            controller: controller,
-            focusNode: focusNode,
-          ),
-        ),
-      ),
-    );
-
-    expect(focusNode.hasFocus, isFalse);
-
-    // Put the cursor at the end of the field.
-    await tester.tapAt(textOffsetToPosition(tester, controller.text.length));
-    await tester.pump(kDoubleTapTimeout);
-    await tester.pumpAndSettle();
-    expect(focusNode.hasFocus, isTrue);
-    expect(controller.selection.baseOffset, 35);
-    expect(controller.selection.extentOffset, 35);
-
-    // Unfocus the field, but the selection remains.
-    focusNode.unfocus();
-    await tester.pumpAndSettle();
-    expect(focusNode.hasFocus, isFalse);
-    expect(controller.selection.baseOffset, 35);
-    expect(controller.selection.extentOffset, 35);
-
-    // Shift tap in the middle of the field.
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.shift);
-    await tester.tapAt(textOffsetToPosition(tester, 20));
-    await tester.pumpAndSettle();
-    expect(focusNode.hasFocus, isTrue);
-    switch (defaultTargetPlatform) {
-      // Apple platforms start the selection from 0.
-      case TargetPlatform.iOS:
-      case TargetPlatform.macOS:
-        expect(controller.selection.baseOffset, 0);
-        break;
-
-      // Other platforms start from the previous selection.
-      case TargetPlatform.android:
-      case TargetPlatform.fuchsia:
-      case TargetPlatform.linux:
-      case TargetPlatform.windows:
-        expect(controller.selection.baseOffset, 35);
-        break;
-    }
-    expect(controller.selection.extentOffset, 20);
-  }, variant: TargetPlatformVariant.all());
-
-  testWidgets('can shift + tap + drag to select with a keyboard (Apple platforms)', (WidgetTester tester) async {
-    final TextEditingController controller = TextEditingController(
-      text: 'Atwater Peel Sherbrooke Bonaventure',
-    );
-    final bool isTargetPlatformMobile = defaultTargetPlatform == TargetPlatform.iOS;
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: CupertinoTextField(
-            controller: controller,
-          ),
-        ),
-      ),
-    );
-
-    await tester.tapAt(textOffsetToPosition(tester, 8));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 8);
-
-    await tester.pump(kDoubleTapTimeout);
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.shift);
-    final TestGesture gesture =
-        await tester.startGesture(
-          textOffsetToPosition(tester, 23),
-          pointer: 7,
-          kind: PointerDeviceKind.mouse,
-        );
-    if (isTargetPlatformMobile) {
-      await gesture.up();
-    }
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 23);
-
-    // Expand the selection a bit.
-    if (isTargetPlatformMobile) {
-      await gesture.down(textOffsetToPosition(tester, 24));
-    }
-    await gesture.moveTo(textOffsetToPosition(tester, 28));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 28);
-
-    // Move back to the original selection.
-    await gesture.moveTo(textOffsetToPosition(tester, 23));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 23);
-
-    // Collapse the selection.
-    await gesture.moveTo(textOffsetToPosition(tester, 8));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 8);
-
-    // Invert the selection. The base jumps to the original extent.
-    await gesture.moveTo(textOffsetToPosition(tester, 7));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 7);
-
-    // Continuing to move in the inverted direction expands the selection.
-    await gesture.moveTo(textOffsetToPosition(tester, 4));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 4);
-
-    // Move back to the original base.
-    await gesture.moveTo(textOffsetToPosition(tester, 8));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 8);
-
-    // Continue to move past the original base, which will cause the selection
-    // to invert back to the original orientation.
-    await gesture.moveTo(textOffsetToPosition(tester, 9));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 9);
-
-    // Continuing to select in this direction selects just like it did
-    // originally.
-    await gesture.moveTo(textOffsetToPosition(tester, 24));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 24);
-
-    // Releasing the shift key has no effect; the selection continues as the
-    // mouse continues to move.
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.shift);
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 24);
-    await gesture.moveTo(textOffsetToPosition(tester, 26));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 26);
-
-    await gesture.up();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 26);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
-
-  testWidgets('can shift + tap + drag to select with a keyboard (non-Apple platforms)', (WidgetTester tester) async {
-    final TextEditingController controller = TextEditingController(
-      text: 'Atwater Peel Sherbrooke Bonaventure',
-    );
-    final bool isTargetPlatformMobile = defaultTargetPlatform == TargetPlatform.android
-        || defaultTargetPlatform == TargetPlatform.fuchsia;
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: CupertinoTextField(
-            controller: controller,
-          ),
-        ),
-      ),
-    );
-
-    await tester.tapAt(textOffsetToPosition(tester, 8));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 8);
-
-    await tester.pump(kDoubleTapTimeout);
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.shift);
-    final TestGesture gesture =
-        await tester.startGesture(
-          textOffsetToPosition(tester, 23),
-          pointer: 7,
-          kind: PointerDeviceKind.mouse,
-        );
-    if (isTargetPlatformMobile) {
-      await gesture.up();
-    }
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 23);
-
-    // Expand the selection a bit.
-    if (isTargetPlatformMobile) {
-      await gesture.down(textOffsetToPosition(tester, 24));
-    }
-    await gesture.moveTo(textOffsetToPosition(tester, 28));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 28);
-
-    // Move back to the original selection.
-    await gesture.moveTo(textOffsetToPosition(tester, 23));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 23);
-
-    // Collapse the selection.
-    await gesture.moveTo(textOffsetToPosition(tester, 8));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 8);
-
-    // Invert the selection. The original selection is not restored like on iOS
-    // and Mac.
-    await gesture.moveTo(textOffsetToPosition(tester, 7));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 7);
-
-    // Continuing to move in the inverted direction expands the selection.
-    await gesture.moveTo(textOffsetToPosition(tester, 4));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 4);
-
-    // Move back to the original base.
-    await gesture.moveTo(textOffsetToPosition(tester, 8));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 8);
-
-    // Continue to move past the original base.
-    await gesture.moveTo(textOffsetToPosition(tester, 9));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 9);
-
-    // Continuing to select in this direction selects just like it did
-    // originally.
-    await gesture.moveTo(textOffsetToPosition(tester, 24));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 24);
-
-    // Releasing the shift key has no effect; the selection continues as the
-    // mouse continues to move.
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.shift);
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 24);
-    await gesture.moveTo(textOffsetToPosition(tester, 26));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 26);
-
-    await gesture.up();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 26);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.linux,  TargetPlatform.android, TargetPlatform.fuchsia, TargetPlatform.windows }));
-
-  testWidgets('can shift + tap + drag to select with a keyboard, reversed (Apple platforms)', (WidgetTester tester) async {
-    final TextEditingController controller = TextEditingController(
-      text: 'Atwater Peel Sherbrooke Bonaventure',
-    );
-    final bool isTargetPlatformMobile = defaultTargetPlatform == TargetPlatform.iOS;
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: CupertinoTextField(
-            controller: controller,
-          ),
-        ),
-      ),
-    );
-
-    // Make a selection from right to left.
-    await tester.tapAt(textOffsetToPosition(tester, 23));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 23);
-    await tester.pump(kDoubleTapTimeout);
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.shift);
-    final TestGesture gesture =
-        await tester.startGesture(
-          textOffsetToPosition(tester, 8),
-          pointer: 7,
-          kind: PointerDeviceKind.mouse,
-        );
-    if (isTargetPlatformMobile) {
-      await gesture.up();
-    }
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 8);
-
-    // Expand the selection a bit.
-    if (isTargetPlatformMobile) {
-      await gesture.down(textOffsetToPosition(tester, 7));
-    }
-    await gesture.moveTo(textOffsetToPosition(tester, 5));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 5);
-
-    // Move back to the original selection.
-    await gesture.moveTo(textOffsetToPosition(tester, 8));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 8);
-
-    // Collapse the selection.
-    await gesture.moveTo(textOffsetToPosition(tester, 23));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 23);
-
-    // Invert the selection. The base jumps to the original extent.
-    await gesture.moveTo(textOffsetToPosition(tester, 24));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 24);
-
-    // Continuing to move in the inverted direction expands the selection.
-    await gesture.moveTo(textOffsetToPosition(tester, 27));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 27);
-
-    // Move back to the original base.
-    await gesture.moveTo(textOffsetToPosition(tester, 23));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 8);
-    expect(controller.selection.extentOffset, 23);
-
-    // Continue to move past the original base, which will cause the selection
-    // to invert back to the original orientation.
-    await gesture.moveTo(textOffsetToPosition(tester, 22));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 22);
-
-    // Continuing to select in this direction selects just like it did
-    // originally.
-    await gesture.moveTo(textOffsetToPosition(tester, 16));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 16);
-
-    // Releasing the shift key has no effect; the selection continues as the
-    // mouse continues to move.
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.shift);
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 16);
-    await gesture.moveTo(textOffsetToPosition(tester, 14));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 14);
-
-    await gesture.up();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 14);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
-
-  testWidgets('can shift + tap + drag to select with a keyboard, reversed (non-Apple platforms)', (WidgetTester tester) async {
-    final TextEditingController controller = TextEditingController(
-      text: 'Atwater Peel Sherbrooke Bonaventure',
-    );
-    final bool isTargetPlatformMobile = defaultTargetPlatform == TargetPlatform.android
-        || defaultTargetPlatform == TargetPlatform.fuchsia;
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: CupertinoTextField(
-            controller: controller,
-          ),
-        ),
-      ),
-    );
-
-    // Make a selection from right to left.
-    await tester.tapAt(textOffsetToPosition(tester, 23));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 23);
-    await tester.pump(kDoubleTapTimeout);
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.shift);
-    final TestGesture gesture =
-        await tester.startGesture(
-          textOffsetToPosition(tester, 8),
-          pointer: 7,
-          kind: PointerDeviceKind.mouse,
-        );
-    if (isTargetPlatformMobile) {
-      await gesture.up();
-    }
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 8);
-
-    // Expand the selection a bit.
-    if (isTargetPlatformMobile) {
-      await gesture.down(textOffsetToPosition(tester, 7));
-    }
-    await gesture.moveTo(textOffsetToPosition(tester, 5));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 5);
-
-    // Move back to the original selection.
-    await gesture.moveTo(textOffsetToPosition(tester, 8));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 8);
-
-    // Collapse the selection.
-    await gesture.moveTo(textOffsetToPosition(tester, 23));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 23);
-
-    // Invert the selection. The selection is not restored like it would be on
-    // iOS and Mac.
-    await gesture.moveTo(textOffsetToPosition(tester, 24));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 24);
-
-    // Continuing to move in the inverted direction expands the selection.
-    await gesture.moveTo(textOffsetToPosition(tester, 27));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 27);
-
-    // Move back to the original base.
-    await gesture.moveTo(textOffsetToPosition(tester, 23));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 23);
-
-    // Continue to move past the original base.
-    await gesture.moveTo(textOffsetToPosition(tester, 22));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 22);
-
-    // Continuing to select in this direction selects just like it did
-    // originally.
-    await gesture.moveTo(textOffsetToPosition(tester, 16));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 16);
-
-    // Releasing the shift key has no effect; the selection continues as the
-    // mouse continues to move.
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.shift);
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 16);
-    await gesture.moveTo(textOffsetToPosition(tester, 14));
-    await tester.pumpAndSettle();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 14);
-
-    await gesture.up();
-    expect(controller.selection.baseOffset, 23);
-    expect(controller.selection.extentOffset, 14);
-  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.linux,  TargetPlatform.android, TargetPlatform.fuchsia, TargetPlatform.windows }));
-
-  // Regression test for https://github.com/flutter/flutter/issues/101587.
-  testWidgets('Right clicking menu behavior', (WidgetTester tester) async {
-    final TextEditingController controller = TextEditingController(
-      text: 'blah1 blah2',
-    );
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: CupertinoTextField(
-            controller: controller,
-          ),
-        ),
-      ),
-    );
-
-    // Initially, the menu is not shown and there is no selection.
-    expect(find.byType(CupertinoButton), findsNothing);
-    expect(controller.selection, const TextSelection(baseOffset: -1, extentOffset: -1));
-
-    final Offset midBlah1 = textOffsetToPosition(tester, 2);
-    final Offset midBlah2 = textOffsetToPosition(tester, 8);
-
-    // Right click the second word.
-    final TestGesture gesture = await tester.startGesture(
-      midBlah2,
-      kind: PointerDeviceKind.mouse,
-      buttons: kSecondaryMouseButton,
-    );
-    await tester.pump();
-    await gesture.up();
-    await tester.pumpAndSettle();
-
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.iOS:
-      case TargetPlatform.macOS:
-        expect(controller.selection, const TextSelection(baseOffset: 6, extentOffset: 11));
-        expect(find.text('Cut'), findsOneWidget);
-        expect(find.text('Copy'), findsOneWidget);
-        expect(find.text('Paste'), findsOneWidget);
-        break;
-
-      case TargetPlatform.android:
-      case TargetPlatform.fuchsia:
-      case TargetPlatform.linux:
-      case TargetPlatform.windows:
-        expect(controller.selection, const TextSelection.collapsed(offset: 8));
-        expect(find.text('Cut'), findsNothing);
-        expect(find.text('Copy'), findsNothing);
-        expect(find.text('Paste'), findsOneWidget);
-        break;
-    }
-
-    // Right click the first word.
-    await gesture.down(midBlah1);
-    await tester.pump();
-    await gesture.up();
-    await tester.pumpAndSettle();
-
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.iOS:
-      case TargetPlatform.macOS:
-        expect(controller.selection, const TextSelection(baseOffset: 0, extentOffset: 5));
-        expect(find.text('Cut'), findsOneWidget);
-        expect(find.text('Copy'), findsOneWidget);
-        expect(find.text('Paste'), findsOneWidget);
-        break;
-
-      case TargetPlatform.android:
-      case TargetPlatform.fuchsia:
-      case TargetPlatform.linux:
-      case TargetPlatform.windows:
-        expect(controller.selection, const TextSelection.collapsed(offset: 8));
-        expect(find.text('Cut'), findsNothing);
-        expect(find.text('Copy'), findsNothing);
-        expect(find.text('Paste'), findsNothing);
-        break;
-    }
-  },
-    variant: TargetPlatformVariant.all(),
-    skip: isContextMenuProvidedByPlatform, // [intended] only applies to platforms where we supply the context menu.
-  );
-
-  group('Right click focus', () {
-    testWidgets('Can right click to focus multiple times', (WidgetTester tester) async {
-      // Regression test for https://github.com/flutter/flutter/pull/103228
-      final FocusNode focusNode1 = FocusNode();
-      final FocusNode focusNode2 = FocusNode();
-      final UniqueKey key1 = UniqueKey();
-      final UniqueKey key2 = UniqueKey();
-      await tester.pumpWidget(
-        CupertinoApp(
-          home: Column(
-            children: <Widget>[
-              CupertinoTextField(
-                key: key1,
-                focusNode: focusNode1,
-              ),
-              CupertinoTextField(
-                key: key2,
-                focusNode: focusNode2,
-              ),
-            ],
-          ),
-        ),
-      );
-
-      // Interact with the field to establish the input connection.
-      await tester.tapAt(
-        tester.getCenter(find.byKey(key1)),
-        buttons: kSecondaryMouseButton,
-      );
-      await tester.pump();
-
-      expect(focusNode1.hasFocus, isTrue);
-      expect(focusNode2.hasFocus, isFalse);
-
-      await tester.tapAt(
-        tester.getCenter(find.byKey(key2)),
-        buttons: kSecondaryMouseButton,
-      );
-      await tester.pump();
-
-      expect(focusNode1.hasFocus, isFalse);
-      expect(focusNode2.hasFocus, isTrue);
-
-      await tester.tapAt(
-        tester.getCenter(find.byKey(key1)),
-        buttons: kSecondaryMouseButton,
-      );
-      await tester.pump();
-
-      expect(focusNode1.hasFocus, isTrue);
-      expect(focusNode2.hasFocus, isFalse);
-    });
-
-    testWidgets('Can right click to focus on previously selected word on Apple platforms', (WidgetTester tester) async {
-      final FocusNode focusNode1 = FocusNode();
-      final FocusNode focusNode2 = FocusNode();
-      final TextEditingController controller = TextEditingController(
-        text: 'first second',
-      );
-      final UniqueKey key1 = UniqueKey();
-      await tester.pumpWidget(
-        CupertinoApp(
-          home: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              CupertinoTextField(
-                key: key1,
-                controller: controller,
-                focusNode: focusNode1,
-              ),
-              Focus(
-                focusNode: focusNode2,
-                child: const Text('focusable'),
-              ),
-            ],
-          ),
-        ),
-      );
-
-      // Interact with the field to establish the input connection.
-      await tester.tapAt(
-        tester.getCenter(find.byKey(key1)),
-        buttons: kSecondaryMouseButton,
-      );
-      await tester.pump();
-
-      expect(focusNode1.hasFocus, isTrue);
-      expect(focusNode2.hasFocus, isFalse);
-
-      // Select the second word.
-      controller.selection = const TextSelection(
-        baseOffset: 6,
-        extentOffset: 12,
-      );
-      await tester.pump();
-
-      expect(focusNode1.hasFocus, isTrue);
-      expect(focusNode2.hasFocus, isFalse);
-      expect(controller.selection.isCollapsed, isFalse);
-      expect(controller.selection.baseOffset, 6);
-      expect(controller.selection.extentOffset, 12);
-
-      // Unfocus the first field.
-      focusNode2.requestFocus();
-      await tester.pumpAndSettle();
-
-      expect(focusNode1.hasFocus, isFalse);
-      expect(focusNode2.hasFocus, isTrue);
-
-      // Right click the second word in the first field, which is still selected
-      // even though the selection is not visible.
-      await tester.tapAt(
-        textOffsetToPosition(tester, 8),
-        buttons: kSecondaryMouseButton,
-      );
-      await tester.pump();
-
-      expect(focusNode1.hasFocus, isTrue);
-      expect(focusNode2.hasFocus, isFalse);
-      expect(controller.selection.baseOffset, 6);
-      expect(controller.selection.extentOffset, 12);
-
-      // Select everything.
-      controller.selection = const TextSelection(
-        baseOffset: 0,
-        extentOffset: 12,
-      );
-      await tester.pump();
-
-      expect(focusNode1.hasFocus, isTrue);
-      expect(focusNode2.hasFocus, isFalse);
-      expect(controller.selection.baseOffset, 0);
-      expect(controller.selection.extentOffset, 12);
-
-      // Unfocus the first field.
-      focusNode2.requestFocus();
-      await tester.pumpAndSettle();
-
-      // Right click the first word in the first field.
-      await tester.tapAt(
-        textOffsetToPosition(tester, 2),
-        buttons: kSecondaryMouseButton,
-      );
-      await tester.pump();
-
-      expect(focusNode1.hasFocus, isTrue);
-      expect(focusNode2.hasFocus, isFalse);
-      expect(controller.selection.baseOffset, 0);
-      expect(controller.selection.extentOffset, 5);
-    }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS, TargetPlatform.macOS }));
   });
 }

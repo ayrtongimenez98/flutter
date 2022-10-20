@@ -8,10 +8,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
+import 'package:flutter_gallery/demo/shrine/model/app_state_model.dart';
 import 'package:scoped_model/scoped_model.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 
-import '../demo/shrine/model/app_state_model.dart';
 import 'demos.dart';
 import 'home.dart';
 import 'options.dart';
@@ -21,14 +22,14 @@ import 'updater.dart';
 
 class GalleryApp extends StatefulWidget {
   const GalleryApp({
-    super.key,
+    Key? key,
     this.updateUrlFetcher,
     this.enablePerformanceOverlay = true,
     this.enableRasterCacheImagesCheckerboard = true,
     this.enableOffscreenLayersCheckerboard = true,
     this.onSendFeedback,
     this.testMode = false,
-  });
+  }) : super(key: key);
 
   final UpdateUrlFetcher? updateUrlFetcher;
   final bool enablePerformanceOverlay;
@@ -122,7 +123,7 @@ class _GalleryAppState extends State<GalleryApp> {
         options: _options,
         onOptionsChanged: _handleOptionsChanged,
         onSendFeedback: widget.onSendFeedback ?? () {
-          launchUrl(Uri.parse('https://github.com/flutter/flutter/issues/new/choose'), mode: LaunchMode.externalApplication);
+          launch('https://github.com/flutter/flutter/issues/new/choose', forceSafariVC: false);
         },
       ),
     );

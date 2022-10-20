@@ -35,7 +35,7 @@ final List<_Page> _allPages = <_Page>[
 ];
 
 class TabsFabDemo extends StatefulWidget {
-  const TabsFabDemo({super.key});
+  const TabsFabDemo({Key? key}) : super(key: key);
 
   static const String routeName = '/material/tabs-fab';
 

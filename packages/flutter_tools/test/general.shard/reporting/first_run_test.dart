@@ -50,7 +50,7 @@ FirstRunMessenger setUpFirstRunMessenger({bool? redisplayWelcomeMessage, bool te
   final MemoryFileSystem fileSystem = MemoryFileSystem.test();
   final PersistentToolState state = PersistentToolState.test(directory: fileSystem.currentDirectory, logger: BufferLogger.test());
   if (redisplayWelcomeMessage != null) {
-    state.setShouldRedisplayWelcomeMessage(redisplayWelcomeMessage);
+    state.redisplayWelcomeMessage = redisplayWelcomeMessage;
   }
   if (test) {
     return TestFirstRunMessenger(state);

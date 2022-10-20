@@ -4,6 +4,7 @@
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 void main() {
   test('wrapped HitTestResult gets HitTestEntry added to wrapping HitTestResult', () async {
@@ -136,7 +137,7 @@ class _DummyHitTestTarget implements HitTestTarget {
 
 class MyHitTestResult extends HitTestResult {
   MyHitTestResult();
-  MyHitTestResult.wrap(super.result) : super.wrap();
+  MyHitTestResult.wrap(HitTestResult result) : super.wrap(result);
 
   void publicPushTransform(Matrix4 transform) => pushTransform(transform);
   void publicPushOffset(Offset offset) => pushOffset(offset);

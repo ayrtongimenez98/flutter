@@ -412,7 +412,7 @@ void main() {
       (WidgetTester tester) async {
       // Regression test for https://github.com/flutter/flutter/pull/59888.
       bool skip = true;
-      Widget buildItem(BuildContext context, int index) {
+      Widget _buildItem(BuildContext context, int index) {
         return !skip || index.isEven
           ? Card(
           child: ListTile(
@@ -431,7 +431,7 @@ void main() {
               slivers: <Widget> [
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    buildItem,
+                    _buildItem,
                     childCount: 30,
                   ),
                 ),
@@ -460,7 +460,7 @@ void main() {
               slivers: <Widget> [
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    buildItem,
+                    _buildItem,
                     childCount: 30,
                   ),
                 ),
@@ -643,7 +643,7 @@ void main() {
     expect(controller.offset, 800.0);
   });
 
-  Widget boilerPlate(Widget sliver) {
+  Widget _boilerPlate(Widget sliver) {
     return Localizations(
       locale: const Locale('en', 'us'),
       delegates: const <LocalizationsDelegate<dynamic>>[
@@ -663,8 +663,9 @@ void main() {
   group('SliverOffstage - ', () {
     testWidgets('offstage true', (WidgetTester tester) async {
       final SemanticsTester semantics = SemanticsTester(tester);
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         const SliverOffstage(
+          offstage: true,
           sliver: SliverToBoxAdapter(
             child: Text('a'),
           ),
@@ -681,7 +682,7 @@ void main() {
 
     testWidgets('offstage false', (WidgetTester tester) async {
       final SemanticsTester semantics = SemanticsTester(tester);
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         const SliverOffstage(
           offstage: false,
           sliver: SliverToBoxAdapter(
@@ -704,7 +705,7 @@ void main() {
       final SemanticsTester semantics = SemanticsTester(tester);
 
       // Opacity 1.0: Semantics and painting
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         const SliverOpacity(
           sliver: SliverToBoxAdapter(
             child: Text(
@@ -720,7 +721,7 @@ void main() {
       expect(find.byType(SliverOpacity), paints..paragraph());
 
       // Opacity 0.0: Nothing
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         const SliverOpacity(
           sliver: SliverToBoxAdapter(
             child: Text(
@@ -736,7 +737,7 @@ void main() {
       expect(find.byType(SliverOpacity), paintsNothing);
 
       // Opacity 0.0 with semantics: Just semantics
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         const SliverOpacity(
           sliver: SliverToBoxAdapter(
             child: Text(
@@ -753,7 +754,7 @@ void main() {
       expect(find.byType(SliverOpacity), paintsNothing);
 
       // Opacity 0.0 without semantics: Nothing
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         const SliverOpacity(
           sliver: SliverToBoxAdapter(
             child: Text(
@@ -762,6 +763,7 @@ void main() {
             ),
           ),
           opacity: 0.0,
+          alwaysIncludeSemantics: false,
         ),
       ));
 
@@ -769,7 +771,7 @@ void main() {
       expect(find.byType(SliverOpacity), paintsNothing);
 
       // Opacity 0.1: Semantics and painting
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         const SliverOpacity(
           sliver: SliverToBoxAdapter(
             child: Text(
@@ -785,7 +787,7 @@ void main() {
       expect(find.byType(SliverOpacity), paints..paragraph());
 
       // Opacity 0.1 without semantics: Still has semantics and painting
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         const SliverOpacity(
           sliver: SliverToBoxAdapter(
             child: Text(
@@ -794,6 +796,7 @@ void main() {
             ),
           ),
           opacity: 0.1,
+          alwaysIncludeSemantics: false,
         ),
       ));
 
@@ -801,7 +804,7 @@ void main() {
       expect(find.byType(SliverOpacity), paints..paragraph());
 
       // Opacity 0.1 with semantics: Semantics and painting
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         const SliverOpacity(
           sliver: SliverToBoxAdapter(
             child: Text(
@@ -825,8 +828,9 @@ void main() {
     testWidgets('ignores pointer events', (WidgetTester tester) async {
       final SemanticsTester semantics = SemanticsTester(tester);
       final List<String> events = <String>[];
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         SliverIgnorePointer(
+          ignoring: true,
           ignoringSemantics: false,
           sliver: SliverToBoxAdapter(
             child: GestureDetector(
@@ -846,7 +850,7 @@ void main() {
     testWidgets('ignores semantics', (WidgetTester tester) async {
       final SemanticsTester semantics = SemanticsTester(tester);
       final List<String> events = <String>[];
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         SliverIgnorePointer(
           ignoring: false,
           ignoringSemantics: true,
@@ -868,8 +872,9 @@ void main() {
     testWidgets('ignores pointer events & semantics', (WidgetTester tester) async {
       final SemanticsTester semantics = SemanticsTester(tester);
       final List<String> events = <String>[];
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         SliverIgnorePointer(
+          ignoring: true,
           ignoringSemantics: true,
           sliver: SliverToBoxAdapter(
             child: GestureDetector(
@@ -889,7 +894,7 @@ void main() {
     testWidgets('ignores nothing', (WidgetTester tester) async {
       final SemanticsTester semantics = SemanticsTester(tester);
       final List<String> events = <String>[];
-      await tester.pumpWidget(boilerPlate(
+      await tester.pumpWidget(_boilerPlate(
         SliverIgnorePointer(
           ignoring: false,
           ignoringSemantics: false,
@@ -999,7 +1004,7 @@ bool sameHorizontal(Offset a, Offset b) => b.dy == a.dy;
 bool sameVertical(Offset a, Offset b) => b.dx == a.dx;
 
 class TestSliverGrid extends StatelessWidget {
-  const TestSliverGrid(this.children, { super.key });
+  const TestSliverGrid(this.children, { Key? key }) : super(key: key);
 
   final List<Widget> children;
 
@@ -1057,7 +1062,7 @@ class _TestArbitrarySliverGridLayout implements SliverGridLayout {
 }
 
 class TestSliverFixedExtentList extends StatelessWidget {
-  const TestSliverFixedExtentList(this.children, { super.key });
+  const TestSliverFixedExtentList(this.children, { Key? key }) : super(key: key);
 
   final List<Widget> children;
 
@@ -1080,7 +1085,7 @@ class TestSliverFixedExtentList extends StatelessWidget {
 }
 
 class StateInitSpy extends StatefulWidget {
-  const StateInitSpy(this.data, this.onStateInit, { super.key });
+  const StateInitSpy(this.data, this.onStateInit, { Key? key }) : super(key: key);
 
   final String data;
   final VoidCallback onStateInit;
@@ -1103,7 +1108,7 @@ class StateInitSpyState extends State<StateInitSpy> {
 }
 
 class KeepAlive extends StatefulWidget {
-  const KeepAlive(this.data, { super.key });
+  const KeepAlive(this.data, { Key? key }) : super(key: key);
 
   final String data;
 

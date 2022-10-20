@@ -2,27 +2,28 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:meta/meta.dart';
 
 import '../base/common.dart';
 import '../base/io.dart';
 import '../base/os.dart';
 import '../base/process.dart';
+import '../base/time.dart';
 import '../cache.dart';
 import '../dart/pub.dart';
-import '../globals.dart' as globals;
-import '../persistent_tool_state.dart';
+import '../globals_null_migrated.dart' as globals;
 import '../runner/flutter_command.dart';
 import '../version.dart';
-import 'channel.dart';
 
 // The official docs to install Flutter.
 const String _flutterInstallDocs = 'https://flutter.dev/docs/get-started/install';
 
 class UpgradeCommand extends FlutterCommand {
   UpgradeCommand({
-    required bool verboseHelp,
-    UpgradeCommandRunner? commandRunner,
+    @required bool verboseHelp,
+    UpgradeCommandRunner commandRunner,
   })
     : _commandRunner = commandRunner ?? UpgradeCommandRunner() {
     argParser
@@ -49,7 +50,7 @@ class UpgradeCommand extends FlutterCommand {
       )
       ..addFlag(
         'verify-only',
-        help: 'Checks for any new Flutter updates, without actually fetching them.',
+        help: 'Checks for any new flutter updates, without actually fetching them.',
         negatable: false,
       );
   }
@@ -63,23 +64,20 @@ class UpgradeCommand extends FlutterCommand {
   final String description = 'Upgrade your copy of Flutter.';
 
   @override
-  final String category = FlutterCommandCategory.sdk;
-
-  @override
   bool get shouldUpdateCache => false;
 
   @override
   Future<FlutterCommandResult> runCommand() {
-    _commandRunner.workingDirectory = stringArgDeprecated('working-directory') ?? Cache.flutterRoot!;
+    _commandRunner.workingDirectory = stringArg('working-directory') ?? Cache.flutterRoot;
     return _commandRunner.runCommand(
-      force: boolArgDeprecated('force'),
-      continueFlow: boolArgDeprecated('continue'),
-      testFlow: stringArgDeprecated('working-directory') != null,
-      gitTagVersion: GitTagVersion.determine(globals.processUtils, globals.platform),
-      flutterVersion: stringArgDeprecated('working-directory') == null
+      force: boolArg('force'),
+      continueFlow: boolArg('continue'),
+      testFlow: stringArg('working-directory') != null,
+      gitTagVersion: GitTagVersion.determine(globals.processUtils),
+      flutterVersion: stringArg('working-directory') == null
         ? globals.flutterVersion
-        : FlutterVersion(workingDirectory: _commandRunner.workingDirectory),
-      verifyOnly: boolArgDeprecated('verify-only'),
+        : FlutterVersion(clock: const SystemClock(), workingDirectory: _commandRunner.workingDirectory),
+      verifyOnly: boolArg('verify-only'),
     );
   }
 }
@@ -87,15 +85,15 @@ class UpgradeCommand extends FlutterCommand {
 @visibleForTesting
 class UpgradeCommandRunner {
 
-  String? workingDirectory;
+  String workingDirectory;
 
   Future<FlutterCommandResult> runCommand({
-    required bool force,
-    required bool continueFlow,
-    required bool testFlow,
-    required GitTagVersion gitTagVersion,
-    required FlutterVersion flutterVersion,
-    required bool verifyOnly,
+    @required bool force,
+    @required bool continueFlow,
+    @required bool testFlow,
+    @required GitTagVersion gitTagVersion,
+    @required FlutterVersion flutterVersion,
+    @required bool verifyOnly,
   }) async {
     if (!continueFlow) {
       await runCommandFirstHalf(
@@ -112,13 +110,13 @@ class UpgradeCommandRunner {
   }
 
   Future<void> runCommandFirstHalf({
-    required bool force,
-    required GitTagVersion gitTagVersion,
-    required FlutterVersion flutterVersion,
-    required bool testFlow,
-    required bool verifyOnly,
+    @required bool force,
+    @required GitTagVersion gitTagVersion,
+    @required FlutterVersion flutterVersion,
+    @required bool testFlow,
+    @required bool verifyOnly,
   }) async {
-    final FlutterVersion upstreamVersion = await fetchLatestVersion(localVersion: flutterVersion);
+    final FlutterVersion upstreamVersion = await fetchLatestVersion();
     if (flutterVersion.frameworkRevision == upstreamVersion.frameworkRevision) {
       globals.printStatus('Flutter is already up to date on channel ${flutterVersion.channel}');
       globals.printStatus('$flutterVersion');
@@ -164,7 +162,6 @@ class UpgradeCommandRunner {
       );
     }
     recordState(flutterVersion);
-    await ChannelCommand.upgradeChannel(flutterVersion);
     globals.printStatus('Upgrading Flutter to ${upstreamVersion.frameworkVersion} from ${flutterVersion.frameworkVersion} in $workingDirectory...');
     await attemptReset(upstreamVersion.frameworkRevision);
     if (!testFlow) {
@@ -173,11 +170,11 @@ class UpgradeCommandRunner {
   }
 
   void recordState(FlutterVersion flutterVersion) {
-    final Channel? channel = getChannelForName(flutterVersion.channel);
+    final Channel channel = getChannelForName(flutterVersion.channel);
     if (channel == null) {
       return;
     }
-    globals.persistentToolState!.updateLastActiveVersion(flutterVersion.frameworkRevision, channel);
+    globals.persistentToolState.updateLastActiveVersion(flutterVersion.frameworkRevision, channel);
   }
 
   Future<void> flutterUpgradeContinue() async {
@@ -201,13 +198,12 @@ class UpgradeCommandRunner {
   // re-entrantly with the `--continue` flag
   Future<void> runCommandSecondHalf(FlutterVersion flutterVersion) async {
     // Make sure the welcome message re-display is delayed until the end.
-    final PersistentToolState persistentToolState = globals.persistentToolState!;
-    persistentToolState.setShouldRedisplayWelcomeMessage(false);
+    globals.persistentToolState.redisplayWelcomeMessage = false;
     await precacheArtifacts();
     await updatePackages(flutterVersion);
     await runDoctor();
     // Force the welcome message to re-display following the upgrade.
-    persistentToolState.setShouldRedisplayWelcomeMessage(true);
+    globals.persistentToolState.redisplayWelcomeMessage = true;
   }
 
   Future<bool> hasUncommittedChanges() async {
@@ -232,9 +228,7 @@ class UpgradeCommandRunner {
   /// Returns the remote HEAD flutter version.
   ///
   /// Exits tool if HEAD isn't pointing to a branch, or there is no upstream.
-  Future<FlutterVersion> fetchLatestVersion({
-    required FlutterVersion localVersion,
-  }) async {
+  Future<FlutterVersion> fetchLatestVersion() async {
     String revision;
     try {
       // Fetch upstream branch's commits and tags
@@ -243,9 +237,9 @@ class UpgradeCommandRunner {
         throwOnError: true,
         workingDirectory: workingDirectory,
       );
-      // Get the latest commit revision of the upstream
+      // '@{u}' means upstream HEAD
       final RunResult result = await globals.processUtils.run(
-          <String>['git', 'rev-parse', '--verify', kGitTrackingUpstream],
+          <String>[ 'git', 'rev-parse', '--verify', '@{u}'],
           throwOnError: true,
           workingDirectory: workingDirectory,
       );
@@ -268,17 +262,6 @@ class UpgradeCommandRunner {
       } else {
         throwToolExit(errorString);
       }
-    }
-    // At this point the current checkout should be on HEAD of a branch having
-    // an upstream. Check whether this upstream is "standard".
-    final VersionCheckError? error = VersionUpstreamValidator(version: localVersion, platform: globals.platform).run();
-    if (error != null) {
-      throwToolExit(
-        'Unable to upgrade Flutter: '
-        '${error.message}\n'
-        'Reinstalling Flutter may fix this issue. Visit $_flutterInstallDocs '
-        'for instructions.'
-      );
     }
     return FlutterVersion(workingDirectory: workingDirectory, frameworkRevision: revision);
   }
@@ -325,13 +308,14 @@ class UpgradeCommandRunner {
   Future<void> updatePackages(FlutterVersion flutterVersion) async {
     globals.printStatus('');
     globals.printStatus(flutterVersion.toString());
-    final String? projectRoot = findProjectRoot(globals.fs);
+    final String projectRoot = findProjectRoot(globals.fs);
     if (projectRoot != null) {
       globals.printStatus('');
       await pub.get(
         context: PubContext.pubUpgrade,
         directory: projectRoot,
         upgrade: true,
+        generateSyntheticPackage: false,
       );
     }
   }

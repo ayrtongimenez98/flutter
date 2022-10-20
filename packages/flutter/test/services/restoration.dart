@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -17,9 +19,8 @@ class MockRestorationManager extends TestRestorationManager {
 
   @override
   void initChannels() {
-    if (enableChannels) {
+    if (enableChannels)
       super.initChannels();
-    }
   }
 
   @override
@@ -58,7 +59,7 @@ class MockRestorationManager extends TestRestorationManager {
   set rootBucket(Future<RestorationBucket?> value) {
     _rootBucket = value;
     _isRestoring = true;
-    ServicesBinding.instance.addPostFrameCallback((Duration _) {
+    ServicesBinding.instance!.addPostFrameCallback((Duration _) {
       _isRestoring = false;
     });
     notifyListeners();

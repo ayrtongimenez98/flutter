@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'dart:async';
 
 import 'package:flutter_tools/src/base/file_system.dart';
@@ -12,9 +14,9 @@ import 'test_driver.dart';
 import 'test_utils.dart';
 
 void main() {
-  late Directory tempDir;
+  Directory tempDir;
   final SingleWidgetReloadProject project = SingleWidgetReloadProject();
-  late FlutterRunTestDriver flutter;
+  FlutterRunTestDriver flutter;
 
   setUp(() async {
     tempDir = createResolvedTempDirectorySync('hot_reload_test.');
@@ -23,7 +25,7 @@ void main() {
   });
 
   tearDown(() async {
-    await flutter.stop();
+    await flutter?.stop();
     tryToDelete(tempDir);
   });
 

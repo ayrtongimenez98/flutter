@@ -8,7 +8,7 @@ import 'package:args/command_runner.dart';
 import 'package:flutter_tools/src/base/file_system.dart';
 import 'package:flutter_tools/src/cache.dart';
 import 'package:flutter_tools/src/commands/ide_config.dart';
-import 'package:flutter_tools/src/globals.dart' as globals;
+import 'package:flutter_tools/src/globals_null_migrated.dart' as globals;
 import 'package:flutter_tools/src/template.dart';
 
 import '../../src/common.dart';
@@ -22,7 +22,7 @@ void main() {
     Directory intellijDir;
     Directory toolsDir;
 
-    Map<String, String> getFilesystemContents([ Directory root ]) {
+    Map<String, String> _getFilesystemContents([ Directory root ]) {
       final String tempPath = tempDir.absolute.path;
       final List<String> paths =
         (root ?? tempDir).listSync(recursive: true).map((FileSystemEntity entity) {
@@ -41,7 +41,7 @@ void main() {
       return contents;
     }
 
-    Map<String, String> getManifest(Directory base, String marker, { bool isTemplate = false }) {
+    Map<String, String> _getManifest(Directory base, String marker, { bool isTemplate = false }) {
       final String basePath = globals.fs.path.relative(base.path, from: tempDir.absolute.path);
       final String suffix = isTemplate ? Template.copyTemplateExtension : '';
       return <String, String>{
@@ -57,7 +57,7 @@ void main() {
       };
     }
 
-    void populateDir(Map<String, String> manifest) {
+    void _populateDir(Map<String, String> manifest) {
       for (final String key in manifest.keys) {
         if (manifest[key] == 'dir') {
           tempDir.childDirectory(key).createSync(recursive: true);
@@ -72,12 +72,12 @@ void main() {
       }
     }
 
-    bool fileOrDirectoryExists(String path) {
+    bool _fileOrDirectoryExists(String path) {
       final String absPath = globals.fs.path.join(tempDir.absolute.path, path);
       return globals.fs.file(absPath).existsSync() || globals.fs.directory(absPath).existsSync();
     }
 
-    Future<void> updateIdeConfig({
+    Future<void> _updateIdeConfig({
       Directory dir,
       List<String> args = const <String>[],
       Map<String, String> expectedContents = const <String, String>{},
@@ -94,7 +94,7 @@ void main() {
 
       for (final String path in expectedContents.keys) {
         final String absPath = globals.fs.path.join(tempDir.absolute.path, path);
-        expect(fileOrDirectoryExists(globals.fs.path.join(dir.path, path)), true,
+        expect(_fileOrDirectoryExists(globals.fs.path.join(dir.path, path)), true,
             reason: "$path doesn't exist");
         if (globals.fs.file(absPath).existsSync()) {
           expect(globals.fs.file(absPath).readAsStringSync(), equals(expectedContents[path]),
@@ -102,7 +102,7 @@ void main() {
         }
       }
       for (final String path in unexpectedPaths) {
-        expect(fileOrDirectoryExists(globals.fs.path.join(dir.path, path)), false, reason: '$path exists');
+        expect(_fileOrDirectoryExists(globals.fs.path.join(dir.path, path)), false, reason: '$path exists');
       }
     }
 
@@ -123,56 +123,56 @@ void main() {
     });
 
     testUsingContext("doesn't touch existing files without --overwrite", () async {
-      final Map<String, String> templateManifest = getManifest(
+      final Map<String, String> templateManifest = _getManifest(
         intellijDir,
         'template',
         isTemplate: true,
       );
-      final Map<String, String> flutterManifest = getManifest(
+      final Map<String, String> flutterManifest = _getManifest(
         tempDir,
         'existing',
       );
-      populateDir(templateManifest);
-      populateDir(flutterManifest);
-      final Map<String, String> expectedContents = getFilesystemContents();
-      return updateIdeConfig(
+      _populateDir(templateManifest);
+      _populateDir(flutterManifest);
+      final Map<String, String> expectedContents = _getFilesystemContents();
+      return _updateIdeConfig(
         expectedContents: expectedContents,
       );
     });
 
     testUsingContext('creates non-existent files', () async {
-      final Map<String, String> templateManifest = getManifest(
+      final Map<String, String> templateManifest = _getManifest(
         intellijDir,
         'template',
         isTemplate: true,
       );
-      final Map<String, String> flutterManifest = getManifest(
+      final Map<String, String> flutterManifest = _getManifest(
         tempDir,
         'template',
       );
-      populateDir(templateManifest);
+      _populateDir(templateManifest);
       final Map<String, String> expectedContents = <String, String>{
         ...templateManifest,
         ...flutterManifest,
       };
-      return updateIdeConfig(
+      return _updateIdeConfig(
         expectedContents: expectedContents,
       );
     });
 
     testUsingContext('overwrites existing files with --overwrite', () async {
-      final Map<String, String> templateManifest = getManifest(
+      final Map<String, String> templateManifest = _getManifest(
         intellijDir,
         'template',
         isTemplate: true,
       );
-      final Map<String, String> flutterManifest = getManifest(
+      final Map<String, String> flutterManifest = _getManifest(
         tempDir,
         'existing',
       );
-      populateDir(templateManifest);
-      populateDir(flutterManifest);
-      final Map<String, String> overwrittenManifest = getManifest(
+      _populateDir(templateManifest);
+      _populateDir(flutterManifest);
+      final Map<String, String> overwrittenManifest = _getManifest(
         tempDir,
         'template',
       );
@@ -180,14 +180,14 @@ void main() {
         ...templateManifest,
         ...overwrittenManifest,
       };
-      return updateIdeConfig(
+      return _updateIdeConfig(
         args: <String>['--overwrite'],
         expectedContents: expectedContents,
       );
     });
 
     testUsingContext('only adds new templates without --overwrite', () async {
-      final Map<String, String> templateManifest = getManifest(
+      final Map<String, String> templateManifest = _getManifest(
         intellijDir,
         'template',
         isTemplate: true,
@@ -200,36 +200,36 @@ void main() {
         'flutter.iml${Template.copyTemplateExtension}',
       );
       templateManifest.remove(flutterIml);
-      populateDir(templateManifest);
+      _populateDir(templateManifest);
       templateManifest[flutterIml] = 'flutter existing';
-      final Map<String, String> flutterManifest = getManifest(
+      final Map<String, String> flutterManifest = _getManifest(
         tempDir,
         'existing',
       );
-      populateDir(flutterManifest);
+      _populateDir(flutterManifest);
       final Map<String, String> expectedContents = <String, String>{
         ...flutterManifest,
         ...templateManifest,
       };
-      return updateIdeConfig(
+      return _updateIdeConfig(
         args: <String>['--update-templates'],
         expectedContents: expectedContents,
       );
     });
 
     testUsingContext('update all templates with --overwrite', () async {
-      final Map<String, String> templateManifest = getManifest(
+      final Map<String, String> templateManifest = _getManifest(
         intellijDir,
         'template',
         isTemplate: true,
       );
-      populateDir(templateManifest);
-      final Map<String, String> flutterManifest = getManifest(
+      _populateDir(templateManifest);
+      final Map<String, String> flutterManifest = _getManifest(
         tempDir,
         'existing',
       );
-      populateDir(flutterManifest);
-      final Map<String, String> updatedTemplates = getManifest(
+      _populateDir(flutterManifest);
+      final Map<String, String> updatedTemplates = _getManifest(
         intellijDir,
         'existing',
         isTemplate: true,
@@ -238,26 +238,26 @@ void main() {
         ...flutterManifest,
         ...updatedTemplates,
       };
-      return updateIdeConfig(
+      return _updateIdeConfig(
         args: <String>['--update-templates', '--overwrite'],
         expectedContents: expectedContents,
       );
     });
 
     testUsingContext('removes deleted imls with --overwrite', () async {
-      final Map<String, String> templateManifest = getManifest(
+      final Map<String, String> templateManifest = _getManifest(
         intellijDir,
         'template',
         isTemplate: true,
       );
-      populateDir(templateManifest);
-      final Map<String, String> flutterManifest = getManifest(
+      _populateDir(templateManifest);
+      final Map<String, String> flutterManifest = _getManifest(
         tempDir,
         'existing',
       );
       flutterManifest.remove('flutter.iml');
-      populateDir(flutterManifest);
-      final Map<String, String> updatedTemplates = getManifest(
+      _populateDir(flutterManifest);
+      final Map<String, String> updatedTemplates = _getManifest(
         intellijDir,
         'existing',
         isTemplate: true,
@@ -274,26 +274,26 @@ void main() {
         ...flutterManifest,
         ...updatedTemplates,
       };
-      return updateIdeConfig(
+      return _updateIdeConfig(
         args: <String>['--update-templates', '--overwrite'],
         expectedContents: expectedContents,
       );
     });
 
     testUsingContext('removes deleted imls with --overwrite, including empty parent dirs', () async {
-      final Map<String, String> templateManifest = getManifest(
+      final Map<String, String> templateManifest = _getManifest(
         intellijDir,
         'template',
         isTemplate: true,
       );
-      populateDir(templateManifest);
-      final Map<String, String> flutterManifest = getManifest(
+      _populateDir(templateManifest);
+      final Map<String, String> flutterManifest = _getManifest(
         tempDir,
         'existing',
       );
       flutterManifest.remove(globals.fs.path.join('packages', 'new', 'deep.iml'));
-      populateDir(flutterManifest);
-      final Map<String, String> updatedTemplates = getManifest(
+      _populateDir(flutterManifest);
+      final Map<String, String> updatedTemplates = _getManifest(
         intellijDir,
         'existing',
         isTemplate: true,
@@ -315,7 +315,7 @@ void main() {
         ...flutterManifest,
         ...updatedTemplates,
       };
-      return updateIdeConfig(
+      return _updateIdeConfig(
         args: <String>['--update-templates', '--overwrite'],
         expectedContents: expectedContents,
       );

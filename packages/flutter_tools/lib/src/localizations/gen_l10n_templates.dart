@@ -9,7 +9,8 @@ description: The Flutter application's synthetic package.
 ''';
 
 const String fileTemplate = '''
-@(header)import 'dart:async';
+@(header)
+import 'dart:async';
 
 @(requiresFoundationImport)
 import 'package:flutter/widgets.dart';
@@ -18,14 +19,14 @@ import 'package:intl/intl.dart' as intl;
 
 @(messageClassImports)
 
-/// Callers can lookup localized strings with an instance of @(class)
-/// returned by `@(class).of(context)`.
+/// Callers can lookup localized strings with an instance of @(class) returned
+/// by `@(class).of(context)`.
 ///
 /// Applications need to include `@(class).delegate()` in their app's
-/// `localizationDelegates` list, and the locales they support in the app's
-/// `supportedLocales` list. For example:
+/// localizationDelegates list, and the locales they support in the app's
+/// supportedLocales list. For example:
 ///
-/// ```dart
+/// ```
 /// import '@(importFile)';
 ///
 /// return MaterialApp(
@@ -40,14 +41,14 @@ import 'package:intl/intl.dart' as intl;
 /// Please make sure to update your pubspec.yaml to include the following
 /// packages:
 ///
-/// ```yaml
+/// ```
 /// dependencies:
 ///   # Internationalization support.
 ///   flutter_localizations:
 ///     sdk: flutter
 ///   intl: any # Use the pinned version from flutter_localizations
 ///
-///   # Rest of dependencies
+///   # rest of dependencies
 /// ```
 ///
 /// ## iOS Applications
@@ -125,11 +126,6 @@ const String dateFormatTemplate = '''
     final String @(placeholder)String = @(placeholder)DateFormat.format(@(placeholder));
 ''';
 
-const String dateFormatCustomTemplate = '''
-    final intl.DateFormat @(placeholder)DateFormat = intl.DateFormat(@(format), localeName);
-    final String @(placeholder)String = @(placeholder)DateFormat.format(@(placeholder));
-''';
-
 const String getterTemplate = '''
   @override
   String get @(name) => @(message);''';
@@ -201,7 +197,10 @@ const String selectMethodTemplateInString = '''
   }''';
 
 const String classFileTemplate = '''
-@(header)@(requiresIntlImport)import '@(fileName)';
+@(header)
+
+@(requiresIntlImport)
+import '@(fileName)';
 
 /// The translations for @(language) (`@(localeName)`).
 class @(class) extends @(baseClass) {

@@ -29,13 +29,9 @@ class TestAPISubclass extends TestAPI {
   }
 }
 
-class RecognizableTestException implements Exception {
-  const RecognizableTestException();
-}
-
 Future<Object> _guardedThrower() {
   return TestAsyncUtils.guard<Object>(() async {
-    throw const RecognizableTestException();
+    throw 'Hello';
   });
 }
 
@@ -46,7 +42,7 @@ void main() {
     f1 = testAPI.testGuard1();
     try {
       f2 = testAPI.testGuard2();
-      fail('unexpectedly did not throw');
+      throw 'unexpectedly did not throw';
     } on FlutterError catch (e) {
       final List<String> lines = e.message.split('\n');
       real_test.expect(lines[0], 'Guarded function conflict.');
@@ -68,7 +64,7 @@ void main() {
     f1 = testAPI.testGuard1();
     try {
       f2 = testAPI.testGuard2();
-      fail('unexpectedly did not throw');
+      throw 'unexpectedly did not throw';
     } on FlutterError catch (e) {
       final List<String> lines = e.message.split('\n');
       real_test.expect(lines[0], 'Guarded function conflict.');
@@ -90,7 +86,7 @@ void main() {
     f1 = testAPI.testGuard1();
     try {
       f2 = testAPI.testGuard3();
-      fail('unexpectedly did not throw');
+      throw 'unexpectedly did not throw';
     } on FlutterError catch (e) {
       final List<String> lines = e.message.split('\n');
       real_test.expect(lines[0], 'Guarded function conflict.');
@@ -112,7 +108,7 @@ void main() {
     f1 = testAPI.testGuard1();
     try {
       flutter_test.expect(0, 0);
-      fail('unexpectedly did not throw');
+      throw 'unexpectedly did not throw';
     } on FlutterError catch (e) {
       final List<String> lines = e.message.split('\n');
       real_test.expect(lines[0], 'Guarded function conflict.');
@@ -133,7 +129,7 @@ void main() {
     try {
       f1 = tester.pump();
       f2 = tester.pump();
-      fail('unexpectedly did not throw');
+      throw 'unexpectedly did not throw';
     } on FlutterError catch (e) {
       final List<String> lines = e.message.split('\n');
       real_test.expect(lines[0], 'Guarded function conflict.');
@@ -175,7 +171,7 @@ void main() {
     try {
       f1 = tester.pump();
       TestAsyncUtils.verifyAllScopesClosed();
-      fail('unexpectedly did not throw');
+      throw 'unexpectedly did not throw';
     } on FlutterError catch (e) {
       final List<String> lines = e.message.split('\n');
       real_test.expect(lines[0], 'Asynchronous call to guarded function leaked.');
@@ -200,7 +196,7 @@ void main() {
     try {
       f1 = tester.pump();
       TestAsyncUtils.verifyAllScopesClosed();
-      fail('unexpectedly did not throw');
+      throw 'unexpectedly did not throw';
     } on FlutterError catch (e) {
       final List<String> lines = e.message.split('\n');
       real_test.expect(lines[0], 'Asynchronous call to guarded function leaked.');
@@ -224,8 +220,8 @@ void main() {
     try {
       await _guardedThrower();
       expect(false, true); // _guardedThrower should throw and we shouldn't reach here
-    } on RecognizableTestException catch (e) {
-      expect(e, const RecognizableTestException());
+    } on String catch (s) {
+      expect(s, 'Hello');
     }
   });
 

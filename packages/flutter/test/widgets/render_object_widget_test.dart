@@ -14,9 +14,9 @@ final BoxDecoration kBoxDecorationC = BoxDecoration(border: nonconst(null));
 
 class TestWidget extends StatelessWidget {
   const TestWidget({
-    super.key,
+    Key? key,
     required this.child,
-  });
+  }) : super(key: key);
 
   final Widget child;
 
@@ -25,7 +25,7 @@ class TestWidget extends StatelessWidget {
 }
 
 class TestOrientedBox extends SingleChildRenderObjectWidget {
-  const TestOrientedBox({ super.key, super.child });
+  const TestOrientedBox({ Key? key, Widget? child }) : super(key: key, child: child);
 
   Decoration _getDecoration(BuildContext context) {
     final Orientation orientation = MediaQuery.of(context).orientation;
@@ -47,7 +47,7 @@ class TestOrientedBox extends SingleChildRenderObjectWidget {
 }
 
 class TestNonVisitingWidget extends SingleChildRenderObjectWidget {
-  const TestNonVisitingWidget({ super.key, required Widget super.child });
+  const TestNonVisitingWidget({ Key? key, required Widget child }) : super(key: key, child: child);
 
   @override
   RenderObject createRenderObject(BuildContext context) => TestNonVisitingRenderObject();

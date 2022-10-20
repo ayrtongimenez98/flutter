@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:io';
-import 'logical_key_data.dart';
+import 'package:gen_keycodes/logical_key_data.dart';
 
 import 'physical_key_data.dart';
 
@@ -34,7 +34,7 @@ abstract class BaseCodeGenerator {
   Map<String, String> mappings();
 
   /// Substitutes the various platform specific maps into the template file for
-  /// keyboard_maps.g.dart.
+  /// keyboard_maps.dart.
   String generate() {
     final String template = File(templatePath).readAsStringSync();
     return _injectDictionary(template, mappings());
@@ -48,7 +48,8 @@ abstract class BaseCodeGenerator {
 
 /// A code generator which also defines platform-based behavior.
 abstract class PlatformCodeGenerator extends BaseCodeGenerator {
-  PlatformCodeGenerator(super.keyData, super.logicalData);
+  PlatformCodeGenerator(PhysicalKeyData keyData, LogicalKeyData logicalData)
+    : super(keyData, logicalData);
 
   /// Absolute path to the output file.
   ///

@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -64,7 +66,6 @@ void main() {
       final List<MethodCall> callsToEngine = <MethodCall>[];
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.restoration, (MethodCall call) async {
         callsToEngine.add(call);
-        return null;
       });
       final RestorationManager manager = RestorationManager();
 
@@ -211,7 +212,7 @@ void main() {
       callsToEngine.clear();
 
       // Schedule a frame.
-      SchedulerBinding.instance.ensureVisualUpdate();
+      SchedulerBinding.instance!.ensureVisualUpdate();
       rootBucket!.write('foo', 1);
       // flushData is no-op because frame is scheduled.
       manager.flushData();
@@ -304,7 +305,7 @@ void main() {
 }
 
 Future<void> _pushDataFromEngine(Map<dynamic, dynamic> data) async {
-  await ServicesBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+  await ServicesBinding.instance!.defaultBinaryMessenger.handlePlatformMessage(
     'flutter/restoration',
     const StandardMethodCodec().encodeMethodCall(MethodCall('push', data)),
     (_) { },

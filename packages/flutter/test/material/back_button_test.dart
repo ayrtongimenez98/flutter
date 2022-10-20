@@ -154,7 +154,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.getSemantics(find.byType(BackButton)), matchesSemantics(
-      tooltip: 'Back',
+      label: 'Back',
       isButton: true,
       hasEnabledState: true,
       isEnabled: true,

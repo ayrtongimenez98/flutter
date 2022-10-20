@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class _ContactCategory extends StatelessWidget {
-  const _ContactCategory({ this.icon, this.children });
+  const _ContactCategory({ Key? key, this.icon, this.children }) : super(key: key);
 
   final IconData? icon;
   final List<Widget>? children;
@@ -42,8 +42,9 @@ class _ContactCategory extends StatelessWidget {
 }
 
 class _ContactItem extends StatelessWidget {
-  const _ContactItem({ this.icon, required this.lines, this.tooltip, this.onPressed })
-    : assert(lines.length > 1);
+  const _ContactItem({ Key? key, this.icon, required this.lines, this.tooltip, this.onPressed })
+    : assert(lines.length > 1),
+      super(key: key);
 
   final IconData? icon;
   final List<String> lines;
@@ -85,7 +86,7 @@ class _ContactItem extends StatelessWidget {
 }
 
 class ContactsDemo extends StatefulWidget {
-  const ContactsDemo({super.key});
+  const ContactsDemo({Key? key}) : super(key: key);
 
   static const String routeName = '/contacts';
 

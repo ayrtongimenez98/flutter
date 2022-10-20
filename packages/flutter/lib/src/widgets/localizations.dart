@@ -11,7 +11,7 @@ import 'debug.dart';
 import 'framework.dart';
 
 // Examples can assume:
-// class Intl { Intl._(); static String message(String s, { String? name, String? locale }) => ''; }
+// class Intl { static String message(String s, { String? name, String? locale }) => ''; }
 // Future<void> initializeMessages(String locale) => Future<void>.value();
 
 // Used by loadAll() to record LocalizationsDelegate.load() futures we're
@@ -68,9 +68,8 @@ Future<Map<Type, dynamic>> _loadAll(Locale locale, Iterable<LocalizationsDelegat
   }
 
   // All of the delegate.load() values were synchronous futures, we're done.
-  if (pendingList == null) {
+  if (pendingList == null)
     return SynchronousFuture<Map<Type, dynamic>>(output);
-  }
 
   // Some of delegate.load() values were asynchronous futures. Wait for them.
   return Future.wait<dynamic>(pendingList.map<Future<dynamic>>((_Pending p) => p.futureValue))
@@ -224,13 +223,14 @@ class DefaultWidgetsLocalizations implements WidgetsLocalizations {
 
 class _LocalizationsScope extends InheritedWidget {
   const _LocalizationsScope({
-    super.key,
+    Key? key,
     required this.locale,
     required this.localizationsState,
     required this.typeToResources,
-    required super.child,
+    required Widget child,
   }) : assert(localizationsState != null),
-       assert(typeToResources != null);
+       assert(typeToResources != null),
+       super(key: key, child: child);
 
   final Locale locale;
   final _LocalizationsState localizationsState;
@@ -339,13 +339,14 @@ class _LocalizationsScope extends InheritedWidget {
 class Localizations extends StatefulWidget {
   /// Create a widget from which localizations (like translated strings) can be obtained.
   Localizations({
-    super.key,
+    Key? key,
     required this.locale,
     required this.delegates,
     this.child,
   }) : assert(locale != null),
        assert(delegates != null),
-       assert(delegates.any((LocalizationsDelegate<dynamic> delegate) => delegate is LocalizationsDelegate<WidgetsLocalizations>));
+       assert(delegates.any((LocalizationsDelegate<dynamic> delegate) => delegate is LocalizationsDelegate<WidgetsLocalizations>)),
+       super(key: key);
 
   /// Overrides the inherited [Locale] or [LocalizationsDelegate]s for `child`.
   ///
@@ -382,9 +383,8 @@ class Localizations extends StatefulWidget {
     Widget? child,
   }) {
     final List<LocalizationsDelegate<dynamic>> mergedDelegates = Localizations._delegatesOf(context);
-    if (delegates != null) {
+    if (delegates != null)
       mergedDelegates.insertAll(0, delegates);
-    }
     return Localizations(
       key: key,
       locale: locale ?? Localizations.localeOf(context),
@@ -448,7 +448,7 @@ class Localizations extends StatefulWidget {
     assert(context != null);
     final _LocalizationsScope? scope = context.dependOnInheritedWidgetOfExactType<_LocalizationsScope>();
     assert(scope != null, 'a Localizations ancestor was not found');
-    return List<LocalizationsDelegate<dynamic>>.of(scope!.localizationsState.widget.delegates);
+    return List<LocalizationsDelegate<dynamic>>.from(scope!.localizationsState.widget.delegates);
   }
 
   /// Returns the localized resources object of the given `type` for the widget
@@ -498,17 +498,15 @@ class _LocalizationsState extends State<Localizations> {
   }
 
   bool _anyDelegatesShouldReload(Localizations old) {
-    if (widget.delegates.length != old.delegates.length) {
+    if (widget.delegates.length != old.delegates.length)
       return true;
-    }
     final List<LocalizationsDelegate<dynamic>> delegates = widget.delegates.toList();
     final List<LocalizationsDelegate<dynamic>> oldDelegates = old.delegates.toList();
     for (int i = 0; i < delegates.length; i += 1) {
       final LocalizationsDelegate<dynamic> delegate = delegates[i];
       final LocalizationsDelegate<dynamic> oldDelegate = oldDelegates[i];
-      if (delegate.runtimeType != oldDelegate.runtimeType || delegate.shouldReload(oldDelegate)) {
+      if (delegate.runtimeType != oldDelegate.runtimeType || delegate.shouldReload(oldDelegate))
         return true;
-      }
     }
     return false;
   }
@@ -519,9 +517,8 @@ class _LocalizationsState extends State<Localizations> {
     if (widget.locale != old.locale
         || (widget.delegates == null)
         || (widget.delegates != null && old.delegates == null)
-        || (widget.delegates != null && _anyDelegatesShouldReload(old))) {
+        || (widget.delegates != null && _anyDelegatesShouldReload(old)))
       load(widget.locale);
-    }
   }
 
   void load(Locale locale) {
@@ -546,7 +543,7 @@ class _LocalizationsState extends State<Localizations> {
       // have finished loading. Until then the old locale will continue to be used.
       // - If we're running at app startup time then defer reporting the first
       // "useful" frame until after the async load has completed.
-      RendererBinding.instance.deferFirstFrame();
+      RendererBinding.instance!.deferFirstFrame();
       typeToResourcesFuture.then<void>((Map<Type, dynamic> value) {
         if (mounted) {
           setState(() {
@@ -554,7 +551,7 @@ class _LocalizationsState extends State<Localizations> {
             _locale = locale;
           });
         }
-        RendererBinding.instance.allowFirstFrame();
+        RendererBinding.instance!.allowFirstFrame();
       });
     }
   }
@@ -573,9 +570,8 @@ class _LocalizationsState extends State<Localizations> {
 
   @override
   Widget build(BuildContext context) {
-    if (_locale == null) {
+    if (_locale == null)
       return Container();
-    }
     return Semantics(
       textDirection: _textDirection,
       child: _LocalizationsScope(

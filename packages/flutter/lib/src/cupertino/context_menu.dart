@@ -4,23 +4,14 @@
 
 import 'dart:math' as math;
 import 'dart:ui' as ui;
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart' show kMinFlingVelocity, kLongPressTimeout;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'colors.dart';
-
 // The scale of the child at the time that the CupertinoContextMenu opens.
 // This value was eyeballed from a physical device running iOS 13.1.2.
 const double _kOpenScale = 1.1;
-
-const Color _borderColor = CupertinoDynamicColor.withBrightness(
-  color: Color(0xFFA9A9AF),
-  darkColor: Color(0xFF57585A),
-);
 
 typedef _DismissCallback = void Function(
   BuildContext context,
@@ -48,11 +39,10 @@ typedef _ContextMenuPreviewBuilderChildless = Widget Function(
 Rect _getRect(GlobalKey globalKey) {
   assert(globalKey.currentContext != null);
   final RenderBox renderBoxContainer = globalKey.currentContext!.findRenderObject()! as RenderBox;
-  return Rect.fromPoints(renderBoxContainer.localToGlobal(
+  final Offset containerOffset = renderBoxContainer.localToGlobal(
     renderBoxContainer.paintBounds.topLeft,
-  ), renderBoxContainer.localToGlobal(
-    renderBoxContainer.paintBounds.bottomRight
-  ));
+  );
+  return containerOffset & renderBoxContainer.paintBounds.size;
 }
 
 // The context menu arranges itself slightly differently based on the location
@@ -83,16 +73,51 @@ enum _ContextMenuLocation {
 /// child's corners and allowing its aspect ratio to expand, similar to the
 /// Photos app on iOS.
 ///
-/// {@tool dartpad}
+/// {@tool dartpad --template=stateless_widget_material}
+///
 /// This sample shows a very simple CupertinoContextMenu for an empty red
 /// 100x100 Container. Simply long press on it to open.
 ///
-/// ** See code in examples/api/lib/cupertino/context_menu/cupertino_context_menu.0.dart **
+/// ```dart imports
+/// import 'package:flutter/cupertino.dart';
+/// ```
+///
+/// ```dart
+/// Widget build(BuildContext context) {
+///   return Scaffold(
+///     body: Center(
+///       child: SizedBox(
+///         width: 100,
+///         height: 100,
+///         child: CupertinoContextMenu(
+///           child: Container(
+///             color: Colors.red,
+///           ),
+///           actions: <Widget>[
+///             CupertinoContextMenuAction(
+///               child: const Text('Action one'),
+///               onPressed: () {
+///                 Navigator.pop(context);
+///               },
+///             ),
+///             CupertinoContextMenuAction(
+///               child: const Text('Action two'),
+///               onPressed: () {
+///                 Navigator.pop(context);
+///               },
+///             ),
+///           ],
+///         ),
+///       ),
+///     ),
+///   );
+/// }
+/// ```
 /// {@end-tool}
 ///
 /// See also:
 ///
-///  * <https://developer.apple.com/design/human-interface-guidelines/ios/controls/context-menus/>
+///  * [Apple's HIG for Context Menus](https://developer.apple.com/design/human-interface-guidelines/ios/controls/context-menus/)
 class CupertinoContextMenu extends StatefulWidget {
   /// Create a context menu.
   ///
@@ -100,12 +125,13 @@ class CupertinoContextMenu extends StatefulWidget {
   ///
   /// [child] is required and cannot be null.
   CupertinoContextMenu({
-    super.key,
+    Key? key,
     required this.actions,
     required this.child,
     this.previewBuilder,
   }) : assert(actions != null && actions.isNotEmpty),
-       assert(child != null);
+       assert(child != null),
+       super(key: key);
 
   /// The widget that can be "opened" with the [CupertinoContextMenu].
   ///
@@ -160,6 +186,10 @@ class CupertinoContextMenu extends StatefulWidget {
   ///
   /// ```dart
   /// CupertinoContextMenu(
+  ///   child: FittedBox(
+  ///     fit: BoxFit.cover,
+  ///     child: Image.asset('assets/photo.jpg'),
+  ///   ),
   ///   // The FittedBox in the preview here allows the image to animate its
   ///   // aspect ratio when the CupertinoContextMenu is animating its preview
   ///   // widget open and closed.
@@ -182,10 +212,6 @@ class CupertinoContextMenu extends StatefulWidget {
   ///       onPressed: () {},
   ///     ),
   ///   ],
-  ///   child: FittedBox(
-  ///     fit: BoxFit.cover,
-  ///     child: Image.asset('assets/photo.jpg'),
-  ///   ),
   /// )
   /// ```
   ///
@@ -289,15 +315,14 @@ class _CupertinoContextMenuState extends State<CupertinoContextMenu> with Ticker
         // because _ContextMenuRoute renders its first frame offscreen.
         // Otherwise there would be a visible flash when nothing is rendered for
         // one frame.
-        SchedulerBinding.instance.addPostFrameCallback((Duration _) {
+        SchedulerBinding.instance!.addPostFrameCallback((Duration _) {
           _lastOverlayEntry?.remove();
           _lastOverlayEntry = null;
           _openController.reset();
         });
         break;
 
-      case AnimationStatus.forward:
-      case AnimationStatus.reverse:
+      default:
         return;
     }
   }
@@ -354,6 +379,7 @@ class _CupertinoContextMenuState extends State<CupertinoContextMenu> with Ticker
     // it expands. This may be solvable by adding a widget to Scaffold that's
     // underneath the AppBar.
     _lastOverlayEntry = OverlayEntry(
+      opaque: false,
       builder: (BuildContext context) {
         return _DecoyChild(
           beginRect: childRect,
@@ -363,26 +389,23 @@ class _CupertinoContextMenuState extends State<CupertinoContextMenu> with Ticker
         );
       },
     );
-    Overlay.of(context, rootOverlay: true)!.insert(_lastOverlayEntry!);
+    Overlay.of(context)!.insert(_lastOverlayEntry!);
     _openController.forward();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: kIsWeb ? SystemMouseCursors.click : MouseCursor.defer,
-      child: GestureDetector(
-        onTapCancel: _onTapCancel,
-        onTapDown: _onTapDown,
-        onTapUp: _onTapUp,
-        onTap: _onTap,
-        child: TickerMode(
-          enabled: !_childHidden,
-          child: Opacity(
-            key: _childGlobalKey,
-            opacity: _childHidden ? 0.0 : 1.0,
-            child: widget.child,
-          ),
+    return GestureDetector(
+      onTapCancel: _onTapCancel,
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTap: _onTap,
+      child: TickerMode(
+        enabled: !_childHidden,
+        child: Opacity(
+          key: _childGlobalKey,
+          opacity: _childHidden ? 0.0 : 1.0,
+          child: widget.child,
         ),
       ),
     );
@@ -404,11 +427,12 @@ class _CupertinoContextMenuState extends State<CupertinoContextMenu> with Ticker
 // siblings of the original child.
 class _DecoyChild extends StatefulWidget {
   const _DecoyChild({
+    Key? key,
     this.beginRect,
     required this.controller,
     this.endRect,
     this.child,
-  });
+  }) : super(key: key);
 
   final Rect? beginRect;
   final AnimationController controller;
@@ -521,15 +545,19 @@ class _ContextMenuRoute<T> extends PopupRoute<T> {
     required _ContextMenuLocation contextMenuLocation,
     this.barrierLabel,
     _ContextMenuPreviewBuilderChildless? builder,
-    super.filter,
+    ui.ImageFilter? filter,
     required Rect previousChildRect,
-    super.settings,
+    RouteSettings? settings,
   }) : assert(actions != null && actions.isNotEmpty),
        assert(contextMenuLocation != null),
        _actions = actions,
        _builder = builder,
        _contextMenuLocation = contextMenuLocation,
-       _previousChildRect = previousChildRect;
+       _previousChildRect = previousChildRect,
+       super(
+         filter: filter,
+         settings: settings,
+       );
 
   // Barrier color for a Cupertino modal barrier.
   static const Color _kModalBarrierColor = Color(0x6604040F);
@@ -714,7 +742,7 @@ class _ContextMenuRoute<T> extends PopupRoute<T> {
 
     // Render one frame offstage in the final position so that we can take
     // measurements of its layout and then animate to them.
-    SchedulerBinding.instance.addPostFrameCallback((Duration _) {
+    SchedulerBinding.instance!.addPostFrameCallback((Duration _) {
       _updateTweenRects();
       _internalOffstage = false;
       _setOffstageInternally();
@@ -765,8 +793,8 @@ class _ContextMenuRoute<T> extends PopupRoute<T> {
             children: <Widget>[
               Positioned.fromRect(
                 rect: sheetRect,
-                child: FadeTransition(
-                  opacity: _sheetOpacity,
+                child: Opacity(
+                  opacity: _sheetOpacity.value,
                   child: Transform.scale(
                     alignment: getSheetAlignment(_contextMenuLocation),
                     scale: sheetScale,
@@ -808,6 +836,7 @@ class _ContextMenuRoute<T> extends PopupRoute<T> {
 // animating out.
 class _ContextMenuRouteStatic extends StatefulWidget {
   const _ContextMenuRouteStatic({
+    Key? key,
     this.actions,
     required this.child,
     this.childGlobalKey,
@@ -816,7 +845,8 @@ class _ContextMenuRouteStatic extends StatefulWidget {
     required this.orientation,
     this.sheetGlobalKey,
   }) : assert(contextMenuLocation != null),
-       assert(orientation != null);
+       assert(orientation != null),
+       super(key: key);
 
   final List<Widget>? actions;
   final Widget child;
@@ -959,7 +989,7 @@ class _ContextMenuRouteStaticState extends State<_ContextMenuRouteStatic> with T
       _moveAnimation = Tween<Offset>(
         begin: Offset.zero,
         end: Offset(
-          clampDouble(endX, -_kPadding, _kPadding),
+          endX.clamp(-_kPadding, _kPadding),
           endY,
         ),
       ).animate(
@@ -1033,8 +1063,8 @@ class _ContextMenuRouteStaticState extends State<_ContextMenuRouteStatic> with T
     return Transform.scale(
       alignment: _ContextMenuRoute.getSheetAlignment(widget.contextMenuLocation),
       scale: _sheetScaleAnimation.value,
-      child: FadeTransition(
-        opacity: _sheetOpacityAnimation,
+      child: Opacity(
+        opacity: _sheetOpacityAnimation.value,
         child: child,
       ),
     );
@@ -1139,7 +1169,7 @@ class _ContextMenuRouteStaticState extends State<_ContextMenuRouteStatic> with T
 // list of actions that are typically CupertinoContextMenuActions.
 class _ContextMenuSheet extends StatelessWidget {
   _ContextMenuSheet({
-    super.key,
+    Key? key,
     required this.actions,
     required _ContextMenuLocation contextMenuLocation,
     required Orientation orientation,
@@ -1147,7 +1177,8 @@ class _ContextMenuSheet extends StatelessWidget {
        assert(contextMenuLocation != null),
        assert(orientation != null),
        _contextMenuLocation = contextMenuLocation,
-       _orientation = orientation;
+       _orientation = orientation,
+       super(key: key);
 
   final List<Widget> actions;
   final _ContextMenuLocation _contextMenuLocation;
@@ -1155,31 +1186,16 @@ class _ContextMenuSheet extends StatelessWidget {
 
   // Get the children, whose order depends on orientation and
   // contextMenuLocation.
-  List<Widget> getChildren(BuildContext context) {
-    final Widget menu = Flexible(
+  List<Widget> get children {
+    final Flexible menu = Flexible(
       fit: FlexFit.tight,
       flex: 2,
       child: IntrinsicHeight(
         child: ClipRRect(
-          borderRadius: const BorderRadius.all(Radius.circular(13.0)),
+          borderRadius: BorderRadius.circular(13.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              actions.first,
-              for (Widget action in actions.skip(1))
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(
-                        color: CupertinoDynamicColor.resolve(_borderColor, context),
-                        width: 0.5,
-                      )
-                    ),
-                  ),
-                  position: DecorationPosition.foreground,
-                  child: action,
-                ),
-            ],
+            children: actions,
           ),
         ),
       ),
@@ -1189,23 +1205,33 @@ class _ContextMenuSheet extends StatelessWidget {
       case _ContextMenuLocation.center:
         return _orientation == Orientation.portrait
           ? <Widget>[
-            const Spacer(),
+            const Spacer(
+              flex: 1,
+            ),
             menu,
-            const Spacer(),
+            const Spacer(
+              flex: 1,
+            ),
           ]
         : <Widget>[
             menu,
-            const Spacer(),
+            const Spacer(
+              flex: 1,
+            ),
           ];
       case _ContextMenuLocation.right:
         return <Widget>[
-          const Spacer(),
+          const Spacer(
+            flex: 1,
+          ),
           menu,
         ];
       case _ContextMenuLocation.left:
         return <Widget>[
           menu,
-          const Spacer(),
+          const Spacer(
+            flex: 1,
+          ),
         ];
     }
   }
@@ -1214,7 +1240,7 @@ class _ContextMenuSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: getChildren(context),
+      children: children,
     );
   }
 }

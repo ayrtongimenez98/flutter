@@ -26,14 +26,10 @@ const Encoding utf8ForTesting = cnv.utf8;
 /// that aren't UTF-8 and we're not quite sure how this is happening.
 /// This tells people to report a bug when they see this.
 class Utf8Codec extends Encoding {
-  const Utf8Codec({this.reportErrors = true});
-
-  final bool reportErrors;
+  const Utf8Codec();
 
   @override
-  Converter<List<int>, String> get decoder => reportErrors
-    ? const Utf8Decoder()
-    : const Utf8Decoder(reportErrors: false);
+  Converter<List<int>, String> get decoder => const Utf8Decoder();
 
   @override
   Converter<String, List<int>> get encoder => cnv.utf8.encoder;
@@ -56,7 +52,7 @@ class Utf8Decoder extends cnv.Utf8Decoder {
     // was malformed.
     if (reportErrors && result.contains('\u{FFFD}')) {
       throwToolExit(
-        'Bad UTF-8 encoding (U+FFFD; REPLACEMENT CHARACTER) found while decoding string: $result. '
+        'Bad UTF-8 encoding found while decoding string: $result. '
         'The Flutter team would greatly appreciate if you could file a bug explaining '
         'exactly what you were doing when this happened:\n'
         'https://github.com/flutter/flutter/issues/new/choose\n'

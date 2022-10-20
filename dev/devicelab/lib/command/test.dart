@@ -4,7 +4,7 @@
 
 import 'package:args/command_runner.dart';
 
-import '../framework/runner.dart';
+import 'package:flutter_devicelab/framework/runner.dart';
 
 class TestCommand extends Command<void> {
   TestCommand() {
@@ -49,7 +49,8 @@ class TestCommand extends Command<void> {
             'task, will write test results to the file.');
     argParser.addFlag(
       'silent',
-      help: 'Suppresses standard output and only print standard error output.',
+      negatable: true,
+      defaultsTo: false,
     );
   }
 

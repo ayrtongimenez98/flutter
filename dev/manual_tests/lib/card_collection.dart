@@ -18,7 +18,7 @@ class CardModel {
 }
 
 class CardCollection extends StatefulWidget {
-  const CardCollection({super.key});
+  const CardCollection({Key? key}) : super(key: key);
 
   @override
   CardCollectionState createState() => CardCollectionState();
@@ -291,20 +291,16 @@ class CardCollectionState extends State<CardCollection> {
       case DismissDirection.startToEnd:
         backgroundMessage = 'Swipe right to dismiss';
         break;
-      case DismissDirection.vertical:
-      case DismissDirection.up:
-      case DismissDirection.down:
-      case DismissDirection.none:
+      default:
         backgroundMessage = 'Unsupported dismissDirection';
-        break;
     }
 
-    // This icon is wrong in RTL.
+    // TODO(abarth): This icon is wrong in RTL.
     Widget leftArrowIcon = const Icon(Icons.arrow_back, size: 36.0);
     if (_dismissDirection == DismissDirection.startToEnd)
       leftArrowIcon = Opacity(opacity: 0.1, child: leftArrowIcon);
 
-    // This icon is wrong in RTL.
+      // TODO(abarth): This icon is wrong in RTL.
     Widget rightArrowIcon = const Icon(Icons.arrow_forward, size: 36.0);
     if (_dismissDirection == DismissDirection.endToStart)
       rightArrowIcon = Opacity(opacity: 0.1, child: rightArrowIcon);

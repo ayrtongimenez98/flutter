@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import '../../gallery/demo.dart';
 
 class PersistentBottomSheetDemo extends StatefulWidget {
-  const PersistentBottomSheetDemo({super.key});
+  const PersistentBottomSheetDemo({Key? key}) : super(key: key);
 
   static const String routeName = '/material/persistent-bottom-sheet';
 

@@ -248,6 +248,7 @@ abstract class MultiChildLayoutDelegate {
                 'to lay out the following '
                 '${_debugChildrenNeedingLayout!.length > 1 ? 'children' : 'child'}',
               properties: _debugChildrenNeedingLayout!.map<DiagnosticsNode>(_debugDescribeChild).toList(),
+              style: DiagnosticsTreeStyle.whitespace,
             ),
           ]);
         }
@@ -318,9 +319,8 @@ class RenderCustomMultiChildLayoutBox extends RenderBox
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! MultiChildLayoutParentData) {
+    if (child.parentData is! MultiChildLayoutParentData)
       child.parentData = MultiChildLayoutParentData();
-    }
   }
 
   /// The delegate that controls the layout of the children.
@@ -328,13 +328,11 @@ class RenderCustomMultiChildLayoutBox extends RenderBox
   MultiChildLayoutDelegate _delegate;
   set delegate(MultiChildLayoutDelegate newDelegate) {
     assert(newDelegate != null);
-    if (_delegate == newDelegate) {
+    if (_delegate == newDelegate)
       return;
-    }
     final MultiChildLayoutDelegate oldDelegate = _delegate;
-    if (newDelegate.runtimeType != oldDelegate.runtimeType || newDelegate.shouldRelayout(oldDelegate)) {
+    if (newDelegate.runtimeType != oldDelegate.runtimeType || newDelegate.shouldRelayout(oldDelegate))
       markNeedsLayout();
-    }
     _delegate = newDelegate;
     if (attached) {
       oldDelegate._relayout?.removeListener(markNeedsLayout);
@@ -366,36 +364,32 @@ class RenderCustomMultiChildLayoutBox extends RenderBox
   @override
   double computeMinIntrinsicWidth(double height) {
     final double width = _getSize(BoxConstraints.tightForFinite(height: height)).width;
-    if (width.isFinite) {
+    if (width.isFinite)
       return width;
-    }
     return 0.0;
   }
 
   @override
   double computeMaxIntrinsicWidth(double height) {
     final double width = _getSize(BoxConstraints.tightForFinite(height: height)).width;
-    if (width.isFinite) {
+    if (width.isFinite)
       return width;
-    }
     return 0.0;
   }
 
   @override
   double computeMinIntrinsicHeight(double width) {
     final double height = _getSize(BoxConstraints.tightForFinite(width: width)).height;
-    if (height.isFinite) {
+    if (height.isFinite)
       return height;
-    }
     return 0.0;
   }
 
   @override
   double computeMaxIntrinsicHeight(double width) {
     final double height = _getSize(BoxConstraints.tightForFinite(width: width)).height;
-    if (height.isFinite) {
+    if (height.isFinite)
       return height;
-    }
     return 0.0;
   }
 

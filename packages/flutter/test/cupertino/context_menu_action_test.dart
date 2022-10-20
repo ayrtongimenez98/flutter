@@ -3,32 +3,17 @@
 // found in the LICENSE file.
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import '../rendering/mock_canvas.dart';
 
 void main() {
   // Constants taken from _ContextMenuActionState.
-  const CupertinoDynamicColor kBackgroundColor = CupertinoDynamicColor.withBrightness(
-    color: Color(0xFFEEEEEE),
-    darkColor: Color(0xFF212122),
-  );
-  const CupertinoDynamicColor kBackgroundColorPressed = CupertinoDynamicColor.withBrightness(
-    color: Color(0xFFDDDDDD),
-    darkColor: Color(0xFF3F3F40),
-  );
-  const Color kDestructiveActionColor = CupertinoColors.destructiveRed;
-  const FontWeight kDefaultActionWeight = FontWeight.w600;
+  const Color _kBackgroundColor = Color(0xFFEEEEEE);
+  const Color _kBackgroundColorPressed = Color(0xFFDDDDDD);
+  const Color _kRegularActionColor = CupertinoColors.black;
+  const Color _kDestructiveActionColor = CupertinoColors.destructiveRed;
+  const FontWeight _kDefaultActionWeight = FontWeight.w600;
 
-  Widget getApp({
-    VoidCallback? onPressed,
-    bool isDestructiveAction = false,
-    bool isDefaultAction = false,
-    Brightness? brightness,
-  }) {
+  Widget _getApp({VoidCallback? onPressed, bool isDestructiveAction = false, bool isDefaultAction = false}) {
     final UniqueKey actionKey = UniqueKey();
     final CupertinoContextMenuAction action = CupertinoContextMenuAction(
       key: actionKey,
@@ -40,9 +25,6 @@ void main() {
     );
 
     return CupertinoApp(
-      theme: CupertinoThemeData(
-        brightness: brightness ?? Brightness.light,
-      ),
       home: CupertinoPageScaffold(
         child: Center(
           child: action,
@@ -51,7 +33,17 @@ void main() {
     );
   }
 
-  TextStyle getTextStyle(WidgetTester tester) {
+  BoxDecoration _getDecoration(WidgetTester tester) {
+    final Finder finder = find.descendant(
+      of: find.byType(CupertinoContextMenuAction),
+      matching: find.byType(Container),
+    );
+    expect(finder, findsOneWidget);
+    final Container container = tester.widget(finder);
+    return container.decoration! as BoxDecoration;
+  }
+
+  TextStyle _getTextStyle(WidgetTester tester) {
     final Finder finder = find.descendant(
       of: find.byType(CupertinoContextMenuAction),
       matching: find.byType(DefaultTextStyle),
@@ -61,7 +53,7 @@ void main() {
     return defaultStyle.style;
   }
 
-  Icon getIcon(WidgetTester tester) {
+  Icon _getIcon(WidgetTester tester) {
     final Finder finder = find.descendant(
       of: find.byType(CupertinoContextMenuAction),
       matching: find.byType(Icon),
@@ -73,7 +65,7 @@ void main() {
 
   testWidgets('responds to taps', (WidgetTester tester) async {
     bool wasPressed = false;
-    await tester.pumpWidget(getApp(onPressed: () {
+    await tester.pumpWidget(_getApp(onPressed: () {
       wasPressed = true;
     }));
 
@@ -83,70 +75,34 @@ void main() {
   });
 
   testWidgets('turns grey when pressed and held', (WidgetTester tester) async {
-    await tester.pumpWidget(getApp());
-    expect(find.byType(CupertinoContextMenuAction), paints..rect(color: kBackgroundColor.color));
+    await tester.pumpWidget(_getApp());
+    expect(_getDecoration(tester).color, _kBackgroundColor);
 
-    final Offset actionCenterLight = tester.getCenter(find.byType(CupertinoContextMenuAction));
-    final TestGesture gestureLight = await tester.startGesture(actionCenterLight);
+    final Offset actionCenter = tester.getCenter(find.byType(CupertinoContextMenuAction));
+    final TestGesture gesture = await tester.startGesture(actionCenter);
     await tester.pump();
-    expect(find.byType(CupertinoContextMenuAction), paints..rect(color: kBackgroundColorPressed.color));
+    expect(_getDecoration(tester).color, _kBackgroundColorPressed);
 
-    await gestureLight.up();
+    await gesture.up();
     await tester.pump();
-    expect(find.byType(CupertinoContextMenuAction), paints..rect(color: kBackgroundColor.color));
-
-    await tester.pumpWidget(getApp(brightness: Brightness.dark));
-    expect(find.byType(CupertinoContextMenuAction), paints..rect(color: kBackgroundColor.darkColor));
-
-    final Offset actionCenterDark = tester.getCenter(find.byType(CupertinoContextMenuAction));
-    final TestGesture gestureDark = await tester.startGesture(actionCenterDark);
-    await tester.pump();
-    expect(find.byType(CupertinoContextMenuAction), paints..rect(color: kBackgroundColorPressed.darkColor));
-
-    await gestureDark.up();
-    await tester.pump();
-    expect(find.byType(CupertinoContextMenuAction), paints..rect(color: kBackgroundColor.darkColor));
+    expect(_getDecoration(tester).color, _kBackgroundColor);
   });
 
   testWidgets('icon and textStyle colors are correct out of the box', (WidgetTester tester) async {
-    await tester.pumpWidget(getApp());
-    expect(getTextStyle(tester).color, CupertinoColors.label);
-    expect(getIcon(tester).color,  CupertinoColors.label);
+    await tester.pumpWidget(_getApp());
+    expect(_getTextStyle(tester).color, _kRegularActionColor);
+    expect(_getIcon(tester).color, _kRegularActionColor);
   });
 
   testWidgets('icon and textStyle colors are correct for destructive actions', (WidgetTester tester) async {
-    await tester.pumpWidget(getApp(isDestructiveAction: true));
-    expect(getTextStyle(tester).color, kDestructiveActionColor);
-    expect(getIcon(tester).color, kDestructiveActionColor);
+    await tester.pumpWidget(_getApp(isDestructiveAction: true));
+    expect(_getTextStyle(tester).color, _kDestructiveActionColor);
+    expect(_getIcon(tester).color, _kDestructiveActionColor);
   });
 
   testWidgets('textStyle is correct for defaultAction', (WidgetTester tester) async {
-    await tester.pumpWidget(getApp(isDefaultAction: true));
-    expect(getTextStyle(tester).fontWeight, kDefaultActionWeight);
+    await tester.pumpWidget(_getApp(isDefaultAction: true));
+    expect(_getTextStyle(tester).fontWeight, _kDefaultActionWeight);
   });
 
-  testWidgets(
-    'Hovering over Cupertino context menu action updates cursor to clickable on Web',
-    (WidgetTester tester) async {
-      /// Cupertino context menu action without "onPressed" callback.
-      await tester.pumpWidget(getApp());
-      final Offset contextMenuAction = tester.getCenter(find.text('I am a CupertinoContextMenuAction'));
-      final TestGesture gesture = await tester.createGesture(kind: PointerDeviceKind.mouse, pointer: 1);
-      await gesture.addPointer(location: contextMenuAction);
-      await tester.pumpAndSettle();
-      expect(RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.basic);
-
-      // / Cupertino context menu action with "onPressed" callback.
-      await tester.pumpWidget(getApp(onPressed: (){}));
-      await gesture.moveTo(const Offset(10, 10));
-      await tester.pumpAndSettle();
-      expect(RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.basic);
-
-      await gesture.moveTo(contextMenuAction);
-      await tester.pumpAndSettle();
-      expect(
-        RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1),
-        kIsWeb ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      );
-  });
 }

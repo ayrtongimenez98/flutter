@@ -4,7 +4,6 @@
 
 import 'dart:convert';
 import 'dart:ui' as ui show Codec;
-import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +24,7 @@ const String kBlueSquare = 'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAASEl'
 /// A 10x10 grid of animated looping placeholder gifts that fade into a
 /// blue square.
 class AnimatedPlaceholderPage extends StatelessWidget {
-  const AnimatedPlaceholderPage({super.key});
+  const AnimatedPlaceholderPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -58,11 +57,11 @@ class DelayedBase64Image extends ImageProvider<int> {
   }
 
   @override
-  ImageStreamCompleter loadBuffer(int key, DecoderBufferCallback decode) {
+  ImageStreamCompleter load(int key, DecoderCallback decode) {
     return MultiFrameImageStreamCompleter(
       codec: Future<ui.Codec>.delayed(
         delay,
-        () async => decode(await ImmutableBuffer.fromUint8List(base64.decode(data))),
+        () => decode(base64.decode(data)),
       ),
       scale: 1.0,
     );

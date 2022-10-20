@@ -16,7 +16,7 @@ void main() {
 }
 
 class Toggler extends StatefulWidget {
-  const Toggler({super.key});
+  const Toggler({Key? key}) : super(key: key);
 
   @override
   State<Toggler> createState() => TogglerState();

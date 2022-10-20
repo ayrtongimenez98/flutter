@@ -36,11 +36,12 @@ class Texture extends LeafRenderObjectWidget {
   /// Creates a widget backed by the texture identified by [textureId], and use
   /// [filterQuality] to set texture's [FilterQuality].
   const Texture({
-    super.key,
+    Key? key,
     required this.textureId,
     this.freeze = false,
     this.filterQuality = FilterQuality.low,
-  }) : assert(textureId != null);
+  }) : assert(textureId != null),
+       super(key: key);
 
   /// The identity of the backend texture.
   final int textureId;

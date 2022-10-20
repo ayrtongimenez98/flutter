@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class Inside extends StatefulWidget {
-  const Inside({ super.key });
+  const Inside({ Key? key }) : super(key: key);
   @override
   InsideState createState() => InsideState();
 }
@@ -27,9 +27,9 @@ class InsideState extends State<Inside> {
 
 class Middle extends StatefulWidget {
   const Middle({
-    super.key,
+    Key? key,
     this.child,
-  });
+  }) : super(key: key);
 
   final Inside? child;
 
@@ -52,7 +52,7 @@ class MiddleState extends State<Middle> {
 }
 
 class Outside extends StatefulWidget {
-  const Outside({ super.key });
+  const Outside({ Key? key }) : super(key: key);
   @override
   OutsideState createState() => OutsideState();
 }

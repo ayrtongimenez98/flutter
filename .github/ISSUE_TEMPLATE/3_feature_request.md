@@ -38,10 +38,7 @@ assignees: ''
 <!--
      Briefly but precisely describe what you would like Flutter to be able to do.
 
-     Consider attaching something showing what you are imagining:
-      * images
-      * videos
-      * code samples
+     Consider attaching images showing what you are imagining.
 
      Does this have to be provided by Flutter directly, or can it be provided
      by a package on pub.dev/flutter? If so, maybe consider implementing and

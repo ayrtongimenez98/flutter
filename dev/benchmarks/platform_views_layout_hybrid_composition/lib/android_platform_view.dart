@@ -12,9 +12,9 @@ class AndroidPlatformView extends StatelessWidget {
   /// Creates a platform view for Android, which is rendered as a
   /// native view.
   const AndroidPlatformView({
-    super.key,
+    Key? key,
     required this.viewType,
-  });
+  }) : super(key: key);
 
   /// The unique identifier for the view type to be embedded by this widget.
   ///
@@ -38,6 +38,7 @@ class AndroidPlatformView extends StatelessWidget {
           id: params.id,
           viewType: viewType,
           layoutDirection: TextDirection.ltr,
+          creationParams: null,
           creationParamsCodec: const StandardMessageCodec(),
         )
           ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)

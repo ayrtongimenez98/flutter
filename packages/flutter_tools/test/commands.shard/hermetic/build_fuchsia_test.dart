@@ -33,6 +33,7 @@ void main() {
   Cache.disableLocking();
 
   final Platform linuxPlatform = FakePlatform(
+    operatingSystem: 'linux',
     environment: const <String, String>{
       'FLUTTER_ROOT': '/',
     },
@@ -40,7 +41,7 @@ void main() {
   final Platform windowsPlatform = FakePlatform(
     operatingSystem: 'windows',
     environment: const <String, String>{
-      'FLUTTER_ROOT': '/',
+      'FLUTTER_ROOT': '/'
     },
   );
   FakeFuchsiaSdk fuchsiaSdk;
@@ -66,7 +67,7 @@ void main() {
       Platform: () => linuxPlatform,
       FileSystem: () => fileSystem,
       ProcessManager: () => FakeProcessManager.any(),
-      FeatureFlags: () => TestFeatureFlags(),
+      FeatureFlags: () => TestFeatureFlags(isFuchsiaEnabled: false),
     });
     testUsingContext('there is no Fuchsia project', () async {
       final BuildCommand command = BuildCommand();

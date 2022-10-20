@@ -144,9 +144,8 @@ class ButtonBarThemeData with Diagnosticable {
   /// {@macro dart.ui.shadow.lerp}
   static ButtonBarThemeData? lerp(ButtonBarThemeData? a, ButtonBarThemeData? b, double t) {
     assert(t != null);
-    if (a == null && b == null) {
+    if (a == null && b == null)
       return null;
-    }
     return ButtonBarThemeData(
       alignment: t < 0.5 ? a?.alignment : b?.alignment,
       mainAxisSize: t < 0.5 ? a?.mainAxisSize : b?.mainAxisSize,
@@ -161,26 +160,26 @@ class ButtonBarThemeData with Diagnosticable {
   }
 
   @override
-  int get hashCode => Object.hash(
-    alignment,
-    mainAxisSize,
-    buttonTextTheme,
-    buttonMinWidth,
-    buttonHeight,
-    buttonPadding,
-    buttonAlignedDropdown,
-    layoutBehavior,
-    overflowDirection,
-  );
+  int get hashCode {
+    return hashValues(
+      alignment,
+      mainAxisSize,
+      buttonTextTheme,
+      buttonMinWidth,
+      buttonHeight,
+      buttonPadding,
+      buttonAlignedDropdown,
+      layoutBehavior,
+      overflowDirection,
+    );
+  }
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) {
+    if (identical(this, other))
       return true;
-    }
-    if (other.runtimeType != runtimeType) {
+    if (other.runtimeType != runtimeType)
       return false;
-    }
     return other is ButtonBarThemeData
         && other.alignment == alignment
         && other.mainAxisSize == mainAxisSize
@@ -206,6 +205,7 @@ class ButtonBarThemeData with Diagnosticable {
       'buttonAlignedDropdown',
       value: buttonAlignedDropdown,
       ifTrue: 'dropdown width matches button',
+      defaultValue: null,
     ));
     properties.add(DiagnosticsProperty<ButtonBarLayoutBehavior>('layoutBehavior', layoutBehavior, defaultValue: null));
     properties.add(DiagnosticsProperty<VerticalDirection>('overflowDirection', overflowDirection, defaultValue: null));
@@ -234,10 +234,10 @@ class ButtonBarTheme extends InheritedWidget {
   ///
   /// The [data] must not be null.
   const ButtonBarTheme({
-    super.key,
+    Key? key,
     required this.data,
-    required super.child,
-  }) : assert(data != null);
+    required Widget child,
+  }) : assert(data != null), super(key: key, child: child);
 
   /// The properties used for all descendant [ButtonBar] widgets.
   final ButtonBarThemeData data;

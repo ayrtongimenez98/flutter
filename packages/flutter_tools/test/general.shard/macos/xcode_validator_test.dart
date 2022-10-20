@@ -23,7 +23,6 @@ void main() {
       final XcodeValidator validator = XcodeValidator(xcode: xcode, userMessages: UserMessages());
       final ValidationResult result = await validator.validate();
       expect(result.type, ValidationType.missing);
-      expect(result.statusInfo, isNull);
       expect(result.messages.last.type, ValidationMessageType.error);
       expect(result.messages.last.message, contains('Xcode not installed'));
     });
@@ -56,20 +55,20 @@ void main() {
       final ValidationResult result = await validator.validate();
       expect(result.type, ValidationType.partial);
       expect(result.messages.last.type, ValidationMessageType.error);
-      expect(result.messages.last.message, contains('Flutter requires Xcode 13 or higher'));
+      expect(result.messages.last.message, contains('Flutter requires a minimum Xcode version of 12.0.1'));
     });
 
     testWithoutContext('Emits partial status when Xcode below recommended version', () async {
       final ProcessManager processManager = FakeProcessManager.any();
       final Xcode xcode = Xcode.test(
         processManager: processManager,
-        xcodeProjectInterpreter: XcodeProjectInterpreter.test(processManager: processManager, version: Version(12, 4, null)),
+        xcodeProjectInterpreter: XcodeProjectInterpreter.test(processManager: processManager, version: Version(12, 0, 1)),
       );
       final XcodeValidator validator = XcodeValidator(xcode: xcode, userMessages: UserMessages());
       final ValidationResult result = await validator.validate();
       expect(result.type, ValidationType.partial);
       expect(result.messages.last.type, ValidationMessageType.hint);
-      expect(result.messages.last.message, contains('Flutter recommends a minimum Xcode version of 13'));
+      expect(result.messages.last.message, contains('Flutter recommends a minimum Xcode version of 12.0.2'));
     }, skip: true); // [intended] Unskip and update when minimum and required check versions diverge.
 
     testWithoutContext('Emits partial status when Xcode EULA not signed', () async {
@@ -183,12 +182,6 @@ void main() {
       final XcodeValidator validator = XcodeValidator(xcode: xcode, userMessages: UserMessages());
       final ValidationResult result = await validator.validate();
       expect(result.type, ValidationType.installed);
-      expect(result.messages.length, 2);
-      final ValidationMessage firstMessage = result.messages.first;
-      expect(firstMessage.type, ValidationMessageType.information);
-      expect(firstMessage.message, 'Xcode at /Library/Developer/CommandLineTools');
-      expect(result.statusInfo, '1000.0.0');
-      expect(result.messages[1].message, 'Build 13C100');
     });
   });
 }

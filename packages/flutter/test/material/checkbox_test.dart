@@ -532,6 +532,7 @@ void main() {
 
     // Start hovering
     final TestGesture gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(gesture.removePointer);
     await gesture.moveTo(tester.getCenter(find.byType(Checkbox)));
 
     await tester.pumpWidget(buildApp());
@@ -709,10 +710,11 @@ void main() {
 
     final TestGesture gesture = await tester.createGesture(kind: PointerDeviceKind.mouse, pointer: 1);
     await gesture.addPointer(location: tester.getCenter(find.byType(Checkbox)));
+    addTearDown(gesture.removePointer);
 
     await tester.pump();
 
-    expect(RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.text);
+    expect(RendererBinding.instance!.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.text);
 
     // Test default cursor
     await tester.pumpWidget(
@@ -734,7 +736,7 @@ void main() {
       ),
     );
 
-    expect(RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.click);
+    expect(RendererBinding.instance!.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.click);
 
     // Test default cursor when disabled
     await tester.pumpWidget(
@@ -756,7 +758,7 @@ void main() {
       ),
     );
 
-    expect(RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.basic);
+    expect(RendererBinding.instance!.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.basic);
 
     // Test cursor when tristate
     await tester.pumpWidget(
@@ -780,7 +782,7 @@ void main() {
       ),
     );
 
-    expect(RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.grab);
+    expect(RendererBinding.instance!.mouseTracker.debugDeviceActiveCursor(1), SystemMouseCursors.grab);
 
     await tester.pumpAndSettle();
   });
@@ -880,6 +882,7 @@ void main() {
     // Start hovering
     final TestGesture gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await gesture.addPointer();
+    addTearDown(gesture.removePointer);
     await gesture.moveTo(tester.getCenter(find.byType(Checkbox)));
     await tester.pumpAndSettle();
 
@@ -887,8 +890,8 @@ void main() {
   });
 
   testWidgets('Checkbox respects shape and side', (WidgetTester tester) async {
-    const RoundedRectangleBorder roundedRectangleBorder =
-        RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(5)));
+    final RoundedRectangleBorder roundedRectangleBorder =
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(5));
 
     const BorderSide side = BorderSide(
       width: 4,
@@ -965,7 +968,7 @@ void main() {
             autofocus: focused,
             value: active,
             onChanged: (_) { },
-            fillColor: const MaterialStatePropertyAll<Color>(fillColor),
+            fillColor: MaterialStateProperty.all(fillColor),
             overlayColor: useOverlay ? MaterialStateProperty.resolveWith(getOverlayColor) : null,
             hoverColor: hoverColor,
             focusColor: focusColor,
@@ -975,7 +978,7 @@ void main() {
       );
     }
 
-    await tester.pumpWidget(buildCheckbox(useOverlay: false));
+    await tester.pumpWidget(buildCheckbox(active: false, useOverlay: false));
     await tester.startGesture(tester.getCenter(find.byType(Checkbox)));
     await tester.pumpAndSettle();
 
@@ -1003,7 +1006,7 @@ void main() {
       reason: 'Default active pressed Checkbox should have overlay color from fillColor',
     );
 
-    await tester.pumpWidget(buildCheckbox());
+    await tester.pumpWidget(buildCheckbox(active: false));
     await tester.startGesture(tester.getCenter(find.byType(Checkbox)));
     await tester.pumpAndSettle();
 
@@ -1048,6 +1051,7 @@ void main() {
     // Start hovering
     final TestGesture gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await gesture.addPointer();
+    addTearDown(gesture.removePointer);
     await gesture.moveTo(tester.getCenter(find.byType(Checkbox)));
     await tester.pumpAndSettle();
 
@@ -1073,11 +1077,10 @@ void main() {
         }
         return inactivePressedOverlayColor;
       }
-      return null;
     }
     const double splashRadius = 24.0;
     TestGesture gesture;
-    bool? value = false;
+    bool? _value = false;
 
     Widget buildTristateCheckbox() {
       return MaterialApp(
@@ -1085,11 +1088,11 @@ void main() {
           body: StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
               return Checkbox(
-                value: value,
+                value: _value,
                 tristate: true,
-                onChanged: (bool? v) {
+                onChanged: (bool? value) {
                   setState(() {
-                    value = v;
+                    _value = value;
                   });
                 },
                 overlayColor: MaterialStateProperty.resolveWith(getOverlayColor),
@@ -1106,7 +1109,7 @@ void main() {
     gesture = await tester.press(find.byType(Checkbox));
     await tester.pumpAndSettle();
 
-    expect(value, false);
+    expect(_value, false);
     expect(
       Material.of(tester.element(find.byType(Checkbox))),
       paints
@@ -1122,7 +1125,7 @@ void main() {
     gesture = await tester.press(find.byType(Checkbox));
     await tester.pumpAndSettle();
 
-    expect(value, true);
+    expect(_value, true);
     expect(
       Material.of(tester.element(find.byType(Checkbox))),
       paints
@@ -1138,7 +1141,7 @@ void main() {
     gesture = await tester.press(find.byType(Checkbox));
     await tester.pumpAndSettle();
 
-    expect(value, null);
+    expect(_value, null);
     expect(
       Material.of(tester.element(find.byType(Checkbox))),
       paints
@@ -1154,7 +1157,7 @@ void main() {
     gesture = await tester.press(find.byType(Checkbox));
     await tester.pumpAndSettle();
 
-    expect(value, false);
+    expect(_value, false);
     expect(
       Material.of(tester.element(find.byType(Checkbox))),
       paints
@@ -1249,7 +1252,7 @@ void main() {
     expect(getCheckboxRenderer(), isNot(paints..drrect())); // no border
     expect(getCheckboxRenderer(), paints..path(color: activeColor)); // checkbox fill
 
-    await tester.pumpWidget(buildApp());
+    await tester.pumpWidget(buildApp(value: null));
     await tester.pumpAndSettle();
     expect(getCheckboxRenderer(), isNot(paints..drrect())); // no border
     expect(getCheckboxRenderer(), paints..path(color: activeColor)); // checkbox fill
@@ -1302,7 +1305,7 @@ void main() {
     await tester.pumpAndSettle();
     expectBorder();
 
-    await tester.pumpWidget(buildApp());
+    await tester.pumpWidget(buildApp(value: null));
     await tester.pumpAndSettle();
     expectBorder();
   });

@@ -21,14 +21,15 @@ import 'android_sdk.dart';
 import 'gradle.dart';
 
 /// An application package created from an already built Android APK.
-class AndroidApk extends ApplicationPackage implements PrebuiltApplicationPackage {
+class AndroidApk extends ApplicationPackage {
   AndroidApk({
-    required super.id,
-    required this.applicationPackage,
+    required String id,
+    required this.file,
     required this.versionCode,
     required this.launchActivity,
-  }) : assert(applicationPackage != null),
-       assert(launchActivity != null);
+  }) : assert(file != null),
+       assert(launchActivity != null),
+       super(id: id);
 
   /// Creates a new AndroidApk from an existing APK.
   ///
@@ -79,14 +80,14 @@ class AndroidApk extends ApplicationPackage implements PrebuiltApplicationPackag
 
     return AndroidApk(
       id: packageName,
-      applicationPackage: apk,
+      file: apk,
       versionCode: data.versionCode == null ? null : int.tryParse(data.versionCode!),
       launchActivity: '${data.packageName}/${data.launchableActivityName}',
     );
   }
 
-  @override
-  final FileSystemEntity applicationPackage;
+  /// Path to the actual apk file.
+  final File file;
 
   /// The path to the activity that should be launched.
   final String launchActivity;
@@ -97,7 +98,7 @@ class AndroidApk extends ApplicationPackage implements PrebuiltApplicationPackag
   /// Creates a new AndroidApk based on the information in the Android manifest.
   static Future<AndroidApk?> fromAndroidProject(
     AndroidProject androidProject, {
-    required AndroidSdk? androidSdk,
+    required AndroidSdk androidSdk,
     required ProcessManager processManager,
     required UserMessages userMessages,
     required ProcessUtils processUtils,
@@ -113,7 +114,7 @@ class AndroidApk extends ApplicationPackage implements PrebuiltApplicationPackag
         // the application Id, so we need to look at what was actually built.
         return AndroidApk.fromApk(
           apkFile,
-          androidSdk: androidSdk!,
+          androidSdk: androidSdk,
           processManager: processManager,
           logger: logger,
           userMessages: userMessages,
@@ -139,7 +140,7 @@ class AndroidApk extends ApplicationPackage implements PrebuiltApplicationPackag
     XmlDocument document;
     try {
       document = XmlDocument.parse(manifestString);
-    } on XmlException catch (exception) {
+    } on XmlParserException catch (exception) {
       String manifestLocation;
       if (androidProject.isUsingGradle) {
         manifestLocation = fileSystem.path.join(androidProject.hostAppGradleRoot.path, 'app', 'src', 'main', 'AndroidManifest.xml');
@@ -148,7 +149,7 @@ class AndroidApk extends ApplicationPackage implements PrebuiltApplicationPackag
       }
       logger.printError('AndroidManifest.xml is not a valid XML document.');
       logger.printError('Please check $manifestLocation for errors.');
-      throwToolExit('XML Parser error message: $exception');
+      throwToolExit('XML Parser error message: ${exception.toString()}');
     }
 
     final Iterable<XmlElement> manifests = document.findElements('manifest');
@@ -196,14 +197,17 @@ class AndroidApk extends ApplicationPackage implements PrebuiltApplicationPackag
 
     return AndroidApk(
       id: packageId,
-      applicationPackage: apkFile,
+      file: apkFile,
       versionCode: null,
       launchActivity: launchActivity,
     );
   }
 
   @override
-  String get name => applicationPackage.basename;
+  File get packagesFile => file;
+
+  @override
+  String get name => file.basename;
 }
 
 abstract class _Entry {
@@ -231,7 +235,7 @@ class _Element extends _Entry {
 
   _Attribute? firstAttribute(String name) {
     for (final _Attribute child in children.whereType<_Attribute>()) {
-      if (child.key?.startsWith(name) ?? false) {
+      if (child.key?.startsWith(name) == true) {
         return child;
       }
     }
@@ -240,7 +244,7 @@ class _Element extends _Entry {
 
   _Element? firstElement(String name) {
     for (final _Element child in children.whereType<_Element>()) {
-      if (child.name?.startsWith(name) ?? false) {
+      if (child.name?.startsWith(name) == true) {
         return child;
       }
     }
@@ -248,7 +252,7 @@ class _Element extends _Entry {
   }
 
   Iterable<_Element> allElements(String name) {
-    return children.whereType<_Element>().where((_Element e) => e.name?.startsWith(name) ?? false);
+    return children.whereType<_Element>().where((_Element e) => e.name?.startsWith(name) == true);
   }
 }
 
@@ -331,7 +335,7 @@ class ApkManifestData {
       final _Attribute? enabled = activity.firstAttribute('android:enabled');
       final Iterable<_Element> intentFilters = activity.allElements('intent-filter');
       final bool isEnabledByDefault = enabled == null;
-      final bool isExplicitlyEnabled = enabled != null && (enabled.value?.contains('0xffffffff') ?? false);
+      final bool isExplicitlyEnabled = enabled != null && enabled.value?.contains('0xffffffff') == true;
       if (!(isEnabledByDefault || isExplicitlyEnabled)) {
         continue;
       }

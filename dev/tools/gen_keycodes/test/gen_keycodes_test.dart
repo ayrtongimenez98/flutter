@@ -23,11 +23,9 @@ String readDataFile(String fileName) {
 }
 
 final PhysicalKeyData physicalData = PhysicalKeyData.fromJson(
-    json.decode(readDataFile('physical_key_data.g.json')) as Map<String, dynamic>);
+    json.decode(readDataFile('physical_key_data.json')) as Map<String, dynamic>);
 final LogicalKeyData logicalData = LogicalKeyData.fromJson(
-    json.decode(readDataFile('logical_key_data.g.json')) as Map<String, dynamic>);
-final Map<String, bool> keyGoals = parseMapOfBool(
-    readDataFile('layout_goals.json'));
+    json.decode(readDataFile('logical_key_data.json')) as Map<String, dynamic>);
 
 void main() {
   setUp(() {
@@ -67,11 +65,10 @@ void main() {
     final PlatformCodeGenerator codeGenerator = MacOSCodeGenerator(
       physicalData,
       logicalData,
-      keyGoals,
     );
     final String output = codeGenerator.generate();
 
-    expect(codeGenerator.outputPath(platform), endsWith('KeyCodeMap.g.mm'));
+    expect(codeGenerator.outputPath(platform), endsWith('KeyCodeMap.mm'));
     expect(output, contains('kValueMask'));
     expect(output, contains('keyCodeToPhysicalKey'));
     expect(output, contains('keyCodeToLogicalKey'));
@@ -89,7 +86,7 @@ void main() {
     );
     final String output = codeGenerator.generate();
 
-    expect(codeGenerator.outputPath(platform), endsWith('KeyCodeMap.g.mm'));
+    expect(codeGenerator.outputPath(platform), endsWith('KeyCodeMap.mm'));
     expect(output, contains('kValueMask'));
     expect(output, contains('keyCodeToPhysicalKey'));
     expect(output, contains('keyCodeToLogicalKey'));
@@ -109,7 +106,7 @@ void main() {
     );
     final String output = codeGenerator.generate();
 
-    expect(codeGenerator.outputPath(platform), endsWith('flutter_key_map.g.cc'));
+    expect(codeGenerator.outputPath(platform), endsWith('flutter_key_map.cc'));
     expect(output, contains('KeyboardKeyEmbedderHandler::windowsToPhysicalMap_'));
     expect(output, contains('KeyboardKeyEmbedderHandler::windowsToLogicalMap_'));
     expect(output, contains('KeyboardKeyEmbedderHandler::scanCodeToLogicalMap_'));
@@ -122,11 +119,10 @@ void main() {
       logicalData,
       readDataFile(path.join(dataRoot, 'gtk_modifier_bit_mapping.json')),
       readDataFile(path.join(dataRoot, 'gtk_lock_bit_mapping.json')),
-      keyGoals,
     );
     final String output = codeGenerator.generate();
 
-    expect(codeGenerator.outputPath(platform), endsWith('key_mapping.g.cc'));
+    expect(codeGenerator.outputPath(platform), endsWith('key_mapping.cc'));
     expect(output, contains('initialize_modifier_bit_to_checked_keys'));
     expect(output, contains('initialize_lock_bit_to_checked_keys'));
     checkCommonOutput(output);
@@ -140,7 +136,7 @@ void main() {
     );
     final String output = codeGenerator.generate();
 
-    expect(codeGenerator.outputPath(platform), endsWith('key_map.g.dart'));
+    expect(codeGenerator.outputPath(platform), endsWith('key_map.dart'));
     expect(output, contains('kWebToLogicalKey'));
     expect(output, contains('kWebToPhysicalKey'));
     expect(output, contains('kWebLogicalLocationMap'));

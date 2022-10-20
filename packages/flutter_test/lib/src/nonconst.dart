@@ -13,7 +13,7 @@
 ///
 /// main () {
 ///   // prevent prefer_const_constructors lint
-///   A(nonconst(null));
+///   new A(nonconst(null));
 ///
 ///   // prevent prefer_const_declarations lint
 ///   final int $null = nonconst(null);

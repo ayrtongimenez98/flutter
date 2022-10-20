@@ -9,8 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 class TestScrollPhysics extends ScrollPhysics {
   const TestScrollPhysics({
     required this.name,
-    super.parent,
-  });
+    ScrollPhysics? parent,
+  }) : super(parent: parent);
   final String name;
 
   @override
@@ -26,9 +26,8 @@ class TestScrollPhysics extends ScrollPhysics {
 
   @override
   String toString() {
-    if (parent == null) {
+    if (parent == null)
       return '${objectRuntimeType(this, 'TestScrollPhysics')}($name)';
-    }
     return '${objectRuntimeType(this, 'TestScrollPhysics')}($name) -> $parent';
   }
 }

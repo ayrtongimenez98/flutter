@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'dart:async';
 
 import 'package:file/memory.dart';
@@ -25,7 +27,9 @@ final FakePlatform macOS = FakePlatform(
   operatingSystem: 'macos',
 );
 
-final FakePlatform linux = FakePlatform();
+final FakePlatform linux = FakePlatform(
+  operatingSystem: 'linux',
+);
 
 void main() {
   testWithoutContext('default configuration', () async {
@@ -58,10 +62,10 @@ void main() {
       processManager: FakeProcessManager.list(<FakeCommand>[
         FakeCommand(
           command: const <String>['release/executable'],
-          stdout: 'Hello World\n',
-          stderr: 'Goodnight, Moon\n',
+          stdout: 'Hello World',
+          stderr: 'Goodnight, Moon',
           completer: completer,
-        ),
+        )
       ]),
       logger: BufferLogger.test(),
       operatingSystemUtils: FakeOperatingSystemUtils(),
@@ -78,7 +82,7 @@ void main() {
 
     final DeviceLogReader logReader = device.getLogReader(app: package);
 
-    expect(logReader.logLines, emitsInAnyOrder(<String>['Hello World', 'Goodnight, Moon']));
+    expect(logReader.logLines, emits('Hello WorldGoodnight, Moon'));
     completer.complete();
   });
 
@@ -104,7 +108,7 @@ void main() {
       platform: macOS,
       operatingSystemUtils: FakeOperatingSystemUtils(),
       macOSWorkflow: MacOSWorkflow(
-        featureFlags: TestFeatureFlags(),
+        featureFlags: TestFeatureFlags(isMacOSEnabled: false),
         platform: macOS,
       ),
     );

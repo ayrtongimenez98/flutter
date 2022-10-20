@@ -2,7 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// TODO(gspencergoog): Remove this tag once this test's state leaks/test
+// dependencies have been fixed.
+// https://github.com/flutter/flutter/issues/85160
+// Fails with "flutter test --test-randomize-ordering-seed=123"
+@Tags(<String>['no-shuffle'])
+
 import 'dart:async';
+import 'dart:ui' show window;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
@@ -52,23 +59,20 @@ void main() {
     input.forEach(scheduleAddingTask);
 
     strategy.allowedPriority = 100;
-    for (int i = 0; i < 3; i += 1) {
+    for (int i = 0; i < 3; i += 1)
       expect(scheduler.handleEventLoopCallback(), isFalse);
-    }
     expect(executedTasks.isEmpty, isTrue);
 
     strategy.allowedPriority = 50;
-    for (int i = 0; i < 3; i += 1) {
+    for (int i = 0; i < 3; i += 1)
       expect(scheduler.handleEventLoopCallback(), i == 0 ? isTrue : isFalse);
-    }
     expect(executedTasks, hasLength(1));
     expect(executedTasks.single, equals(80));
     executedTasks.clear();
 
     strategy.allowedPriority = 20;
-    for (int i = 0; i < 3; i += 1) {
+    for (int i = 0; i < 3; i += 1)
       expect(scheduler.handleEventLoopCallback(), i < 2 ? isTrue : isFalse);
-    }
     expect(executedTasks, hasLength(2));
     expect(executedTasks[0], equals(23));
     expect(executedTasks[1], equals(23));
@@ -78,27 +82,24 @@ void main() {
     scheduleAddingTask(19);
     scheduleAddingTask(5);
     scheduleAddingTask(97);
-    for (int i = 0; i < 3; i += 1) {
+    for (int i = 0; i < 3; i += 1)
       expect(scheduler.handleEventLoopCallback(), i < 2 ? isTrue : isFalse);
-    }
     expect(executedTasks, hasLength(2));
     expect(executedTasks[0], equals(99));
     expect(executedTasks[1], equals(97));
     executedTasks.clear();
 
     strategy.allowedPriority = 10;
-    for (int i = 0; i < 3; i += 1) {
+    for (int i = 0; i < 3; i += 1)
       expect(scheduler.handleEventLoopCallback(), i < 2 ? isTrue : isFalse);
-    }
     expect(executedTasks, hasLength(2));
     expect(executedTasks[0], equals(19));
     expect(executedTasks[1], equals(11));
     executedTasks.clear();
 
     strategy.allowedPriority = 1;
-    for (int i = 0; i < 4; i += 1) {
+    for (int i = 0; i < 4; i += 1)
       expect(scheduler.handleEventLoopCallback(), i < 3 ? isTrue : isFalse);
-    }
     expect(executedTasks, hasLength(3));
     expect(executedTasks[0], equals(5));
     expect(executedTasks[1], equals(3));
@@ -139,24 +140,18 @@ void main() {
     for (final VoidCallback timer in timerQueueTasks) {
       timer();
     }
-
-    // As events are locked, make scheduleTask execute after the test or it
-    // will execute during following tests and risk failure.
-    addTearDown(() => scheduler.handleEventLoopCallback());
   });
 
   test('Flutter.Frame event fired', () async {
-    SchedulerBinding.instance.platformDispatcher.onReportTimings!(<FrameTiming>[
-      FrameTiming(
-        vsyncStart: 5000,
-        buildStart: 10000,
-        buildFinish: 15000,
-        rasterStart: 16000,
-        rasterFinish: 20000,
-        rasterFinishWallTime: 20010,
-        frameNumber: 1991,
-      ),
-    ]);
+    window.onReportTimings!(<FrameTiming>[FrameTiming(
+      vsyncStart: 5000,
+      buildStart: 10000,
+      buildFinish: 15000,
+      rasterStart: 16000,
+      rasterFinish: 20000,
+      rasterFinishWallTime: 20010,
+      frameNumber: 1991
+    )]);
 
     final List<Map<String, dynamic>> events = scheduler.getEventsDispatched('Flutter.Frame');
     expect(events, hasLength(1));
@@ -175,10 +170,10 @@ void main() {
     FlutterError.onError = (FlutterErrorDetails details) {
       errorCaught = details;
     };
-    SchedulerBinding.instance.addTimingsCallback((List<FrameTiming> timings) {
+    SchedulerBinding.instance!.addTimingsCallback((List<FrameTiming> timings) {
       throw Exception('Test');
     });
-    SchedulerBinding.instance.platformDispatcher.onReportTimings!(<FrameTiming>[]);
+    window.onReportTimings!(<FrameTiming>[]);
     expect(errorCaught!.exceptionAsString(), equals('Exception: Test'));
   });
 
@@ -240,9 +235,9 @@ void main() {
     // Simulate an animation frame firing between warm-up begin frame and warm-up draw frame.
     // Expect a timer that reschedules the frame.
     expect(scheduler.hasScheduledFrame, isFalse);
-    SchedulerBinding.instance.platformDispatcher.onBeginFrame!(Duration.zero);
+    window.onBeginFrame!(Duration.zero);
     expect(scheduler.hasScheduledFrame, isFalse);
-    SchedulerBinding.instance.platformDispatcher.onDrawFrame!();
+    window.onDrawFrame!();
     expect(scheduler.hasScheduledFrame, isFalse);
 
     // The draw frame part of the warm-up frame will run the post-frame

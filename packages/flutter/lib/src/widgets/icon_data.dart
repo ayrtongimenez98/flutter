@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:ui' show hashValues;
+
 import 'package:flutter/foundation.dart';
 
 /// A description of an icon fulfilled by a font glyph.
@@ -49,9 +51,8 @@ class IconData {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
+    if (other.runtimeType != runtimeType)
       return false;
-    }
     return other is IconData
         && other.codePoint == codePoint
         && other.fontFamily == fontFamily
@@ -60,7 +61,7 @@ class IconData {
   }
 
   @override
-  int get hashCode => Object.hash(codePoint, fontFamily, fontPackage, matchTextDirection);
+  int get hashCode => hashValues(codePoint, fontFamily, fontPackage, matchTextDirection);
 
   @override
   String toString() => 'IconData(U+${codePoint.toRadixString(16).toUpperCase().padLeft(5, '0')})';
@@ -72,15 +73,21 @@ class IconDataProperty extends DiagnosticsProperty<IconData> {
   ///
   /// The [showName], [style], and [level] arguments must not be null.
   IconDataProperty(
-    String super.name,
-    super.value, {
-    super.ifNull,
-    super.showName,
-    super.style,
-    super.level,
+    String name,
+    IconData? value, {
+    String? ifNull,
+    bool showName = true,
+    DiagnosticsTreeStyle style = DiagnosticsTreeStyle.singleLine,
+    DiagnosticLevel level = DiagnosticLevel.info,
   }) : assert(showName != null),
        assert(style != null),
-       assert(level != null);
+       assert(level != null),
+       super(name, value,
+         showName: showName,
+         ifNull: ifNull,
+         style: style,
+         level: level,
+       );
 
   @override
   Map<String, Object?> toJsonMap(DiagnosticsSerializationDelegate delegate) {

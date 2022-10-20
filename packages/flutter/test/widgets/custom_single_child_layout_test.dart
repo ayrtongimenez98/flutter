@@ -13,9 +13,8 @@ class TestSingleChildLayoutDelegate extends SingleChildLayoutDelegate {
 
   @override
   Size getSize(BoxConstraints constraints) {
-    if (!RenderObject.debugCheckingIntrinsics) {
+    if (!RenderObject.debugCheckingIntrinsics)
       constraintsFromGetSize = constraints;
-    }
     return const Size(200.0, 300.0);
   }
 

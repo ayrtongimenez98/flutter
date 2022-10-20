@@ -212,9 +212,12 @@ abstract class MultiRootFileSystemEntity<T extends FileSystemEntity,
 class MultiRootFile extends MultiRootFileSystemEntity<File, io.File>
     with ForwardingFile {
   MultiRootFile({
-    required super.fileSystem,
-    required super.delegate,
-  });
+    required MultiRootFileSystem fileSystem,
+    required io.File delegate,
+  }) : super(
+    fileSystem: fileSystem,
+    delegate: delegate,
+  );
 
   @override
   String toString() =>
@@ -225,9 +228,12 @@ class MultiRootDirectory
     extends MultiRootFileSystemEntity<Directory, io.Directory>
     with ForwardingDirectory<Directory> {
   MultiRootDirectory({
-    required super.fileSystem,
-    required super.delegate,
-  });
+    required MultiRootFileSystem fileSystem,
+    required io.Directory delegate,
+  }) : super(
+    fileSystem: fileSystem,
+    delegate: delegate,
+  );
 
   // For the childEntity methods, we first obtain an instance of the entity
   // from the underlying file system, then invoke childEntity() on it, then
@@ -252,9 +258,12 @@ class MultiRootDirectory
 class MultiRootLink extends MultiRootFileSystemEntity<Link, io.Link>
     with ForwardingLink {
   MultiRootLink({
-    required super.fileSystem,
-    required super.delegate,
-  });
+    required MultiRootFileSystem fileSystem,
+    required io.Link delegate,
+  }) : super(
+    fileSystem: fileSystem,
+    delegate: delegate,
+  );
 
   @override
   String toString() =>

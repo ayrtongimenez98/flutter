@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import '../../base/file_system.dart';
+import '../../base/logger.dart';
 import '../../base/project_migrator.dart';
 import '../../xcode_project.dart';
 
@@ -10,8 +11,9 @@ import '../../xcode_project.dart';
 class ProjectBuildLocationMigration extends ProjectMigrator {
   ProjectBuildLocationMigration(
     IosProject project,
-    super.logger,
-  ) : _xcodeProjectWorkspaceData = project.xcodeProjectWorkspaceData;
+    Logger logger,
+  ) : _xcodeProjectWorkspaceData = project.xcodeProjectWorkspaceData,
+      super(logger);
 
   final File _xcodeProjectWorkspaceData;
 

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'dart:async';
 
 import 'package:file/file.dart';
@@ -12,9 +14,9 @@ import 'test_driver.dart';
 import 'test_utils.dart';
 
 void main() {
-  late Directory tempDir;
+  Directory tempDir;
   final HotReloadWithAssetProject project = HotReloadWithAssetProject();
-  late FlutterRunTestDriver flutter;
+  FlutterRunTestDriver flutter;
 
   setUp(() async {
     tempDir = createResolvedTempDirectorySync('hot_reload_test.');
@@ -23,7 +25,7 @@ void main() {
   });
 
   tearDown(() async {
-    await flutter.stop();
+    await flutter?.stop();
     tryToDelete(tempDir);
   });
 
@@ -45,7 +47,7 @@ void main() {
         onSecondLoad.complete();
       }
     });
-    flutter.stdout.listen(printOnFailure);
+    flutter.stdout.listen(print);
     await flutter.run();
     await onFirstLoad.future;
 
@@ -72,7 +74,7 @@ void main() {
         onSecondLoad.complete();
       }
     });
-    flutter.stdout.listen(printOnFailure);
+    flutter.stdout.listen(print);
     await flutter.run();
     await onFirstLoad.future;
 

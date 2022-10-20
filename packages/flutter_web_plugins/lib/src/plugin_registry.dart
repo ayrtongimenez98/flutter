@@ -158,11 +158,10 @@ class Registrar extends BinaryMessenger {
 
   @override
   void setMessageHandler(String channel, MessageHandler? handler) {
-    if (handler == null) {
+    if (handler == null)
       _handlers.remove(channel);
-    } else {
+    else
       _handlers[channel] = handler;
-    }
   }
 }
 

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:ui' as ui;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -167,7 +169,7 @@ Widget buildFrame({
 }
 
 class SyncLoadTest extends StatefulWidget {
-  const SyncLoadTest({super.key});
+  const SyncLoadTest({Key? key}) : super(key: key);
 
   @override
   SyncLoadTestState createState() => SyncLoadTestState();
@@ -687,8 +689,8 @@ void main() {
           const OnlyRTLDefaultWidgetsLocalizationsDelegate(),
         ],
         buildContent: (BuildContext context) {
-          final Locale locale1 = WidgetsBinding.instance.platformDispatcher.locales.first;
-          final Locale locale2 = WidgetsBinding.instance.platformDispatcher.locales[1];
+          final Locale locale1 = ui.window.locales.first;
+          final Locale locale2 = ui.window.locales[1];
           return Text('$locale1 $locale2');
         },
       )
@@ -1428,9 +1430,8 @@ void main() {
           Locale('de', 'DE'),
         ],
         localeResolutionCallback: (Locale? locale, Iterable<Locale> supportedLocales) {
-          if (locale == null) {
+          if (locale == null)
             return const Locale('und', 'US');
-          }
           return const Locale('en', 'US');
         },
         buildContent: (BuildContext context) {

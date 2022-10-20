@@ -2,37 +2,52 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
 
+import 'package:args/args.dart';
+import 'package:meta/meta.dart';
+import 'package:process/process.dart';
+
+import '../artifacts.dart';
 import '../base/common.dart';
 import '../base/file_system.dart';
 import '../base/io.dart';
 import '../base/logger.dart';
+import '../base/platform.dart';
+import '../base/terminal.dart';
 import '../dart/analysis.dart';
 import 'analyze_base.dart';
 
 class AnalyzeContinuously extends AnalyzeBase {
   AnalyzeContinuously(
-    super.argResults,
+    ArgResults argResults,
     List<String> repoRoots,
     List<Directory> repoPackages, {
-    required super.fileSystem,
-    required super.logger,
-    required super.terminal,
-    required super.platform,
-    required super.processManager,
-    required super.artifacts,
+    @required FileSystem fileSystem,
+    @required Logger logger,
+    @required Terminal terminal,
+    @required Platform platform,
+    @required ProcessManager processManager,
+    @required Artifacts artifacts,
   }) : super(
+        argResults,
         repoPackages: repoPackages,
         repoRoots: repoRoots,
+        fileSystem: fileSystem,
+        logger: logger,
+        platform: platform,
+        terminal: terminal,
+        processManager: processManager,
+        artifacts: artifacts,
       );
 
-  String? analysisTarget;
+  String analysisTarget;
   bool firstAnalysis = true;
   Set<String> analyzedPaths = <String>{};
   Map<String, List<AnalysisError>> analysisErrors = <String, List<AnalysisError>>{};
-  final Stopwatch analysisTimer = Stopwatch();
+  Stopwatch analysisTimer;
   int lastErrorCount = 0;
-  Status? analysisStatus;
+  Status analysisStatus;
 
   @override
   Future<void> analyze() async {
@@ -68,7 +83,7 @@ class AnalyzeContinuously extends AnalyzeBase {
     server.onErrors.listen(_handleAnalysisErrors);
 
     await server.start();
-    final int? exitCode = await server.onExit;
+    final int exitCode = await server.onExit;
 
     final String message = 'Analysis server exited with code $exitCode.';
     if (exitCode != 0) {
@@ -89,7 +104,7 @@ class AnalyzeContinuously extends AnalyzeBase {
       }
       analysisStatus = logger.startProgress('Analyzing $analysisTarget...');
       analyzedPaths.clear();
-      analysisTimer.start();
+      analysisTimer = Stopwatch()..start();
     } else {
       analysisStatus?.stop();
       analysisStatus = null;
@@ -98,29 +113,27 @@ class AnalyzeContinuously extends AnalyzeBase {
       logger.printStatus(terminal.clearScreen(), newline: false);
 
       // Remove errors for deleted files, sort, and print errors.
-      final List<AnalysisError> sortedErrors = <AnalysisError>[];
-      final List<String> pathsToRemove = <String>[];
-      analysisErrors.forEach((String path, List<AnalysisError> errors) {
+      final List<AnalysisError> errors = <AnalysisError>[];
+      for (final String path in analysisErrors.keys.toList()) {
         if (fileSystem.isFileSync(path)) {
-          sortedErrors.addAll(errors);
+          errors.addAll(analysisErrors[path]);
         } else {
-          pathsToRemove.add(path);
+          analysisErrors.remove(path);
         }
-      });
-      analysisErrors.removeWhere((String path, _) => pathsToRemove.contains(path));
+      }
 
-      sortedErrors.sort();
+      errors.sort();
 
-      for (final AnalysisError error in sortedErrors) {
+      for (final AnalysisError error in errors) {
         logger.printStatus(error.toString());
         if (error.code != null) {
           logger.printTrace('error code: ${error.code}');
         }
       }
 
-      dumpErrors(sortedErrors.map<String>((AnalysisError error) => error.toLegacyString()));
+      dumpErrors(errors.map<String>((AnalysisError error) => error.toLegacyString()));
 
-      final int issueCount = sortedErrors.length;
+      final int issueCount = errors.length;
       final int issueDiff = issueCount - lastErrorCount;
       lastErrorCount = issueCount;
       final String seconds = (analysisTimer.elapsedMilliseconds / 1000.0).toStringAsFixed(2);

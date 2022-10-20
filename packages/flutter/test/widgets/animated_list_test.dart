@@ -7,46 +7,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  // Regression test for https://github.com/flutter/flutter/issues/100451
-  testWidgets('SliverAnimatedList.builder respects findChildIndexCallback', (WidgetTester tester) async {
-    bool finderCalled = false;
-    int itemCount = 7;
-    late StateSetter stateSetter;
-
-    await tester.pumpWidget(
-      Directionality(
-        textDirection: TextDirection.ltr,
-        child: StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            stateSetter = setState;
-            return CustomScrollView(
-              slivers: <Widget>[
-                SliverAnimatedList(
-                  initialItemCount: itemCount,
-                  itemBuilder: (BuildContext context, int index, Animation<double> animation) => Container(
-                    key: Key('$index'),
-                    height: 2000.0,
-                  ),
-                  findChildIndexCallback: (Key key) {
-                    finderCalled = true;
-                    return null;
-                  },
-                ),
-              ],
-            );
-          },
-        ),
-      )
-    );
-    expect(finderCalled, false);
-
-    // Trigger update.
-    stateSetter(() => itemCount = 77);
-    await tester.pump();
-
-    expect(finderCalled, true);
-  });
-
   testWidgets('AnimatedList', (WidgetTester tester) async {
     Widget builder(BuildContext context, int index, Animation<double> animation) {
       return SizedBox(
@@ -94,7 +54,7 @@ void main() {
     expect(find.text('removing item'), findsOneWidget);
     expect(find.text('item 2'), findsNothing);
 
-    await tester.pumpAndSettle();
+    await tester.pumpAndSettle(const Duration(milliseconds: 100));
     expect(find.text('removing item'), findsNothing);
   });
 
@@ -145,6 +105,7 @@ void main() {
                 itemBuilder: (BuildContext context, int index, Animation<double> animation) {
                   return SizeTransition(
                     key: ValueKey<int>(index),
+                    axis: Axis.vertical,
                     sizeFactor: animation,
                     child: SizedBox(
                       height: 100.0,
@@ -224,6 +185,7 @@ void main() {
       Widget buildItem(BuildContext context, int item, Animation<double> animation) {
         return SizeTransition(
           key: ValueKey<int>(item),
+          axis: Axis.vertical,
           sizeFactor: animation,
           child: SizedBox(
             height: 100.0,

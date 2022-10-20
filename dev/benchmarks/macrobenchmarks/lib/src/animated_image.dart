@@ -5,7 +5,7 @@
 import 'package:flutter/material.dart';
 
 class AnimatedImagePage extends StatelessWidget {
-  const AnimatedImagePage({super.key, this.onFrame});
+  const AnimatedImagePage({Key? key, this.onFrame}) : super(key: key);
 
   final ValueChanged<int>? onFrame;
 

@@ -67,7 +67,7 @@ class FirstRunMessenger {
 
   /// Update the cached license terms hash once the new terms have been displayed.
   void confirmLicenseTermsDisplayed() {
-    _persistentToolState.setLastActiveLicenseTermsHash(_currentHash);
+    _persistentToolState.lastActiveLicenseTerms = _currentHash;
   }
 
   /// The hash of the current license representation.

@@ -2,12 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'dart:async';
 
 import 'package:meta/meta.dart';
 import 'package:process/process.dart';
 
 import '../artifacts.dart';
+import '../base/common.dart';
 import '../base/file_system.dart';
 import '../base/io.dart';
 import '../base/logger.dart';
@@ -16,7 +19,7 @@ import '../base/process.dart';
 import '../cache.dart';
 import '../convert.dart';
 import 'code_signing.dart';
-import 'iproxy.dart';
+import 'devices.dart';
 
 // Error message patterns from ios-deploy output
 const String noProvisioningProfileErrorOne = 'Error 0xe8008015';
@@ -26,11 +29,11 @@ const String unknownAppLaunchError = 'Error 0xe8000022';
 
 class IOSDeploy {
   IOSDeploy({
-    required Artifacts artifacts,
-    required Cache cache,
-    required Logger logger,
-    required Platform platform,
-    required ProcessManager processManager,
+    @required Artifacts artifacts,
+    @required Cache cache,
+    @required Logger logger,
+    @required Platform platform,
+    @required ProcessManager processManager,
   }) : _platform = platform,
        _cache = cache,
        _processUtils = ProcessUtils(processManager: processManager, logger: logger),
@@ -60,8 +63,8 @@ class IOSDeploy {
   ///
   /// Uses ios-deploy and returns the exit code.
   Future<int> uninstallApp({
-    required String deviceId,
-    required String bundleId,
+    @required String deviceId,
+    @required String bundleId,
   }) async {
     final List<String> launchCommand = <String>[
       _binaryPath,
@@ -84,11 +87,11 @@ class IOSDeploy {
   ///
   /// Uses ios-deploy and returns the exit code.
   Future<int> installApp({
-    required String deviceId,
-    required String bundlePath,
-    required List<String>launchArguments,
-    required IOSDeviceConnectionInterface interfaceType,
-    Directory? appDeltaDirectory,
+    @required String deviceId,
+    @required String bundlePath,
+    @required Directory appDeltaDirectory,
+    @required List<String>launchArguments,
+    @required IOSDeviceInterface interfaceType,
   }) async {
     appDeltaDirectory?.createSync(recursive: true);
     final List<String> launchCommand = <String>[
@@ -101,7 +104,7 @@ class IOSDeploy {
         '--app_deltas',
         appDeltaDirectory.path,
       ],
-      if (interfaceType != IOSDeviceConnectionInterface.network)
+      if (interfaceType != IOSDeviceInterface.network)
         '--no-wifi',
       if (launchArguments.isNotEmpty) ...<String>[
         '--args',
@@ -122,12 +125,11 @@ class IOSDeploy {
   /// This method does not install the app. Call [IOSDeployDebugger.launchAndAttach()]
   /// to install and attach the debugger to the specified app bundle.
   IOSDeployDebugger prepareDebuggerForLaunch({
-    required String deviceId,
-    required String bundlePath,
-    required List<String> launchArguments,
-    required IOSDeviceConnectionInterface interfaceType,
-    Directory? appDeltaDirectory,
-    required bool uninstallFirst,
+    @required String deviceId,
+    @required String bundlePath,
+    @required Directory appDeltaDirectory,
+    @required List<String> launchArguments,
+    @required IOSDeviceInterface interfaceType,
   }) {
     appDeltaDirectory?.createSync(recursive: true);
     // Interactive debug session to support sending the lldb detach command.
@@ -145,10 +147,8 @@ class IOSDeploy {
         '--app_deltas',
         appDeltaDirectory.path,
       ],
-      if (uninstallFirst)
-        '--uninstall',
       '--debug',
-      if (interfaceType != IOSDeviceConnectionInterface.network)
+      if (interfaceType != IOSDeviceInterface.network)
         '--no-wifi',
       if (launchArguments.isNotEmpty) ...<String>[
         '--args',
@@ -167,12 +167,11 @@ class IOSDeploy {
   ///
   /// Uses ios-deploy and returns the exit code.
   Future<int> launchApp({
-    required String deviceId,
-    required String bundlePath,
-    required List<String> launchArguments,
-    required IOSDeviceConnectionInterface interfaceType,
-    required bool uninstallFirst,
-    Directory? appDeltaDirectory,
+    @required String deviceId,
+    @required String bundlePath,
+    @required Directory appDeltaDirectory,
+    @required List<String> launchArguments,
+    @required IOSDeviceInterface interfaceType,
   }) async {
     appDeltaDirectory?.createSync(recursive: true);
     final List<String> launchCommand = <String>[
@@ -185,10 +184,8 @@ class IOSDeploy {
         '--app_deltas',
         appDeltaDirectory.path,
       ],
-      if (interfaceType != IOSDeviceConnectionInterface.network)
+      if (interfaceType != IOSDeviceInterface.network)
         '--no-wifi',
-      if (uninstallFirst)
-        '--uninstall',
       '--justlaunch',
       if (launchArguments.isNotEmpty) ...<String>[
         '--args',
@@ -205,8 +202,8 @@ class IOSDeploy {
   }
 
   Future<bool> isAppInstalled({
-    required String bundleId,
-    required String deviceId,
+    @required String bundleId,
+    @required String deviceId,
   }) async {
     final List<String> launchCommand = <String>[
       _binaryPath,
@@ -247,10 +244,10 @@ enum _IOSDeployDebuggerState {
 /// Wrapper to launch app and attach the debugger with ios-deploy.
 class IOSDeployDebugger {
   IOSDeployDebugger({
-    required Logger logger,
-    required ProcessUtils processUtils,
-    required List<String> launchCommand,
-    required Map<String, String> iosDeployEnv,
+    @required Logger logger,
+    @required ProcessUtils processUtils,
+    @required List<String> launchCommand,
+    @required Map<String, String> iosDeployEnv,
   }) : _processUtils = processUtils,
         _logger = logger,
         _launchCommand = launchCommand,
@@ -262,8 +259,8 @@ class IOSDeployDebugger {
   /// Sets the command to "ios-deploy" and environment to an empty map.
   @visibleForTesting
   factory IOSDeployDebugger.test({
-    required ProcessManager processManager,
-    Logger? logger,
+    @required ProcessManager processManager,
+    Logger logger,
   }) {
     final Logger debugLogger = logger ?? BufferLogger.test();
     return IOSDeployDebugger(
@@ -279,7 +276,7 @@ class IOSDeployDebugger {
   final List<String> _launchCommand;
   final Map<String, String> _iosDeployEnv;
 
-  Process? _iosDeployProcess;
+  Process _iosDeployProcess;
 
   Stream<String> get logLines => _debuggerOutput.stream;
   final StreamController<String> _debuggerOutput = StreamController<String>.broadcast();
@@ -298,26 +295,6 @@ class IOSDeployDebugger {
   // (lldb) Process 6152 stopped
   static final RegExp _lldbProcessStopped = RegExp(r'Process \d* stopped');
 
-  // (lldb) Process 6152 detached
-  static final RegExp _lldbProcessDetached = RegExp(r'Process \d* detached');
-
-  // (lldb) Process 6152 resuming
-  static final RegExp _lldbProcessResuming = RegExp(r'Process \d+ resuming');
-
-  // Send signal to stop (pause) the app. Used before a backtrace dump.
-  static const String _signalStop = 'process signal SIGSTOP';
-
-  static const String _processResume = 'process continue';
-  static const String _processInterrupt = 'process interrupt';
-
-  // Print backtrace for all threads while app is stopped.
-  static const String _backTraceAll = 'thread backtrace all';
-
-  /// If this is non-null, then the app process is paused and awaiting backtrace logging.
-  ///
-  /// The future should be completed once the backtraces are logged.
-  Completer<void>? _processResumeCompleter;
-
   /// Launch the app on the device, and attach the debugger.
   ///
   /// Returns whether or not the debugger successfully attached.
@@ -329,15 +306,16 @@ class IOSDeployDebugger {
         _launchCommand,
         environment: _iosDeployEnv,
       );
-      String? lastLineFromDebugger;
-      final StreamSubscription<String> stdoutSubscription = _iosDeployProcess!.stdout
+      String lastLineFromDebugger;
+      final StreamSubscription<String> stdoutSubscription = _iosDeployProcess.stdout
           .transform<String>(utf8.decoder)
           .transform<String>(const LineSplitter())
           .listen((String line) {
         _monitorIOSDeployFailure(line, _logger);
+
         // (lldb)     run
         // success
-        // 2020-09-15 13:42:25.185474-0700 Runner[477:181141] flutter: The Dart VM service is listening on http://127.0.0.1:57782/
+        // 2020-09-15 13:42:25.185474-0700 Runner[477:181141] flutter: Observatory listening on http://127.0.0.1:57782/
         if (_lldbRun.hasMatch(line)) {
           _logger.printTrace(line);
           _debuggerState = _IOSDeployDebuggerState.launching;
@@ -354,84 +332,42 @@ class IOSDeployDebugger {
           }
           return;
         }
-        if (line == _signalStop) {
-          // The app is about to be stopped. Only show in verbose mode.
-          _logger.printTrace(line);
-          return;
-        }
-        if (line == _backTraceAll) {
-          // The app is stopped and the backtrace for all threads will be printed.
-          _logger.printTrace(line);
-          // Even though we're not "detached", just stopped, mark as detached so the backtrace
-          // is only show in verbose.
-          _debuggerState = _IOSDeployDebuggerState.detached;
-
-          // If we paused the app and are waiting to resume it, complete the completer
-          final Completer<void>? processResumeCompleter = _processResumeCompleter;
-          if (processResumeCompleter != null) {
-            _processResumeCompleter = null;
-            processResumeCompleter.complete();
-          }
-          return;
-        }
-
-        if (line.contains('PROCESS_STOPPED') || _lldbProcessStopped.hasMatch(line)) {
-          // The app has been stopped. Dump the backtrace, and detach.
-          _logger.printTrace(line);
-          _iosDeployProcess?.stdin.writeln(_backTraceAll);
-          if (_processResumeCompleter == null) {
-            detach();
-          }
-          return;
-        }
-
-        if (line.contains('PROCESS_EXITED') || _lldbProcessExit.hasMatch(line)) {
+        if (line.contains('PROCESS_STOPPED') ||
+            line.contains('PROCESS_EXITED') ||
+            _lldbProcessExit.hasMatch(line) ||
+            _lldbProcessStopped.hasMatch(line)) {
           // The app exited or crashed, so exit. Continue passing debugging
           // messages to the log reader until it exits to capture crash dumps.
           _logger.printTrace(line);
           exit();
           return;
         }
-        if (_lldbProcessDetached.hasMatch(line)) {
-          // The debugger has detached from the app, and there will be no more debugging messages.
-          // Kill the ios-deploy process.
-          exit();
-          return;
-        }
-
-        if (_lldbProcessResuming.hasMatch(line)) {
-          _logger.printTrace(line);
-          // we marked this detached when we received [_backTraceAll]
-          _debuggerState = _IOSDeployDebuggerState.attached;
-          return;
-        }
-
         if (_debuggerState != _IOSDeployDebuggerState.attached) {
           _logger.printTrace(line);
           return;
         }
-        if (lastLineFromDebugger != null && lastLineFromDebugger!.isNotEmpty && line.isEmpty) {
+        if (lastLineFromDebugger != null && lastLineFromDebugger.isNotEmpty && line.isEmpty) {
           // The lldb console stream from ios-deploy is separated lines by an extra \r\n.
           // To avoid all lines being double spaced, if the last line from the
           // debugger was not an empty line, skip this empty line.
           // This will still cause "legit" logged newlines to be doubled...
-        } else if (!_debuggerOutput.isClosed) {
+        } else {
           _debuggerOutput.add(line);
         }
         lastLineFromDebugger = line;
       });
-      final StreamSubscription<String> stderrSubscription = _iosDeployProcess!.stderr
+      final StreamSubscription<String> stderrSubscription = _iosDeployProcess.stderr
           .transform<String>(utf8.decoder)
           .transform<String>(const LineSplitter())
           .listen((String line) {
         _monitorIOSDeployFailure(line, _logger);
         _logger.printTrace(line);
       });
-      unawaited(_iosDeployProcess!.exitCode.then((int status) async {
+      unawaited(_iosDeployProcess.exitCode.then((int status) {
         _logger.printTrace('ios-deploy exited with code $exitCode');
         _debuggerState = _IOSDeployDebuggerState.detached;
-        await stdoutSubscription.cancel();
-        await stderrSubscription.cancel();
+        unawaited(stdoutSubscription.cancel());
+        unawaited(stderrSubscription.cancel());
       }).whenComplete(() async {
         if (_debuggerOutput.hasListener) {
           // Tell listeners the process died.
@@ -445,57 +381,20 @@ class IOSDeployDebugger {
     } on ProcessException catch (exception, stackTrace) {
       _logger.printTrace('ios-deploy failed: $exception');
       _debuggerState = _IOSDeployDebuggerState.detached;
-      if (!_debuggerOutput.isClosed) {
-        _debuggerOutput.addError(exception, stackTrace);
-      }
+      _debuggerOutput.addError(exception, stackTrace);
     } on ArgumentError catch (exception, stackTrace) {
       _logger.printTrace('ios-deploy failed: $exception');
       _debuggerState = _IOSDeployDebuggerState.detached;
-      if (!_debuggerOutput.isClosed) {
-        _debuggerOutput.addError(exception, stackTrace);
-      }
+      _debuggerOutput.addError(exception, stackTrace);
     }
     // Wait until the debugger attaches, or the attempt fails.
     return debuggerCompleter.future;
   }
 
   bool exit() {
-    final bool success = (_iosDeployProcess == null) || _iosDeployProcess!.kill();
+    final bool success = (_iosDeployProcess == null) || _iosDeployProcess.kill();
     _iosDeployProcess = null;
     return success;
-  }
-
-  /// Pause app, dump backtrace for debugging, and resume.
-  Future<void> pauseDumpBacktraceResume() async {
-    if (!debuggerAttached) {
-      return;
-    }
-    final Completer<void> completer = Completer<void>();
-    _processResumeCompleter = completer;
-    try {
-      // Stop the app, which will prompt the backtrace to be printed for all threads in the stdoutSubscription handler.
-      _iosDeployProcess?.stdin.writeln(_processInterrupt);
-    } on SocketException catch (error) {
-      _logger.printTrace('Could not stop app from debugger: $error');
-    }
-    // wait for backtrace to be dumped
-    await completer.future;
-    _iosDeployProcess?.stdin.writeln(_processResume);
-  }
-
-  Future<void> stopAndDumpBacktrace() async {
-    if (!debuggerAttached) {
-      return;
-    }
-    try {
-      // Stop the app, which will prompt the backtrace to be printed for all threads in the stdoutSubscription handler.
-      _iosDeployProcess?.stdin.writeln(_signalStop);
-    } on SocketException catch (error) {
-      // Best effort, try to detach, but maybe the app already exited or already detached.
-      _logger.printTrace('Could not stop app from debugger: $error');
-    }
-    // Wait for logging to finish on process exit.
-    return logLines.drain();
   }
 
   void detach() {
@@ -505,7 +404,8 @@ class IOSDeployDebugger {
 
     try {
       // Detach lldb from the app process.
-      _iosDeployProcess?.stdin.writeln('process detach');
+      _iosDeployProcess?.stdin?.writeln('process detach');
+      _debuggerState = _IOSDeployDebuggerState.detached;
     } on SocketException catch (error) {
       // Best effort, try to detach, but maybe the app already exited or already detached.
       _logger.printTrace('Could not detach from debugger: $error');

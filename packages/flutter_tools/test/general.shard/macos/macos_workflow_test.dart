@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'package:flutter_tools/src/base/platform.dart';
 import 'package:flutter_tools/src/macos/macos_workflow.dart';
 
@@ -12,7 +14,9 @@ final FakePlatform macOS = FakePlatform(
   operatingSystem: 'macos',
 );
 
-final FakePlatform linux = FakePlatform();
+final FakePlatform linux = FakePlatform(
+  operatingSystem: 'linux',
+);
 
 void main() {
   testWithoutContext('Applies to macOS platform', () {
@@ -42,7 +46,7 @@ void main() {
   testWithoutContext('Does not apply when feature is disabled', () {
     final MacOSWorkflow macOSWorkflow = MacOSWorkflow(
       platform: macOS,
-      featureFlags: TestFeatureFlags(),
+      featureFlags: TestFeatureFlags(isMacOSEnabled: false),
     );
 
     expect(macOSWorkflow.appliesToHostPlatform, false);

@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   // Pumps and ensures that the BottomSheet animates non-linearly.
-  Future<void> checkNonLinearAnimation(WidgetTester tester) async {
+  Future<void> _checkNonLinearAnimation(WidgetTester tester) async {
     final Offset firstPosition = tester.getCenter(find.text('One'));
     await tester.pump(const Duration(milliseconds: 30));
     final Offset secondPosition = tester.getCenter(find.text('One'));
@@ -21,24 +21,6 @@ void main() {
     // If the animation were linear, these two values would be the same.
     expect(dyDelta1, isNot(moreOrLessEquals(dyDelta2, epsilon: 0.1)));
   }
-
-  // Regression test for https://github.com/flutter/flutter/issues/83668
-  testWidgets('Scaffold.bottomSheet update test', (WidgetTester tester) async {
-    Widget buildFrame(Widget? bottomSheet) {
-      return MaterialApp(
-        home: Scaffold(
-          body: const Placeholder(),
-          bottomSheet: bottomSheet,
-        ),
-      );
-    }
-
-    await tester.pumpWidget(buildFrame(const Text('I love Flutter!')));
-    await tester.pumpWidget(buildFrame(null));
-
-    // The disappearing animation has not yet been completed.
-    await tester.pumpWidget(buildFrame(const Text('I love Flutter!')));
-  });
 
   testWidgets('Verify that a BottomSheet can be rebuilt with ScaffoldFeatureController.setState()', (WidgetTester tester) async {
     final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
@@ -152,14 +134,14 @@ void main() {
       );
     });
     await tester.pump();
-    await checkNonLinearAnimation(tester);
+    await _checkNonLinearAnimation(tester);
 
     await tester.pumpAndSettle();
 
     expect(find.text('Two'), findsOneWidget);
 
     await tester.drag(find.text('Two'), const Offset(0.0, 200.0));
-    await checkNonLinearAnimation(tester);
+    await _checkNonLinearAnimation(tester);
     await tester.pumpAndSettle();
 
     expect(find.text('Two'), findsNothing);
@@ -484,6 +466,7 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
+          bottomSheet: null,
           body: Placeholder(),
         ),
       ),
@@ -522,7 +505,7 @@ void main() {
     final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
     const Color color = Colors.pink;
     const double elevation = 9.0;
-    const ShapeBorder shape = BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12)));
+    final ShapeBorder shape = BeveledRectangleBorder(borderRadius: BorderRadius.circular(12));
     const Clip clipBehavior = Clip.antiAlias;
 
     await tester.pumpWidget(MaterialApp(

@@ -193,8 +193,7 @@ class Placeholder {
       example = _stringAttribute(resourceId, name, attributes, 'example'),
       type = _stringAttribute(resourceId, name, attributes, 'type') ?? 'Object',
       format = _stringAttribute(resourceId, name, attributes, 'format'),
-      optionalParameters = _optionalParameters(resourceId, name, attributes),
-      isCustomDateFormat = _boolAttribute(resourceId, name, attributes, 'isCustomDateFormat');
+      optionalParameters = _optionalParameters(resourceId, name, attributes);
 
   final String resourceId;
   final String name;
@@ -202,7 +201,6 @@ class Placeholder {
   final String? type;
   final String? format;
   final List<OptionalParameter> optionalParameters;
-  final bool? isCustomDateFormat;
 
   bool get requiresFormatting => <String>['DateTime', 'double', 'num'].contains(type) || (type == 'int' && format != null);
   bool get isNumber => <String>['double', 'int', 'num'].contains(type);
@@ -228,25 +226,6 @@ class Placeholder {
       );
     }
     return value;
-  }
-
-  static bool? _boolAttribute(
-      String resourceId,
-      String name,
-      Map<String, Object?> attributes,
-      String attributeName,
-      ) {
-    final Object? value = attributes[attributeName];
-    if (value == null) {
-      return null;
-    }
-    if (value != 'true' && value != 'false') {
-      throw L10nException(
-        'The "$attributeName" value of the "$name" placeholder in message $resourceId '
-            'must be a boolean value.',
-      );
-    }
-    return value == 'true';
   }
 
   static List<OptionalParameter> _optionalParameters(
@@ -358,7 +337,7 @@ class Message {
 
     if (attributes == null) {
 
-      void throwEmptyAttributes(final RegExp regExp, final String type) {
+      void _throwEmptyAttributes(final RegExp regExp, final String type) {
         final RegExpMatch? match = regExp.firstMatch(_value(bundle, resourceId));
         final bool isMatch = match != null && match.groupCount == 1;
         if (isMatch) {
@@ -369,8 +348,8 @@ class Message {
         }
       }
 
-      throwEmptyAttributes(_pluralRE, 'plural');
-      throwEmptyAttributes(_selectRE, 'select');
+      _throwEmptyAttributes(_pluralRE, 'plural');
+      _throwEmptyAttributes(_selectRE, 'select');
     }
 
     return attributes as Map<String, Object?>?;
@@ -442,7 +421,7 @@ class AppResourceBundle {
     } on FormatException catch (e) {
       throw L10nException(
         'The arb file ${file.path} has the following formatting issue: \n'
-        '$e',
+        '${e.toString()}',
       );
     }
 

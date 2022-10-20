@@ -8,12 +8,6 @@ import '../base/io.dart';
 import '../base/logger.dart';
 import '../base/process.dart';
 
-enum IOSDeviceConnectionInterface {
-  none,
-  usb,
-  network,
-}
-
 /// Wraps iproxy command line tool port forwarding.
 ///
 /// See https://github.com/libimobiledevice/libusbmuxd.
@@ -25,7 +19,6 @@ class IProxy {
     required MapEntry<String, String> dyLdLibEntry,
   }) : _dyLdLibEntry = dyLdLibEntry,
         _processUtils = ProcessUtils(processManager: processManager, logger: logger),
-        _logger = logger,
         _iproxyPath = iproxyPath;
 
   /// Create a [IProxy] for testing.
@@ -48,7 +41,6 @@ class IProxy {
 
   final String _iproxyPath;
   final ProcessUtils _processUtils;
-  final Logger _logger;
   final MapEntry<String, String> _dyLdLibEntry;
 
   Future<Process> forward(int devicePort, int hostPort, String deviceId) {
@@ -59,8 +51,6 @@ class IProxy {
         '$hostPort:$devicePort',
         '--udid',
         deviceId,
-        if (_logger.isVerbose)
-          '--debug',
       ],
       environment: Map<String, String>.fromEntries(
         <MapEntry<String, String>>[_dyLdLibEntry],

@@ -35,7 +35,6 @@ class TooltipThemeData with Diagnosticable {
     this.excludeFromSemantics,
     this.decoration,
     this.textStyle,
-    this.textAlign,
     this.waitDuration,
     this.showDuration,
     this.triggerMode,
@@ -80,9 +79,6 @@ class TooltipThemeData with Diagnosticable {
   /// The style to use for the message of [Tooltip]s.
   final TextStyle? textStyle;
 
-  /// The [TextAlign] to use for the message of [Tooltip]s.
-  final TextAlign? textAlign;
-
   /// The length of time that a pointer must hover over a tooltip's widget
   /// before the tooltip will be shown.
   final Duration? waitDuration;
@@ -117,7 +113,6 @@ class TooltipThemeData with Diagnosticable {
     bool? excludeFromSemantics,
     Decoration? decoration,
     TextStyle? textStyle,
-    TextAlign? textAlign,
     Duration? waitDuration,
     Duration? showDuration,
     TooltipTriggerMode? triggerMode,
@@ -132,7 +127,6 @@ class TooltipThemeData with Diagnosticable {
       excludeFromSemantics: excludeFromSemantics ?? this.excludeFromSemantics,
       decoration: decoration ?? this.decoration,
       textStyle: textStyle ?? this.textStyle,
-      textAlign: textAlign ?? this.textAlign,
       waitDuration: waitDuration ?? this.waitDuration,
       showDuration: showDuration ?? this.showDuration,
       triggerMode: triggerMode ?? this.triggerMode,
@@ -146,9 +140,8 @@ class TooltipThemeData with Diagnosticable {
   ///
   /// {@macro dart.ui.shadow.lerp}
   static TooltipThemeData? lerp(TooltipThemeData? a, TooltipThemeData? b, double t) {
-    if (a == null && b == null) {
+    if (a == null && b == null)
       return null;
-    }
     assert(t != null);
     return TooltipThemeData(
       height: lerpDouble(a?.height, b?.height, t),
@@ -159,35 +152,33 @@ class TooltipThemeData with Diagnosticable {
       excludeFromSemantics: t < 0.5 ? a?.excludeFromSemantics : b?.excludeFromSemantics,
       decoration: Decoration.lerp(a?.decoration, b?.decoration, t),
       textStyle: TextStyle.lerp(a?.textStyle, b?.textStyle, t),
-      textAlign: t < 0.5 ? a?.textAlign: b?.textAlign,
     );
   }
 
   @override
-  int get hashCode => Object.hash(
-    height,
-    padding,
-    margin,
-    verticalOffset,
-    preferBelow,
-    excludeFromSemantics,
-    decoration,
-    textStyle,
-    textAlign,
-    waitDuration,
-    showDuration,
-    triggerMode,
-    enableFeedback,
-  );
+  int get hashCode {
+    return hashValues(
+      height,
+      padding,
+      margin,
+      verticalOffset,
+      preferBelow,
+      excludeFromSemantics,
+      decoration,
+      textStyle,
+      waitDuration,
+      showDuration,
+      triggerMode,
+      enableFeedback
+    );
+  }
 
   @override
   bool operator==(Object other) {
-    if (identical(this, other)) {
+    if (identical(this, other))
       return true;
-    }
-    if (other.runtimeType != runtimeType) {
+    if (other.runtimeType != runtimeType)
       return false;
-    }
     return other is TooltipThemeData
         && other.height == height
         && other.padding == padding
@@ -197,7 +188,6 @@ class TooltipThemeData with Diagnosticable {
         && other.excludeFromSemantics == excludeFromSemantics
         && other.decoration == decoration
         && other.textStyle == textStyle
-        && other.textAlign == textAlign
         && other.waitDuration == waitDuration
         && other.showDuration == showDuration
         && other.triggerMode == triggerMode
@@ -211,15 +201,14 @@ class TooltipThemeData with Diagnosticable {
     properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('padding', padding, defaultValue: null));
     properties.add(DiagnosticsProperty<EdgeInsetsGeometry>('margin', margin, defaultValue: null));
     properties.add(DoubleProperty('vertical offset', verticalOffset, defaultValue: null));
-    properties.add(FlagProperty('position', value: preferBelow, ifTrue: 'below', ifFalse: 'above', showName: true));
-    properties.add(FlagProperty('semantics', value: excludeFromSemantics, ifTrue: 'excluded', showName: true));
+    properties.add(FlagProperty('position', value: preferBelow, ifTrue: 'below', ifFalse: 'above', showName: true, defaultValue: null));
+    properties.add(FlagProperty('semantics', value: excludeFromSemantics, ifTrue: 'excluded', showName: true, defaultValue: null));
     properties.add(DiagnosticsProperty<Decoration>('decoration', decoration, defaultValue: null));
     properties.add(DiagnosticsProperty<TextStyle>('textStyle', textStyle, defaultValue: null));
-    properties.add(DiagnosticsProperty<TextAlign>('textAlign', textAlign, defaultValue: null));
     properties.add(DiagnosticsProperty<Duration>('wait duration', waitDuration, defaultValue: null));
     properties.add(DiagnosticsProperty<Duration>('show duration', showDuration, defaultValue: null));
     properties.add(DiagnosticsProperty<TooltipTriggerMode>('triggerMode', triggerMode, defaultValue: null));
-    properties.add(FlagProperty('enableFeedback', value: enableFeedback, ifTrue: 'true', showName: true));
+    properties.add(FlagProperty('enableFeedback', value: enableFeedback, ifTrue: 'true', showName: true, defaultValue: null));
   }
 }
 
@@ -253,20 +242,16 @@ class TooltipThemeData with Diagnosticable {
 /// )
 /// ```
 /// {@end-tool}
-///
-/// See also:
-///
-///  * [TooltipVisibility], which can be used to visually disable descendant [Tooltip]s.
 class TooltipTheme extends InheritedTheme {
   /// Creates a tooltip theme that controls the configurations for
   /// [Tooltip].
   ///
   /// The data argument must not be null.
   const TooltipTheme({
-    super.key,
+    Key? key,
     required this.data,
-    required super.child,
-  }) : assert(data != null);
+    required Widget child,
+  }) : assert(data != null), super(key: key, child: child);
 
   /// The properties for descendant [Tooltip] widgets.
   final TooltipThemeData data;

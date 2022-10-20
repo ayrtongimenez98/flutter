@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.8
+
 import 'dart:async';
 
 import 'package:file/file.dart';
@@ -14,34 +16,34 @@ import 'test_utils.dart';
 // This test verifies that we can hot reload a stateless widget into a
 // stateful one and back.
 void main() {
-  late Directory tempDir;
-  final HotReloadProject project = HotReloadProject();
-  late FlutterRunTestDriver flutter;
+  Directory tempDir;
+  final HotReloadProject _project = HotReloadProject();
+  FlutterRunTestDriver _flutter;
 
   setUp(() async {
     tempDir = createResolvedTempDirectorySync('hot_reload_test.');
-    await project.setUpIn(tempDir);
-    flutter = FlutterRunTestDriver(tempDir);
+    await _project.setUpIn(tempDir);
+    _flutter = FlutterRunTestDriver(tempDir);
   });
 
   tearDown(() async {
-    await flutter.stop();
+    await _flutter?.stop();
     tryToDelete(tempDir);
   });
 
   testWithoutContext('Can switch between stateless and stateful', () async {
-    await flutter.run();
-    await flutter.hotReload();
+    await _flutter.run();
+    await _flutter.hotReload();
     final StringBuffer stdout = StringBuffer();
-    final StreamSubscription<String> subscription = flutter.stdout.listen(stdout.writeln);
+    final StreamSubscription<String> subscription = _flutter.stdout.listen(stdout.writeln);
 
     // switch to stateful.
-    project.toggleState();
-    await flutter.hotReload();
+    _project.toggleState();
+    await _flutter.hotReload();
 
     // switch to stateless.
-    project.toggleState();
-    await flutter.hotReload();
+    _project.toggleState();
+    await _flutter.hotReload();
 
     final String logs = stdout.toString();
 

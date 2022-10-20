@@ -8,32 +8,28 @@ import 'package:flutter/foundation.dart';
 
 import 'debug.dart';
 
-export 'dart:ui' show AccessibilityFeatures, SemanticsUpdateBuilder;
+export 'dart:ui' show AccessibilityFeatures;
 
 /// The glue between the semantics layer and the Flutter engine.
-// TODO(zanderso): move the remaining semantic related bindings here.
+// TODO(jonahwilliams): move the remaining semantic related bindings here.
 mixin SemanticsBinding on BindingBase {
+  /// The current [SemanticsBinding], if one has been created.
+  static SemanticsBinding? get instance => _instance;
+  static SemanticsBinding? _instance;
+
   @override
   void initInstances() {
     super.initInstances();
     _instance = this;
-    _accessibilityFeatures = platformDispatcher.accessibilityFeatures;
+    _accessibilityFeatures = window.accessibilityFeatures;
   }
-
-  /// The current [SemanticsBinding], if one has been created.
-  ///
-  /// Provides access to the features exposed by this mixin. The binding must
-  /// be initialized before using this getter; this is typically done by calling
-  /// [runApp] or [WidgetsFlutterBinding.ensureInitialized].
-  static SemanticsBinding get instance => BindingBase.checkInstance(_instance);
-  static SemanticsBinding? _instance;
 
   /// Called when the platform accessibility features change.
   ///
   /// See [dart:ui.PlatformDispatcher.onAccessibilityFeaturesChanged].
   @protected
   void handleAccessibilityFeaturesChanged() {
-    _accessibilityFeatures = platformDispatcher.accessibilityFeatures;
+    _accessibilityFeatures = window.accessibilityFeatures;
   }
 
   /// Creates an empty semantics update builder.
@@ -64,9 +60,8 @@ mixin SemanticsBinding on BindingBase {
   bool get disableAnimations {
     bool value = _accessibilityFeatures.disableAnimations;
     assert(() {
-      if (debugSemanticsDisableAnimations != null) {
+      if (debugSemanticsDisableAnimations != null)
         value = debugSemanticsDisableAnimations!;
-      }
       return true;
     }());
     return value;

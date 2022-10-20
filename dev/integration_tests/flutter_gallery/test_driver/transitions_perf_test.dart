@@ -13,15 +13,7 @@ import 'package:test/test.dart' hide TypeMatcher, isInstanceOf;
 
 const FileSystem _fs = LocalFileSystem();
 
-/// The demos we don't run as part of the integration test.
-///
-/// Demo names are formatted as 'DEMO_NAME@DEMO_CATEGORY' (see
-/// `demo_lists.dart` for more examples).
-const List<String> kSkippedDemos = <String>[
-  // This demo is flaky on CI due to hitting the network.
-  // See: https://github.com/flutter/flutter/issues/100497
-  'Video@Media',
-];
+const List<String> kSkippedDemos = <String>[];
 
 // All of the gallery demos, identified as "title@category".
 //
@@ -45,11 +37,11 @@ Future<void> saveDurationsHistogram(List<Map<String, dynamic>> events, String ou
     } else if (startEvent != null && eventName == 'Frame') {
       final String phase = event['ph'] as String;
       final int timestamp = event['ts'] as int;
-      if (phase == 'B' || phase == 'b') {
+      if (phase == 'B') {
         assert(frameStart == null);
         frameStart = timestamp;
       } else {
-        assert(phase == 'E' || phase == 'e');
+        assert(phase == 'E');
         final String routeName = (startEvent['args'] as Map<String, dynamic>)['to'] as String;
         durations[routeName] ??= <int>[];
         durations[routeName]!.add(timestamp - frameStart!);
@@ -188,10 +180,7 @@ void main([List<String> args = const <String>[]]) {
       // Assert that we can use semantics related finders in profile mode.
       final int id = await driver.getSemanticsId(find.bySemanticsLabel('Material'));
       expect(id, greaterThan(-1));
-    },
-        skip: !withSemantics, // [intended] test only makes sense when semantics are turned on.
-        timeout: Timeout.none,
-    );
+    }, skip: !withSemantics, timeout: Timeout.none);
 
     test('all demos', () async {
       // Collect timeline data for just a limited set of demos to avoid OOMs.

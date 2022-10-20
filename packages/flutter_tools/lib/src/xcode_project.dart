@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'artifacts.dart';
 import 'base/error_handling_io.dart';
 import 'base/file_system.dart';
 import 'base/utils.dart';
 import 'build_info.dart';
 import 'bundle.dart' as bundle;
 import 'flutter_plugins.dart';
-import 'globals.dart' as globals;
-import 'ios/code_signing.dart';
+import 'globals_null_migrated.dart' as globals;
 import 'ios/plist_parser.dart';
 import 'ios/xcode_build_settings.dart' as xcode;
 import 'ios/xcodeproj.dart';
@@ -20,40 +20,21 @@ import 'template.dart';
 /// Represents an Xcode-based sub-project.
 ///
 /// This defines interfaces common to iOS and macOS projects.
-abstract class XcodeBasedProject extends FlutterProjectPlatform  {
-  static const String _hostAppProjectName = 'Runner';
-
+abstract class XcodeBasedProject {
   /// The parent of this project.
   FlutterProject get parent;
 
-  Directory get hostAppRoot;
-
-  /// The default 'Info.plist' file of the host app. The developer can change this location in Xcode.
-  File get defaultHostInfoPlist => hostAppRoot.childDirectory(_hostAppProjectName).childFile('Info.plist');
+  /// Whether the subproject (either iOS or macOS) exists in the Flutter project.
+  bool existsSync();
 
   /// The Xcode project (.xcodeproj directory) of the host app.
-  Directory get xcodeProject => hostAppRoot.childDirectory('$_hostAppProjectName.xcodeproj');
+  Directory get xcodeProject;
 
   /// The 'project.pbxproj' file of [xcodeProject].
-  File get xcodeProjectInfoFile => xcodeProject.childFile('project.pbxproj');
-
-  /// The 'Runner.xcscheme' file of [xcodeProject].
-  File get xcodeProjectSchemeFile =>
-      xcodeProject.childDirectory('xcshareddata').childDirectory('xcschemes').childFile('Runner.xcscheme');
-
-  File get xcodeProjectWorkspaceData =>
-      xcodeProject
-          .childDirectory('project.xcworkspace')
-          .childFile('contents.xcworkspacedata');
+  File get xcodeProjectInfoFile;
 
   /// The Xcode workspace (.xcworkspace directory) of the host app.
-  Directory get xcodeWorkspace => hostAppRoot.childDirectory('$_hostAppProjectName.xcworkspace');
-
-  /// Xcode workspace shared data directory for the host app.
-  Directory get xcodeWorkspaceSharedData => xcodeWorkspace.childDirectory('xcshareddata');
-
-  /// Xcode workspace shared workspace settings file for the host app.
-  File get xcodeWorkspaceSharedSettings => xcodeWorkspaceSharedData.childFile('WorkspaceSettings.xcsettings');
+  Directory get xcodeWorkspace;
 
   /// Contains definitions for FLUTTER_ROOT, LOCAL_ENGINE, and more flags for
   /// the Xcode build.
@@ -69,20 +50,20 @@ abstract class XcodeBasedProject extends FlutterProjectPlatform  {
   File get generatedEnvironmentVariableExportScript;
 
   /// The CocoaPods 'Podfile'.
-  File get podfile => hostAppRoot.childFile('Podfile');
+  File get podfile;
 
   /// The CocoaPods 'Podfile.lock'.
-  File get podfileLock => hostAppRoot.childFile('Podfile.lock');
+  File get podfileLock;
 
   /// The CocoaPods 'Manifest.lock'.
-  File get podManifestLock => hostAppRoot.childDirectory('Pods').childFile('Manifest.lock');
+  File get podManifestLock;
 }
 
 /// Represents the iOS sub-project of a Flutter project.
 ///
 /// Instances will reflect the contents of the `ios/` sub-folder of
 /// Flutter applications and the `.ios/` sub-folder of Flutter module projects.
-class IosProject extends XcodeBasedProject {
+class IosProject extends FlutterProjectPlatform implements XcodeBasedProject {
   IosProject.fromFlutter(this.parent);
 
   @override
@@ -93,12 +74,12 @@ class IosProject extends XcodeBasedProject {
 
   static final RegExp _productBundleIdPattern = RegExp(r'''^\s*PRODUCT_BUNDLE_IDENTIFIER\s*=\s*(["']?)(.*?)\1;\s*$''');
   static const String _productBundleIdVariable = r'$(PRODUCT_BUNDLE_IDENTIFIER)';
+  static const String _hostAppProjectName = 'Runner';
 
   Directory get ephemeralModuleDirectory => parent.directory.childDirectory('.ios');
   Directory get _editableDirectory => parent.directory.childDirectory('ios');
 
   /// This parent folder of `Runner.xcodeproj`.
-  @override
   Directory get hostAppRoot {
     if (!isModule || _editableDirectory.existsSync()) {
       return _editableDirectory;
@@ -117,7 +98,7 @@ class IosProject extends XcodeBasedProject {
   /// True, if the parent Flutter project is a module project.
   bool get isModule => parent.isModule;
 
-  /// Whether the Flutter application has an iOS project.
+  /// Whether the flutter application has an iOS project.
   bool get exists => hostAppRoot.existsSync();
 
   /// Put generated files here.
@@ -129,15 +110,41 @@ class IosProject extends XcodeBasedProject {
   @override
   File get generatedEnvironmentVariableExportScript => _flutterLibRoot.childDirectory('Flutter').childFile('flutter_export_environment.sh');
 
+  @override
+  File get podfile => hostAppRoot.childFile('Podfile');
+
+  @override
+  File get podfileLock => hostAppRoot.childFile('Podfile.lock');
+
+  @override
+  File get podManifestLock => hostAppRoot.childDirectory('Pods').childFile('Manifest.lock');
+
+  /// The default 'Info.plist' file of the host app. The developer can change this location in Xcode.
+  File get defaultHostInfoPlist => hostAppRoot.childDirectory(_hostAppProjectName).childFile('Info.plist');
+
   File get appFrameworkInfoPlist => _flutterLibRoot.childDirectory('Flutter').childFile('AppFrameworkInfo.plist');
 
   Directory get symlinks => _flutterLibRoot.childDirectory('.symlinks');
 
-  /// True, if the app project is using swift.
-  bool get isSwift {
-    final File appDelegateSwift = _editableDirectory.childDirectory('Runner').childFile('AppDelegate.swift');
-    return appDelegateSwift.existsSync();
-  }
+  @override
+  Directory get xcodeProject => hostAppRoot.childDirectory('$_hostAppProjectName.xcodeproj');
+
+  @override
+  File get xcodeProjectInfoFile => xcodeProject.childFile('project.pbxproj');
+
+  File get xcodeProjectWorkspaceData =>
+    xcodeProject
+    .childDirectory('project.xcworkspace')
+    .childFile('contents.xcworkspacedata');
+
+  @override
+  Directory get xcodeWorkspace => hostAppRoot.childDirectory('$_hostAppProjectName.xcworkspace');
+
+  /// Xcode workspace shared data directory for the host app.
+  Directory get xcodeWorkspaceSharedData => xcodeWorkspace.childDirectory('xcshareddata');
+
+  /// Xcode workspace shared workspace settings file for the host app.
+  File get xcodeWorkspaceSharedSettings => xcodeWorkspaceSharedData.childFile('WorkspaceSettings.xcsettings');
 
   /// Do all plugins support arm64 simulators to run natively on an ARM Mac?
   Future<bool> pluginsSupportArmSimulator() async {
@@ -185,7 +192,7 @@ class IosProject extends XcodeBasedProject {
     // Try parsing the default, first.
     if (defaultInfoPlist.existsSync()) {
       try {
-        fromPlist = globals.plistParser.getStringValueFromFile(
+        fromPlist = globals.plistParser.getValueFromFile(
           defaultHostInfoPlist.path,
           PlistParser.kCFBundleIdentifierKey,
         );
@@ -221,7 +228,7 @@ class IosProject extends XcodeBasedProject {
   }
 
   /// The bundle name of the host app, `My App.app`.
-  Future<String?> hostAppBundleName(BuildInfo? buildInfo) async {
+  Future<String?> hostAppBundleName(BuildInfo buildInfo) async {
     if (!existsSync()) {
       return null;
     }
@@ -229,32 +236,28 @@ class IosProject extends XcodeBasedProject {
   }
   String? _hostAppBundleName;
 
-  Future<String> _parseHostAppBundleName(BuildInfo? buildInfo) async {
+  Future<String> _parseHostAppBundleName(BuildInfo buildInfo) async {
     // The product name and bundle name are derived from the display name, which the user
     // is instructed to change in Xcode as part of deploying to the App Store.
     // https://flutter.dev/docs/deployment/ios#review-xcode-project-settings
     // The only source of truth for the name is Xcode's interpretation of the build settings.
     String? productName;
-    if (globals.xcodeProjectInterpreter?.isInstalled ?? false) {
+    if (globals.xcodeProjectInterpreter?.isInstalled == true) {
       final Map<String, String>? xcodeBuildSettings = await buildSettingsForBuildInfo(buildInfo);
       if (xcodeBuildSettings != null) {
         productName = xcodeBuildSettings['FULL_PRODUCT_NAME'];
       }
     }
     if (productName == null) {
-      globals.printTrace('FULL_PRODUCT_NAME not present, defaulting to ${XcodeBasedProject._hostAppProjectName}');
+      globals.printTrace('FULL_PRODUCT_NAME not present, defaulting to $_hostAppProjectName');
     }
-    return productName ?? '${XcodeBasedProject._hostAppProjectName}.app';
+    return productName ?? '$_hostAppProjectName.app';
   }
 
   /// The build settings for the host app of this project, as a detached map.
   ///
   /// Returns null, if iOS tooling is unavailable.
-  Future<Map<String, String>?> buildSettingsForBuildInfo(
-    BuildInfo? buildInfo, {
-    EnvironmentType environmentType = EnvironmentType.physical,
-    String? deviceId,
-  }) async {
+  Future<Map<String, String>?> buildSettingsForBuildInfo(BuildInfo? buildInfo, { EnvironmentType environmentType = EnvironmentType.physical }) async {
     if (!existsSync()) {
       return null;
     }
@@ -272,12 +275,7 @@ class IosProject extends XcodeBasedProject {
       buildInfo,
       scheme,
     );
-    final XcodeProjectBuildContext buildContext = XcodeProjectBuildContext(
-      environmentType: environmentType,
-      scheme: scheme,
-      configuration: configuration,
-      deviceId: deviceId,
-    );
+    final XcodeProjectBuildContext buildContext = XcodeProjectBuildContext(environmentType: environmentType, scheme: scheme, configuration: configuration);
     final Map<String, String>? currentBuildSettings = _buildSettingsByBuildContext[buildContext];
     if (currentBuildSettings == null) {
       final Map<String, String>? calculatedBuildSettings = await _xcodeProjectBuildSettings(buildContext);
@@ -325,7 +323,7 @@ class IosProject extends XcodeBasedProject {
   }
 
   /// Check if one the [targets] of the project is a watchOS companion app target.
-  Future<bool> containsWatchCompanion(List<String> targets, BuildInfo buildInfo, String? deviceId) async {
+  Future<bool> containsWatchCompanion(List<String> targets, BuildInfo buildInfo) async {
     final String? bundleIdentifier = await productBundleIdentifier(buildInfo);
     // A bundle identifier is required for a companion app.
     if (bundleIdentifier == null) {
@@ -337,7 +335,7 @@ class IosProject extends XcodeBasedProject {
       // The Info.plist file of a target contains the key WKCompanionAppBundleIdentifier,
       // if it is a watchOS companion app.
       if (infoFile.existsSync()) {
-        final String? fromPlist = globals.plistParser.getStringValueFromFile(infoFile.path, 'WKCompanionAppBundleIdentifier');
+        final String? fromPlist = globals.plistParser.getValueFromFile(infoFile.path, 'WKCompanionAppBundleIdentifier');
         if (bundleIdentifier == fromPlist) {
           return true;
         }
@@ -345,10 +343,10 @@ class IosProject extends XcodeBasedProject {
         // The key WKCompanionAppBundleIdentifier might contain an xcode variable
         // that needs to be substituted before comparing it with bundle id
         if (fromPlist != null && fromPlist.contains(r'$')) {
-          final Map<String, String>? allBuildSettings = await buildSettingsForBuildInfo(buildInfo, deviceId: deviceId);
+          final Map<String, String>? allBuildSettings = await buildSettingsForBuildInfo(buildInfo);
           if (allBuildSettings != null) {
-            final String substitutedVariable = substituteXcodeVariables(fromPlist, allBuildSettings);
-            if (substitutedVariable == bundleIdentifier) {
+            final String substituedVariable = substituteXcodeVariables(fromPlist, allBuildSettings);
+            if (substituedVariable == bundleIdentifier) {
               return true;
             }
           }
@@ -398,6 +396,29 @@ class IosProject extends XcodeBasedProject {
           ephemeralModuleDirectory,
         );
       }
+      // Use release mode so host project can link on bitcode variant.
+      _copyEngineArtifactToProject(BuildMode.release, EnvironmentType.physical);
+    }
+  }
+
+  void _copyEngineArtifactToProject(BuildMode mode, EnvironmentType environmentType) {
+    // Copy framework from engine cache. The actual build mode
+    // doesn't actually matter as it will be overwritten by xcode_backend.sh.
+    // However, cocoapods will run before that script and requires something
+    // to be in this location.
+    final Directory framework = globals.fs.directory(
+      globals.artifacts?.getArtifactPath(
+        Artifact.flutterXcframework,
+        platform: TargetPlatform.ios,
+        mode: mode,
+        environmentType: environmentType,
+      )
+    );
+    if (framework.existsSync()) {
+      copyDirectory(
+        framework,
+        engineCopyDirectory.childDirectory('Flutter.xcframework'),
+      );
     }
   }
 
@@ -430,7 +451,7 @@ class IosProject extends XcodeBasedProject {
         ? _flutterLibRoot
             .childDirectory('Flutter')
             .childDirectory('FlutterPluginRegistrant')
-        : hostAppRoot.childDirectory(XcodeBasedProject._hostAppProjectName);
+        : hostAppRoot.childDirectory(_hostAppProjectName);
   }
 
   File get pluginRegistrantHeader {
@@ -443,6 +464,12 @@ class IosProject extends XcodeBasedProject {
     return registryDirectory.childFile('GeneratedPluginRegistrant.m');
   }
 
+  Directory get engineCopyDirectory {
+    return isModule
+        ? ephemeralModuleDirectory.childDirectory('Flutter').childDirectory('engine')
+        : hostAppRoot.childDirectory('Flutter');
+  }
+
   Future<void> _overwriteFromTemplate(String path, Directory target) async {
     final Template template = await Template.fromName(
       path,
@@ -452,37 +479,21 @@ class IosProject extends XcodeBasedProject {
       templateRenderer: globals.templateRenderer,
     );
     final String iosBundleIdentifier = parent.manifest.iosBundleIdentifier ?? 'com.example.${parent.manifest.appName}';
-
-    final String? iosDevelopmentTeam = await getCodeSigningIdentityDevelopmentTeam(
-      processManager: globals.processManager,
-      platform: globals.platform,
-      logger: globals.logger,
-      config: globals.config,
-      terminal: globals.terminal,
-    );
-
-    final String projectName = parent.manifest.appName;
-
-    // The dart project_name is in snake_case, this variable is the Title Case of the Project Name.
-    final String titleCaseProjectName = snakeCaseToTitleCase(projectName);
-
     template.render(
       target,
       <String, Object>{
         'ios': true,
-        'projectName': projectName,
-        'titleCaseProjectName': titleCaseProjectName,
+        'projectName': parent.manifest.appName,
         'iosIdentifier': iosBundleIdentifier,
-        'hasIosDevelopmentTeam': iosDevelopmentTeam != null && iosDevelopmentTeam.isNotEmpty,
-        'iosDevelopmentTeam': iosDevelopmentTeam ?? '',
       },
       printStatusWhenWriting: false,
+      overwriteExisting: true,
     );
   }
 }
 
 /// The macOS sub project.
-class MacOSProject extends XcodeBasedProject {
+class MacOSProject extends FlutterProjectPlatform implements XcodeBasedProject {
   MacOSProject.fromFlutter(this.parent);
 
   @override
@@ -491,16 +502,17 @@ class MacOSProject extends XcodeBasedProject {
   @override
   String get pluginConfigKey => MacOSPlugin.kConfigKey;
 
-  @override
-  bool existsSync() => hostAppRoot.existsSync();
+  static const String _hostAppProjectName = 'Runner';
 
   @override
-  Directory get hostAppRoot => parent.directory.childDirectory('macos');
+  bool existsSync() => _macOSDirectory.existsSync();
+
+  Directory get _macOSDirectory => parent.directory.childDirectory('macos');
 
   /// The directory in the project that is managed by Flutter. As much as
   /// possible, files that are edited by Flutter tooling after initial project
   /// creation should live here.
-  Directory get managedDirectory => hostAppRoot.childDirectory('Flutter');
+  Directory get managedDirectory => _macOSDirectory.childDirectory('Flutter');
 
   /// The subdirectory of [managedDirectory] that contains files that are
   /// generated on the fly. All generated files that are not intended to be
@@ -518,13 +530,29 @@ class MacOSProject extends XcodeBasedProject {
   @override
   File get generatedXcodePropertiesFile => ephemeralDirectory.childFile('Flutter-Generated.xcconfig');
 
-  File get pluginRegistrantImplementation => managedDirectory.childFile('GeneratedPluginRegistrant.swift');
-
   @override
   File xcodeConfigFor(String mode) => managedDirectory.childFile('Flutter-$mode.xcconfig');
 
   @override
   File get generatedEnvironmentVariableExportScript => ephemeralDirectory.childFile('flutter_export_environment.sh');
+
+  @override
+  File get podfile => _macOSDirectory.childFile('Podfile');
+
+  @override
+  File get podfileLock => _macOSDirectory.childFile('Podfile.lock');
+
+  @override
+  File get podManifestLock => _macOSDirectory.childDirectory('Pods').childFile('Manifest.lock');
+
+  @override
+  Directory get xcodeProject => _macOSDirectory.childDirectory('$_hostAppProjectName.xcodeproj');
+
+  @override
+  File get xcodeProjectInfoFile => xcodeProject.childFile('project.pbxproj');
+
+  @override
+  Directory get xcodeWorkspace => _macOSDirectory.childDirectory('$_hostAppProjectName.xcworkspace');
 
   /// The file where the Xcode build will write the name of the built app.
   ///

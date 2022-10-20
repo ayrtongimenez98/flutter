@@ -39,8 +39,8 @@ class RenderSliverList extends RenderSliverMultiBoxAdaptor {
   ///
   /// The [childManager] argument must not be null.
   RenderSliverList({
-    required super.childManager,
-  });
+    required RenderSliverBoxChildManager childManager,
+  }) : super(childManager: childManager);
 
   @override
   void performLayout() {
@@ -227,13 +227,11 @@ class RenderSliverList extends RenderSliverMultiBoxAdaptor {
     bool advance() { // returns true if we advanced, false if we have no more children
       // This function is used in two different places below, to avoid code duplication.
       assert(child != null);
-      if (child == trailingChildWithLayout) {
+      if (child == trailingChildWithLayout)
         inLayoutRange = false;
-      }
       child = childAfter(child!);
-      if (child == null) {
+      if (child == null)
         inLayoutRange = false;
-      }
       index += 1;
       if (!inLayoutRange) {
         if (child == null || indexOf(child!) != index) {
@@ -272,6 +270,7 @@ class RenderSliverList extends RenderSliverMultiBoxAdaptor {
         final double extent = childScrollOffset(lastChild!)! + paintExtentOf(lastChild!);
         geometry = SliverGeometry(
           scrollExtent: extent,
+          paintExtent: 0.0,
           maxPaintExtent: extent,
         );
         return;
@@ -336,9 +335,8 @@ class RenderSliverList extends RenderSliverMultiBoxAdaptor {
 
     // We may have started the layout while scrolled to the end, which would not
     // expose a new child.
-    if (estimatedMaxScrollOffset == endScrollOffset) {
+    if (estimatedMaxScrollOffset == endScrollOffset)
       childManager.setDidUnderflow(true);
-    }
     childManager.didFinishLayout();
   }
 }

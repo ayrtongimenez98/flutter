@@ -58,7 +58,7 @@ void main() {
       logger: testLogger,
       processManager: fakeProcessManager,
       artifacts: Artifacts.test(),
-      platform: FakePlatform(),
+      platform: FakePlatform(operatingSystem: 'linux'),
       fileSystem: MemoryFileSystem.test(),
       stdoutHandler: generatorStdoutHandler,
     );
@@ -68,7 +68,7 @@ void main() {
       logger: testLogger,
       processManager: fakeProcessManager,
       artifacts: Artifacts.test(),
-      platform: FakePlatform(),
+      platform: FakePlatform(operatingSystem: 'linux'),
       fileSystemRoots: <String>[
         '/foo/bar/fizz',
       ],
@@ -80,7 +80,7 @@ void main() {
 
   testWithoutContext('incremental compile single dart compile', () async {
     fakeProcessManager.addCommand(FakeCommand(
-      command: const <String>[...frontendServerCommand, '--verbosity=error'],
+      command: frontendServerCommand,
       stdout: 'result abc\nline1\nline2\nabc\nabc /path/to/main.dart.dill 0',
       stdin: frontendServerStdIn,
     ));
@@ -107,7 +107,6 @@ void main() {
         '/foo/bar/fizz',
         '--filesystem-scheme',
         'scheme',
-        '--verbosity=error',
       ],
       stdout: 'result abc\nline1\nline2\nabc\nabc /path/to/main.dart.dill 0',
       stdin: frontendServerStdIn,
@@ -129,7 +128,7 @@ void main() {
 
   testWithoutContext('incremental compile single dart compile abnormally terminates', () async {
     fakeProcessManager.addCommand(FakeCommand(
-      command: const <String>[...frontendServerCommand, '--verbosity=error'],
+      command: frontendServerCommand,
       stdin: frontendServerStdIn,
     ));
 
@@ -145,7 +144,7 @@ void main() {
 
   testWithoutContext('incremental compile single dart compile abnormally terminates via exitCode', () async {
     fakeProcessManager.addCommand(FakeCommand(
-      command: const <String>[...frontendServerCommand, '--verbosity=error'],
+      command: frontendServerCommand,
       stdin: frontendServerStdIn,
       exitCode: 1,
     ));
@@ -163,7 +162,7 @@ void main() {
   testWithoutContext('incremental compile and recompile', () async {
     final Completer<void> completer = Completer<void>();
     fakeProcessManager.addCommand(FakeCommand(
-      command: const <String>[...frontendServerCommand, '--verbosity=error'],
+      command: frontendServerCommand,
       stdout: 'result abc\nline0\nline1\nabc\nabc /path/to/main.dart.dill 0',
       stdin: frontendServerStdIn,
       completer: completer,
@@ -212,7 +211,6 @@ void main() {
         '/foo/bar/fizz',
         '--filesystem-scheme',
         'scheme',
-        '--verbosity=error',
       ],
       stdout: 'result abc\nline0\nline1\nabc\nabc /path/to/main.dart.dill 0',
       stdin: frontendServerStdIn,
@@ -276,7 +274,6 @@ void main() {
         '/foo/bar/fizz',
         '--filesystem-scheme',
         'scheme',
-        '--verbosity=error',
       ],
       stdout: 'result abc\nline0\nline1\nabc\nabc /path/to/main.dart.dill 0',
       stdin: frontendServerStdIn,
@@ -327,7 +324,7 @@ void main() {
   testWithoutContext('incremental compile can suppress errors', () async {
     final Completer<void> completer = Completer<void>();
     fakeProcessManager.addCommand(FakeCommand(
-      command: const <String>[...frontendServerCommand, '--verbosity=error'],
+      command: frontendServerCommand,
       stdout: 'result abc\nline0\nline1\nabc\nabc /path/to/main.dart.dill 0',
       stdin: frontendServerStdIn,
       completer: completer,
@@ -366,7 +363,7 @@ void main() {
   testWithoutContext('incremental compile and recompile twice', () async {
     final Completer<void> completer = Completer<void>();
     fakeProcessManager.addCommand(FakeCommand(
-      command: const <String>[...frontendServerCommand, '--verbosity=error'],
+      command: frontendServerCommand,
       stdout: 'result abc\nline0\nline1\nabc\nabc /path/to/main.dart.dill 0',
       stdin: frontendServerStdIn,
       completer: completer,

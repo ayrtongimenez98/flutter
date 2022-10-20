@@ -4,8 +4,43 @@
 
 #import "AppDelegate.h"
 #import "GeneratedPluginRegistrant.h"
-#import "ViewFactory.h"
-#import "TextFieldFactory.h"
+
+@interface PlatformView: NSObject<FlutterPlatformView>
+
+@property (strong, nonatomic) UIView *platformView;
+
+@end
+
+@implementation PlatformView
+
+- (instancetype)init
+{
+  self = [super init];
+  if (self) {
+    self.platformView = [[UIView alloc] init];
+    self.platformView.backgroundColor = [UIColor blueColor];
+  }
+  return self;
+}
+
+- (UIView *)view {
+  return self.platformView;
+}
+
+@end
+
+@interface ViewFactory: NSObject<FlutterPlatformViewFactory>
+
+@end
+
+@implementation ViewFactory
+
+- (NSObject<FlutterPlatformView> *)createWithFrame:(CGRect)frame viewIdentifier:(int64_t)viewId arguments:(id)args {
+  PlatformView *platformView = [[PlatformView alloc] init];
+  return platformView;
+}
+
+@end
 
 @implementation AppDelegate
 
@@ -13,9 +48,7 @@
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
   [GeneratedPluginRegistrant registerWithRegistry:self];
   // Override point for customization after application launch.
-  id<FlutterPluginRegistrar> registrar = [self registrarForPlugin:@"flutter"];
-  [registrar registerViewFactory:[[ViewFactory alloc] init] withId:@"platform_view"];
-  [registrar registerViewFactory:[[TextFieldFactory alloc] init] withId:@"platform_text_field"];
+  [[self registrarForPlugin:@"flutter"] registerViewFactory:[ViewFactory new] withId:@"platform_view"];
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 

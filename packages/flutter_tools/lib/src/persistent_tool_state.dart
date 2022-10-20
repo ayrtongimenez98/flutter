@@ -38,7 +38,7 @@ abstract class PersistentToolState {
   ///
   /// May give null if the value has not been set.
   bool? get shouldRedisplayWelcomeMessage;
-  void setShouldRedisplayWelcomeMessage(bool value); // Enforced nonnull setter.
+  set redisplayWelcomeMessage(bool value); // Enforced nonnull setter.
 
   /// Returns the last active version for a given [channel].
   ///
@@ -50,11 +50,15 @@ abstract class PersistentToolState {
 
   /// Return the hash of the last active license terms.
   String? get lastActiveLicenseTermsHash;
-  void setLastActiveLicenseTermsHash(String value); // Enforced nonnull setter.
+  set lastActiveLicenseTerms(String value); // Enforced nonnull setter.
 
   /// Whether this client was already determined to be or not be a bot.
   bool? get isRunningOnBot;
-  void setIsRunningOnBot(bool value); // Enforced nonnull setter.
+  set runningOnBot(bool value); // Enforced nonnull setter.
+
+  /// The last time the DevTools package was activated from pub.
+  DateTime? get lastDevToolsActivationTime;
+  set lastDevToolsActivation(DateTime value); // Enforced nonnull setter.
 }
 
 class _DefaultPersistentToolState implements PersistentToolState {
@@ -83,10 +87,12 @@ class _DefaultPersistentToolState implements PersistentToolState {
   static const String _kRedisplayWelcomeMessage = 'redisplay-welcome-message';
   static const Map<Channel, String> _lastActiveVersionKeys = <Channel,String>{
     Channel.master: 'last-active-master-version',
+    Channel.dev: 'last-active-dev-version',
     Channel.beta: 'last-active-beta-version',
-    Channel.stable: 'last-active-stable-version',
+    Channel.stable: 'last-active-stable-version'
   };
   static const String _kBotKey = 'is-bot';
+  static const String _kLastDevToolsActivationTimeKey = 'last-devtools-activation-time';
   static const String _kLicenseHash = 'license-hash';
 
   final Config _config;
@@ -97,7 +103,7 @@ class _DefaultPersistentToolState implements PersistentToolState {
   }
 
   @override
-  void setShouldRedisplayWelcomeMessage(bool value) {
+  set redisplayWelcomeMessage(bool value) {
     _config.setValue(_kRedisplayWelcomeMessage, value);
   }
 
@@ -119,7 +125,7 @@ class _DefaultPersistentToolState implements PersistentToolState {
   String? get lastActiveLicenseTermsHash => _config.getValue(_kLicenseHash) as String?;
 
   @override
-  void setLastActiveLicenseTermsHash(String value) {
+  set lastActiveLicenseTerms(String value) {
     _config.setValue(_kLicenseHash, value);
   }
 
@@ -131,7 +137,17 @@ class _DefaultPersistentToolState implements PersistentToolState {
   bool? get isRunningOnBot => _config.getValue(_kBotKey) as bool?;
 
   @override
-  void setIsRunningOnBot(bool value) {
+  set runningOnBot(bool value) {
     _config.setValue(_kBotKey, value);
   }
+
+  @override
+  DateTime? get lastDevToolsActivationTime {
+    final String? value = _config.getValue(_kLastDevToolsActivationTimeKey) as String?;
+    return value != null ? DateTime.parse(value) : null;
+  }
+
+  @override
+  set lastDevToolsActivation(DateTime time) =>
+      _config.setValue(_kLastDevToolsActivationTimeKey, time.toString());
 }

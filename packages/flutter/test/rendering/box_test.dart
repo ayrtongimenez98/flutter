@@ -37,8 +37,6 @@ class MissingSetSizeRenderBox extends RenderBox {
 }
 
 void main() {
-  TestRenderingFlutterBinding.ensureInitialized();
-
   test('should size to render view', () {
     final RenderBox root = RenderDecoratedBox(
       decoration: BoxDecoration(
@@ -343,7 +341,7 @@ void main() {
     );
     // Check that we can update the constrained axis to null.
     unconstrained.constrainedAxis = null;
-    TestRenderingFlutterBinding.instance.reassembleApplication();
+    renderer.reassembleApplication();
 
     expect(unconstrained.size.width, equals(200.0), reason: 'unconstrained width');
     expect(unconstrained.size.height, equals(200.0), reason: 'unconstrained height');
@@ -386,7 +384,7 @@ void main() {
     void exhaustErrors() {
       FlutterErrorDetails? next;
       do {
-        next = TestRenderingFlutterBinding.instance.takeFlutterErrorDetails();
+        next = renderer.takeFlutterErrorDetails();
         firstErrorDetails ??= next;
       } while (next != null);
     }
@@ -598,6 +596,7 @@ void main() {
       constrainedAxis: Axis.horizontal,
       textDirection: TextDirection.ltr,
       child: RenderFlex(
+        direction: Axis.horizontal,
         textDirection: TextDirection.ltr,
         children: <RenderBox>[flexible],
       ),
@@ -1086,9 +1085,9 @@ void main() {
 
     test('localToGlobal with ancestor', () {
       final RenderConstrainedBox innerConstrained = RenderConstrainedBox(additionalConstraints: const BoxConstraints.tightFor(width: 50, height: 50));
-      final RenderPositionedBox innerCenter = RenderPositionedBox(child: innerConstrained);
+      final RenderPositionedBox innerCenter = RenderPositionedBox(alignment: Alignment.center, child: innerConstrained);
       final RenderConstrainedBox outerConstrained = RenderConstrainedBox(additionalConstraints: const BoxConstraints.tightFor(width: 100, height: 100), child: innerCenter);
-      final RenderPositionedBox outerCentered = RenderPositionedBox(child: outerConstrained);
+      final RenderPositionedBox outerCentered = RenderPositionedBox(alignment: Alignment.center, child: outerConstrained);
 
       layout(outerCentered);
 

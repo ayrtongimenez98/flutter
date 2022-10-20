@@ -20,7 +20,8 @@ class FractionalOffsetTween extends Tween<FractionalOffset?> {
   ///
   /// The [begin] and [end] properties may be null; the null value
   /// is treated as meaning the center.
-  FractionalOffsetTween({ super.begin, super.end });
+  FractionalOffsetTween({ FractionalOffset? begin, FractionalOffset? end })
+    : super(begin: begin, end: end);
 
   /// Returns the value this variable has at the given animation clock value.
   @override
@@ -43,7 +44,8 @@ class AlignmentTween extends Tween<Alignment> {
   ///
   /// The [begin] and [end] properties may be null; the null value
   /// is treated as meaning the center.
-  AlignmentTween({ super.begin, super.end });
+  AlignmentTween({ Alignment? begin, Alignment? end })
+    : super(begin: begin, end: end);
 
   /// Returns the value this variable has at the given animation clock value.
   @override
@@ -66,9 +68,9 @@ class AlignmentGeometryTween extends Tween<AlignmentGeometry?> {
   /// The [begin] and [end] properties may be null; the null value
   /// is treated as meaning the center.
   AlignmentGeometryTween({
-    super.begin,
-    super.end,
-  });
+    AlignmentGeometry? begin,
+    AlignmentGeometry? end,
+  }) : super(begin: begin, end: end);
 
   /// Returns the value this variable has at the given animation clock value.
   @override

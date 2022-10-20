@@ -18,11 +18,12 @@ class IconTheme extends InheritedTheme {
   ///
   /// Both [data] and [child] arguments must not be null.
   const IconTheme({
-    super.key,
+    Key? key,
     required this.data,
-    required super.child,
+    required Widget child,
   }) : assert(data != null),
-       assert(child != null);
+       assert(child != null),
+       super(key: key, child: child);
 
   /// Creates an icon theme that controls the color, opacity, and size of
   /// descendant widgets, and merges in the current icon theme, if any.
@@ -74,7 +75,6 @@ class IconTheme extends InheritedTheme {
         size: iconThemeData.size ?? const IconThemeData.fallback().size,
         color: iconThemeData.color ?? const IconThemeData.fallback().color,
         opacity: iconThemeData.opacity ?? const IconThemeData.fallback().opacity,
-        shadows: iconThemeData.shadows ?? const IconThemeData.fallback().shadows,
       );
   }
 

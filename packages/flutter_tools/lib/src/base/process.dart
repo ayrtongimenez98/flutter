@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:process/process.dart';
 
 import '../convert.dart';
+import 'common.dart';
 import 'io.dart';
 import 'logger.dart';
 
@@ -295,11 +296,11 @@ class _DefaultProcessUtils implements ProcessUtils {
       final Future<void> stdoutFuture = process.stdout
           .transform<String>(const Utf8Decoder(reportErrors: false))
           .listen(stdoutBuffer.write)
-          .asFuture<void>();
+          .asFuture<void>(null);
       final Future<void> stderrFuture = process.stderr
           .transform<String>(const Utf8Decoder(reportErrors: false))
           .listen(stderrBuffer.write)
-          .asFuture<void>();
+          .asFuture<void>(null);
 
       int? exitCode;
       exitCode = await process.exitCode.then<int?>((int x) => x).timeout(timeout, onTimeout: () {
@@ -457,7 +458,7 @@ class _DefaultProcessUtils implements ProcessUtils {
         }
         if (mappedLine != null) {
           final String message = '$prefix$mappedLine';
-          if (stdoutErrorMatcher?.hasMatch(mappedLine) ?? false) {
+          if (stdoutErrorMatcher?.hasMatch(mappedLine) == true) {
             _logger.printError(message, wrap: false);
           } else if (trace) {
             _logger.printTrace(message);
